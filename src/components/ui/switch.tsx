@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 import { cn } from "@/lib/utils";
 
 export function Switch({
@@ -25,11 +23,13 @@ export function Switch({
         className,
       )}
     >
-      <motion.span
-        layout
-        transition={{ type: "spring", bounce: 0.22, duration: 0.32 }}
+      <span
         className="block size-5 rounded-full bg-white shadow-lg"
-        style={{ marginLeft: checked ? 26 : 4 }}
+        style={{
+          marginLeft: 4,
+          transform: `translateX(${checked ? 22 : 0}px)`,
+          transition: "transform 200ms ease-out",
+        }}
       />
     </button>
   );

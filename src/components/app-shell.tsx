@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -64,6 +63,7 @@ export function AppShell({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={cn(
                     "rounded-2xl px-4 py-3 text-sm font-semibold transition",
                     active
@@ -86,17 +86,7 @@ export function AppShell({
       </header>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={pathname}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.24, ease: "easeOut" }}
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+        <div>{children}</div>
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 pb-[calc(0.9rem+env(safe-area-inset-bottom))] lg:hidden">
@@ -108,6 +98,7 @@ export function AppShell({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={cn(
                   "flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-center text-[11px] font-semibold transition",
                   active

@@ -1,29 +1,15 @@
-import { redirect } from "next/navigation";
-
 import { AppShell } from "@/components/app-shell";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getWorkspaceIdentity } from "@/lib/auth";
 
 export default async function WorkspaceLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/auth");
-  }
-
-  const label =
-    user.user_metadata?.full_name ??
-    user.email?.split("@")[0]?.replace(/\./g, " ") ??
-    "Pengguna";
+  const identity = await getWorkspaceIdentity();
 
   return (
-    <AppShell userEmail={user.email ?? "-"} userLabel={label}>
+    <AppShell userEmail={identity.email} userLabel={identity.label}>
       {children}
     </AppShell>
   );

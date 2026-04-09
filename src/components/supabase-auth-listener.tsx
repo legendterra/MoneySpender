@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { startTransition, useEffect } from "react";
+import type { AuthChangeEvent } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -16,8 +17,14 @@ export function SupabaseAuthListener() {
     const supabase = createBrowserSupabaseClient();
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      router.refresh();
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
+      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
+        return;
+      }
+
+      startTransition(() => {
+        router.refresh();
+      });
     });
 
     return () => {

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   Area,
   AreaChart,
@@ -45,11 +44,12 @@ function GoalBar({
         <span className="text-sm font-bold text-accent-strong">{Math.round(ratio)}%</span>
       </div>
       <div className="h-3 rounded-full bg-accent-soft">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${ratio}%` }}
-          transition={{ duration: 0.65, ease: "easeOut" }}
+        <div
           className="h-3 rounded-full bg-accent"
+          style={{
+            width: `${ratio}%`,
+            transition: "width 260ms ease-out",
+          }}
         />
       </div>
     </div>

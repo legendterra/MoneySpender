@@ -91,6 +91,7 @@ export default async function AllTransactionsPage({
           <div className="flex items-end">
             <Link
               href="/all-transactions"
+              prefetch={false}
               className={cn(buttonVariants({ variant: "secondary", size: "md", fullWidth: true }))}
             >
               Reset

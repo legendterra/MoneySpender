@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
+import { format as formatDateFns } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { DEFAULT_CURRENCY } from "@/lib/constants";
@@ -9,6 +10,11 @@ export function cn(...inputs: ClassValue[]) {
 
 function normalizeDateValue(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value;
+}
+
+function parseDateValue(value: string) {
+  const parsedDate = new Date(normalizeDateValue(value));
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
 }
 
 export function formatCurrency(value: number, currency = DEFAULT_CURRENCY) {
@@ -29,9 +35,8 @@ export function formatCompactCurrency(value: number, currency = DEFAULT_CURRENCY
 }
 
 export function formatDate(date: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-  }).format(new Date(normalizeDateValue(date)));
+  const parsedDate = parseDateValue(date);
+  return parsedDate ? formatDateFns(parsedDate, "dd/MM/yyyy") : date;
 }
 
 export function formatMonthLabel(date: string) {

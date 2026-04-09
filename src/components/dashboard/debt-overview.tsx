@@ -21,7 +21,11 @@ export function DebtOverview({
           <p className="text-sm font-semibold text-muted">Ringkasan hutang</p>
           <h2 className="text-2xl font-bold text-foreground">Pantau hutang aktif dari dashboard</h2>
         </div>
-        <Link href="/debts#form" className={cn(buttonVariants({ variant: "secondary", size: "md" }))}>
+        <Link
+          href="/debts#form"
+          prefetch={false}
+          className={cn(buttonVariants({ variant: "secondary", size: "md" }))}
+        >
           Tambah hutang
         </Link>
       </div>

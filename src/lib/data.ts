@@ -1,16 +1,12 @@
 import { endOfMonth, endOfYear, format, startOfMonth, startOfYear, subMonths } from "date-fns";
 import { id as indonesiaLocale } from "date-fns/locale";
-import { redirect } from "next/navigation";
 
 import {
   DEFAULT_CURRENCY,
-  DEFAULT_DEBT_CATEGORIES,
-  DEFAULT_EXPENSE_CATEGORIES,
-  DEFAULT_INCOME_CATEGORIES,
   MONTHS_TO_SHOW,
   WEEKDAY_OPTIONS,
 } from "@/lib/constants";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getAuthedContext } from "@/lib/auth";
 import type {
   Category,
   CategorySlice,
@@ -37,115 +33,6 @@ function resolveMonthValue(month?: string) {
 
 function buildMonthDate(monthValue: string) {
   return new Date(`${monthValue}-01T00:00:00`);
-}
-
-async function getAuthedContext() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/auth");
-  }
-
-  await ensureUserSetup(supabase, user);
-
-  return { supabase, user };
-}
-
-async function ensureUserSetup(
-  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
-  user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> | null },
-) {
-  const fullName =
-    typeof user.user_metadata?.full_name === "string"
-      ? user.user_metadata.full_name
-      : typeof user.user_metadata?.name === "string"
-        ? user.user_metadata.name
-        : user.email?.split("@")[0] ?? "Pengguna";
-
-  const defaultCategories = [
-    ...DEFAULT_INCOME_CATEGORIES.map((name) => ({
-      user_id: user.id,
-      name,
-      type: "income" as const,
-      color: "#82A5FF",
-    })),
-    ...DEFAULT_EXPENSE_CATEGORIES.map((name) => ({
-      user_id: user.id,
-      name,
-      type: "expense" as const,
-      color: "#4D84FF",
-    })),
-    ...DEFAULT_DEBT_CATEGORIES.map((name) => ({
-      user_id: user.id,
-      name,
-      type: "debt" as const,
-      color: "#FF8A8A",
-    })),
-  ];
-
-  const [profileCheck, reminderCheck, categoriesCheck] = await Promise.all([
-    supabase.from("profiles").select("id").eq("id", user.id).maybeSingle(),
-    supabase
-      .from("reminder_preferences")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-    supabase.from("categories").select("id").eq("user_id", user.id).limit(1),
-  ]);
-
-  if (profileCheck.error || reminderCheck.error || categoriesCheck.error) {
-    throw new Error(
-      "Gagal menyiapkan data awal user di Supabase. Jalankan schema terbaru dan cek RLS/policies.",
-    );
-  }
-
-  const writes = [];
-
-  if (!profileCheck.data) {
-    writes.push(
-      supabase.from("profiles").upsert(
-        {
-          id: user.id,
-          full_name: fullName,
-        },
-        { onConflict: "id" },
-      ),
-    );
-  }
-
-  if (!reminderCheck.data) {
-    writes.push(
-      supabase.from("reminder_preferences").upsert(
-        {
-          user_id: user.id,
-        },
-        { onConflict: "user_id" },
-      ),
-    );
-  }
-
-  if (!(categoriesCheck.data?.length ?? 0)) {
-    writes.push(
-      supabase.from("categories").upsert(defaultCategories, {
-        onConflict: "user_id,name,type",
-      }),
-    );
-  }
-
-  if (!writes.length) {
-    return;
-  }
-
-  const results = await Promise.all(writes);
-
-  if (results.some((result) => result.error)) {
-    throw new Error(
-      "Gagal menyiapkan data awal user di Supabase. Jalankan schema terbaru dan cek RLS/policies.",
-    );
-  }
 }
 
 function normalizeProfile(profile: ProfileData | null, fallbackName: string | null): ProfileData {
@@ -348,55 +235,12 @@ export async function getDashboardData(month?: string) {
 
   const { supabase, user } = await getAuthedContext();
 
-  const [
-    profileResult,
-    categoriesResult,
-    reminderResult,
-    monthTransactionsResult,
-    topIncomeResult,
-    topExpenseResult,
-    historyTransactionsResult,
-    yearTransactionsResult,
-    monthDebtsResult,
-    allDebtsResult,
-  ] = await Promise.all([
+  const [profileResult, periodTransactionsResult, yearTransactionsResult, allDebtsResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
       .eq("id", user.id)
       .maybeSingle(),
-    supabase.from("categories").select("id,name,type,color").eq("user_id", user.id).order("name"),
-    supabase
-      .from("reminder_preferences")
-      .select("reminder_morning_enabled,reminder_evening_enabled,push_enabled")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("transactions")
-      .select("id,amount,type,transaction_date,reason,merchant,payment_method,category_label")
-      .eq("user_id", user.id)
-      .gte("transaction_date", monthStart)
-      .lte("transaction_date", monthEnd)
-      .order("transaction_date", { ascending: false })
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("transactions")
-      .select("id,amount,type,transaction_date,reason,merchant,payment_method,category_label")
-      .eq("user_id", user.id)
-      .eq("type", "income")
-      .gte("transaction_date", monthStart)
-      .lte("transaction_date", monthEnd)
-      .order("amount", { ascending: false })
-      .limit(10),
-    supabase
-      .from("transactions")
-      .select("id,amount,type,transaction_date,reason,merchant,payment_method,category_label")
-      .eq("user_id", user.id)
-      .eq("type", "expense")
-      .gte("transaction_date", monthStart)
-      .lte("transaction_date", monthEnd)
-      .order("amount", { ascending: false })
-      .limit(10),
     supabase
       .from("transactions")
       .select("id,amount,type,transaction_date,reason,merchant,payment_method,category_label")
@@ -415,13 +259,6 @@ export async function getDashboardData(month?: string) {
       .from("debts")
       .select("id,amount,debt_date,source_name,lender_name,reason,category_label,is_paid,paid_at")
       .eq("user_id", user.id)
-      .gte("debt_date", monthStart)
-      .lte("debt_date", monthEnd)
-      .order("debt_date", { ascending: false }),
-    supabase
-      .from("debts")
-      .select("id,amount,debt_date,source_name,lender_name,reason,category_label,is_paid,paid_at")
-      .eq("user_id", user.id)
       .order("debt_date", { ascending: false }),
   ]);
 
@@ -429,38 +266,36 @@ export async function getDashboardData(month?: string) {
     profileResult.data as ProfileData | null,
     user.user_metadata?.full_name ?? null,
   );
-  const categories = (categoriesResult.data ?? []) as Category[];
-  const reminder = normalizeReminder(reminderResult.data as ReminderPreferences | null);
-  const monthTransactions = (monthTransactionsResult.data ?? []).map(mapTransaction);
-  const historyTransactions = (historyTransactionsResult.data ?? []).map(mapTransaction);
+  const periodTransactions = (periodTransactionsResult.data ?? []).map(mapTransaction);
   const yearTransactions = (yearTransactionsResult.data ?? []).map(mapTransaction);
-  const monthDebts = (monthDebtsResult.data ?? []).map(mapDebt);
   const allDebts = (allDebtsResult.data ?? []).map(mapDebt);
+  const monthTransactions = periodTransactions.filter(
+    (transaction) => transaction.transaction_date >= monthStart && transaction.transaction_date <= monthEnd,
+  );
   const summary = summarizeTransactions(monthTransactions);
   const debtSummary = summarizeDebts(allDebts, selectedMonthDate);
-  const unpaidMonthDebts = monthDebts.filter((debt) => !debt.is_paid);
+  const unpaidMonthDebts = allDebts.filter(
+    (debt) => !debt.is_paid && debt.debt_date >= monthStart && debt.debt_date <= monthEnd,
+  );
 
   return {
     monthValue,
     selectedMonthLabel: format(selectedMonthDate, "MMMM yyyy", { locale: indonesiaLocale }),
     profile,
-    categories,
-    reminder,
     summary,
     goalProgress: buildGoalProgress(profile, summary, yearTransactions),
-    topIncome: (topIncomeResult.data ?? []).map(mapTransaction),
-    topExpense: (topExpenseResult.data ?? []).map(mapTransaction),
-    monthTransactions,
-    monthDebts,
-    trendData: buildHistory(historyTransactions, selectedMonthDate),
+    topIncome: monthTransactions
+      .filter((transaction) => transaction.type === "income")
+      .sort((left, right) => right.amount - left.amount)
+      .slice(0, 10),
+    topExpense: monthTransactions
+      .filter((transaction) => transaction.type === "expense")
+      .sort((left, right) => right.amount - left.amount)
+      .slice(0, 10),
+    trendData: buildHistory(periodTransactions, selectedMonthDate),
     expenseBreakdown: buildCategoryBreakdown(monthTransactions),
     debtSummary,
     recentDebts: unpaidMonthDebts.slice(0, 5),
-    user: {
-      id: user.id,
-      email: user.email ?? "",
-      fullName: profile.full_name ?? null,
-    },
   };
 }
 

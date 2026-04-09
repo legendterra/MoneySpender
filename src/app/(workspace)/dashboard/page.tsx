@@ -1,6 +1,6 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 
-import { DashboardCharts } from "@/components/dashboard/charts";
 import { DebtOverview } from "@/components/dashboard/debt-overview";
 import { SummaryStrip } from "@/components/dashboard/summary-strip";
 import { TopTransactions } from "@/components/dashboard/top-transactions";
@@ -10,6 +10,13 @@ import { buttonVariants } from "@/components/ui/button-styles";
 import { Panel } from "@/components/ui/panel";
 import { getDashboardData } from "@/lib/data";
 import { cn, formatCurrency } from "@/lib/utils";
+
+const DashboardCharts = dynamic(
+  () => import("@/components/dashboard/charts").then((module) => module.DashboardCharts),
+  {
+    loading: () => <DashboardChartsFallback />,
+  },
+);
 
 export default async function DashboardPage({
   searchParams,
@@ -44,24 +51,28 @@ export default async function DashboardPage({
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/income#form"
+                prefetch={false}
                 className={cn(buttonVariants({ variant: "primary", size: "lg" }))}
               >
                 Tambah pemasukan
               </Link>
               <Link
                 href="/expenses#form"
+                prefetch={false}
                 className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}
               >
                 Tambah pengeluaran
               </Link>
               <Link
                 href="/debts#form"
+                prefetch={false}
                 className={cn(buttonVariants({ variant: "danger", size: "lg" }))}
               >
                 Tambah hutang
               </Link>
               <Link
                 href="/all-transactions"
+                prefetch={false}
                 className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}
               >
                 Semua transaksi
@@ -105,6 +116,18 @@ export default async function DashboardPage({
         goals={data.goalProgress}
       />
       <TopTransactions currencyCode={currency} topIncome={data.topIncome} topExpense={data.topExpense} />
+    </div>
+  );
+}
+
+function DashboardChartsFallback() {
+  return (
+    <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
+      <Panel className="h-[380px] animate-pulse bg-background-strong" />
+      <div className="grid gap-4">
+        <Panel className="h-[180px] animate-pulse bg-background-strong" />
+        <Panel className="h-[300px] animate-pulse bg-background-strong" />
+      </div>
     </div>
   );
 }

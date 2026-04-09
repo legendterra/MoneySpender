@@ -11,8 +11,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "MoneySpender";
   const options = {
     body: payload.body || "Saatnya catat keuangan hari ini.",
-    icon: "/icon-512-maskable.svg",
-    badge: "/icon-192.svg",
+    icon: "/icon-512-maskable.png",
+    badge: "/icon-192.png",
     data: payload.url || "/dashboard",
     vibrate: [120, 40, 120],
     tag: payload.tag || "moneyspender-reminder",
