@@ -33,8 +33,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6fbff" },
-    { media: "(prefers-color-scheme: dark)", color: "#060814" },
+    { media: "(prefers-color-scheme: light)", color: "#f8f1ff" },
+    { media: "(prefers-color-scheme: dark)", color: "#080b1c" },
   ],
 };
 
@@ -50,7 +50,10 @@ export default function RootLayout({
       className={`${plusJakartaSans.variable} ${jetBrainsMono.variable}`}
     >
       <body>
-        <AppProviders>{children}</AppProviders>
+        <div className="hub-dots" aria-hidden="true" />
+        <div className="relative z-10">
+          <AppProviders>{children}</AppProviders>
+        </div>
       </body>
     </html>
   );

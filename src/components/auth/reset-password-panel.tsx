@@ -23,27 +23,29 @@ type AuthPalette = {
 };
 
 const lightPalette: AuthPalette = {
-  page: "#f8f5ef",
-  card: "#fffdf8",
-  border: "#dad3c7",
-  text: "#2f3538",
-  muted: "#717a7c",
-  accent: "#3f9f96",
-  accentHover: "#34857e",
-  inputBg: "#fffdf8",
+  page: "#f8f1ff",
+  pagePattern:
+    "radial-gradient(circle at 0% 0%, rgba(173,123,255,.34) 0 14rem, transparent 14.2rem), radial-gradient(circle at 100% 100%, rgba(255,186,112,.54) 0 17rem, transparent 17.2rem), radial-gradient(circle at 11% 94%, rgba(51,103,255,.34) 0 14rem, transparent 14.2rem), linear-gradient(135deg, #f8f1ff 0%, #eef6ff 38%, #fff3ef 100%)",
+  card: "rgba(255,255,255,.58)",
+  border: "rgba(255,255,255,.72)",
+  text: "#11162f",
+  muted: "#68708e",
+  accent: "#5747ef",
+  accentHover: "#4333d8",
+  inputBg: "rgba(255,255,255,.38)",
 };
 
 const darkPalette: AuthPalette = {
-  page: "#080d1b",
+  page: "#080b1c",
   pagePattern:
-    "radial-gradient(circle at 20% 20%, rgba(118, 156, 255, 0.18) 0, transparent 36%), radial-gradient(circle at 80% 8%, rgba(114, 88, 176, 0.18) 0, transparent 34%), radial-gradient(circle at 1px 1px, rgba(255,255,255,0.08) 1px, transparent 0)",
-  card: "#121a2d",
-  border: "#2d3856",
-  text: "#eef2ff",
-  muted: "#a6b3d4",
-  accent: "#63d3b8",
-  accentHover: "#4cb79e",
-  inputBg: "#141f35",
+    "radial-gradient(circle at 0% 0%, rgba(118,86,255,.28) 0 14rem, transparent 14.2rem), radial-gradient(circle at 100% 100%, rgba(255,147,92,.22) 0 18rem, transparent 18.2rem), radial-gradient(circle at 8% 94%, rgba(52,96,255,.22) 0 15rem, transparent 15.2rem), linear-gradient(135deg, #080b1c 0%, #101834 46%, #170f23 100%)",
+  card: "rgba(20,25,54,.72)",
+  border: "rgba(178,189,255,.18)",
+  text: "#f4f6ff",
+  muted: "#a6aecb",
+  accent: "#7567ff",
+  accentHover: "#55b8ff",
+  inputBg: "rgba(255,255,255,.08)",
 };
 
 export function ResetPasswordPanel() {
@@ -92,20 +94,19 @@ export function ResetPasswordPanel() {
 
   return (
     <div
-      className="h-[100dvh] overflow-hidden"
+      className="min-h-[100dvh] overflow-hidden"
       style={{
         backgroundColor: palette.page,
         backgroundImage: palette.pagePattern,
-        backgroundSize: isDark ? "auto, auto, 24px 24px" : undefined,
       }}
     >
-      <div className="mx-auto flex h-full w-full max-w-md flex-col px-4 py-3 sm:px-5">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-4 py-5 sm:px-5">
         <header className="flex items-center justify-between pb-1">
           <LogoMark
             className={
               isDark
-                ? "[&_span:first-child]:text-[#9df5df] [&_span:last-child]:text-[#eef2ff]"
-                : "[&_span:first-child]:text-[#3f9f96] [&_span:last-child]:text-[#2f3538]"
+                ? "[&_span:first-child]:text-[#a79cff] [&_span:last-child]:text-[#f4f6ff]"
+                : "[&_span:first-child]:text-[#5747ef] [&_span:last-child]:text-[#11162f]"
             }
           />
           <ThemeToggle
@@ -120,8 +121,8 @@ export function ResetPasswordPanel() {
 
         <main className="flex flex-1 items-center justify-center">
           <section
-            className="w-full rounded-2xl border p-4 sm:p-5"
-            style={{ borderColor: palette.border, backgroundColor: palette.card }}
+            className="w-full rounded-[24px] border-2 p-5 shadow-[0_22px_70px_rgba(54,74,155,.2)] backdrop-blur-[22px] sm:p-6"
+            style={{ borderColor: palette.border, background: palette.card }}
           >
             <div className="space-y-1">
               <h1 className="text-2xl font-semibold" style={{ color: palette.text }}>
@@ -143,7 +144,7 @@ export function ResetPasswordPanel() {
                   placeholder="Minimal 8 karakter"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  className="min-h-11 rounded-xl"
+                  className="min-h-11 rounded-2xl"
                   style={{
                     borderColor: palette.border,
                     backgroundColor: palette.inputBg,
@@ -162,7 +163,7 @@ export function ResetPasswordPanel() {
                   placeholder="Tulis ulang password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
-                  className="min-h-11 rounded-xl"
+                  className="min-h-11 rounded-2xl"
                   style={{
                     borderColor: palette.border,
                     backgroundColor: palette.inputBg,
@@ -174,7 +175,7 @@ export function ResetPasswordPanel() {
               <button
                 type="submit"
                 disabled={isBusy}
-                className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60"
+                className="w-full rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_18px_48px_rgba(57,74,216,.3)] transition disabled:opacity-60"
                 style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
               >
                 {isBusy ? "Memproses..." : "Simpan password baru"}

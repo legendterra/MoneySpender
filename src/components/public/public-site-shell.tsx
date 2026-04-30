@@ -28,7 +28,7 @@ export function PublicSiteShell({
   return (
     <main className="px-4 py-5 sm:px-6">
       <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-6xl flex-col gap-6">
-        <header className="glass-panel rounded-[32px] px-5 py-4 sm:px-6">
+        <header className="glass-panel rounded-[24px] px-5 py-4 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <LogoMark />
             <nav className="flex flex-wrap items-center gap-2">
@@ -52,13 +52,14 @@ export function PublicSiteShell({
         </header>
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <Panel className="rounded-[36px] border-border bg-background-strong/90 p-7 sm:p-9">
+          <Panel className="overflow-hidden rounded-[24px] p-7 sm:p-9">
+            <div className="absolute -right-20 -top-24 size-56 rounded-full bg-white/25 blur-2xl dark:bg-white/8" />
             <div className="space-y-5">
-              <p className="inline-flex rounded-full border border-border bg-accent-soft px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-accent-strong">
+              <p className="inline-flex rounded-full border border-[rgba(108,120,158,0.26)] bg-white/30 px-4 py-2 text-xs font-black uppercase text-accent-strong dark:bg-white/8">
                 {eyebrow}
               </p>
               <div className="space-y-4">
-                <h1 className="max-w-3xl text-4xl font-bold leading-tight text-foreground sm:text-5xl">
+                <h1 className="max-w-3xl text-4xl font-black leading-tight text-foreground sm:text-5xl">
                   {title}
                 </h1>
                 <p className="max-w-2xl text-sm leading-8 text-muted sm:text-base">
@@ -82,7 +83,7 @@ export function PublicSiteShell({
             </div>
           </Panel>
 
-          <Panel className="rounded-[36px] p-7 sm:p-9">
+          <Panel className="rounded-[24px] p-7 sm:p-9">
             <div className="space-y-5">
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold text-foreground">Link Publik Resmi</h2>
@@ -95,7 +96,7 @@ export function PublicSiteShell({
                 {publicLinks.map((item) => (
                   <div
                     key={item.href}
-                    className="rounded-[24px] border border-border bg-background p-4"
+                    className="rounded-[22px] border border-[rgba(108,120,158,0.18)] bg-white/30 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:bg-white/8"
                   >
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                       {item.label}
@@ -115,7 +116,7 @@ export function PublicSiteShell({
 
         <section>{children}</section>
 
-        <footer className="glass-panel rounded-[28px] px-5 py-4 text-sm leading-7 text-muted">
+        <footer className="glass-panel rounded-[24px] px-5 py-4 text-sm leading-7 text-muted">
           <p className="font-semibold text-foreground">{APP_NAME}</p>
           <p>{APP_DESCRIPTION}</p>
           <p className="mt-2">
