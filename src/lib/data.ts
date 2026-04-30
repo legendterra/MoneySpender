@@ -193,7 +193,7 @@ function buildHistoryRecordFromTransaction(transaction: TransactionRecord): Hist
     amount: transaction.amount,
     date: transaction.transaction_date,
     title: transaction.category_label || label,
-    subtitle: transaction.reason || "Tanpa alasan tambahan",
+    subtitle: transaction.reason || "Tanpa catatan",
     detail: [transaction.merchant, transaction.payment_method].filter(Boolean).join(" • ") || null,
     statusLabel: label,
   };

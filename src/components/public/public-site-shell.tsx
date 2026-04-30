@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 
 const publicLinks = [
   { href: "/", label: "Home" },
-  { href: "/privacy", label: "Privacy Policy" },
-  { href: "/terms", label: "Terms of Service" },
+  { href: "/privacy", label: "Privasi" },
+  { href: "/terms", label: "Syarat" },
 ] as const;
 
 type PublicSiteShellProps = {
@@ -45,7 +45,7 @@ export function PublicSiteShell({
                 href="/auth"
                 className={cn(buttonVariants({ variant: "primary", size: "sm" }))}
               >
-                Masuk ke aplikasi
+                Masuk
               </Link>
             </nav>
           </div>
@@ -53,9 +53,8 @@ export function PublicSiteShell({
 
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <Panel className="overflow-hidden rounded-[24px] p-7 sm:p-9">
-            <div className="absolute -right-20 -top-24 size-56 rounded-full bg-white/25 blur-2xl dark:bg-white/8" />
             <div className="space-y-5">
-              <p className="inline-flex rounded-full border border-[rgba(108,120,158,0.26)] bg-white/30 px-4 py-2 text-xs font-black uppercase text-accent-strong dark:bg-white/8">
+              <p className="inline-flex rounded-xl border border-border bg-accent-soft px-4 py-2 text-xs font-black uppercase text-accent-strong">
                 {eyebrow}
               </p>
               <div className="space-y-4">
@@ -71,13 +70,13 @@ export function PublicSiteShell({
                   href="/auth"
                   className={cn(buttonVariants({ variant: "primary", size: "lg" }))}
                 >
-                  Login / Register
+                  Mulai catat uang
                 </Link>
                 <Link
                   href="/dashboard"
                   className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}
                 >
-                  Buka dashboard
+                  Cek dashboard
                 </Link>
               </div>
             </div>
@@ -86,17 +85,16 @@ export function PublicSiteShell({
           <Panel className="rounded-[24px] p-7 sm:p-9">
             <div className="space-y-5">
               <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-foreground">Link Publik Resmi</h2>
+                <h2 className="text-2xl font-bold text-foreground">Link yang biasanya diminta</h2>
                 <p className="text-sm leading-7 text-muted">
-                  Halaman ini dapat dipakai untuk kebutuhan verifikasi publik, termasuk
-                  pengajuan Google OAuth verification.
+                  Kalau butuh link untuk login Google, review aplikasi, atau halaman legal, pakai ini.
                 </p>
               </div>
               <div className="space-y-3">
                 {publicLinks.map((item) => (
                   <div
                     key={item.href}
-                    className="rounded-[22px] border border-[rgba(108,120,158,0.18)] bg-white/30 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] dark:bg-white/8"
+                    className="rounded-[18px] border border-border bg-background-strong p-4"
                   >
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                       {item.label}

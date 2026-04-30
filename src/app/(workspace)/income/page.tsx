@@ -18,19 +18,19 @@ export default async function IncomePage({
     <div className="space-y-6 pb-10">
       <PageHeading
         eyebrow="Pemasukan"
-        title="Catat semua uang masuk tanpa ribet."
-        description={`Total pemasukan ${data.selectedMonthLabel}: ${formatCurrency(data.total, currency)}.`}
+        title="Uang masuk, masuk catatan juga."
+        description={`${data.selectedMonthLabel}: total pemasukan ${formatCurrency(data.total, currency)}.`}
         right={<MonthFilter monthValue={data.monthValue} actionPath="/income" />}
       />
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <TransactionForm
-          title="Tambah pemasukan"
-          description="Isi nominal, kategori, tanggal, dan alasan singkat agar laporan tetap bersih saat direkap per bulan."
+          title="Tambah uang masuk"
+          description="Isi jumlah, kategori, tanggal, dan catatan pendek. Cukup yang penting, tidak perlu panjang."
           categories={data.categories}
           type="income"
         />
         <TransactionsList
-          title="Daftar pemasukan"
+          title="Pemasukan bulan ini"
           records={data.transactions}
           currencyCode={currency}
         />

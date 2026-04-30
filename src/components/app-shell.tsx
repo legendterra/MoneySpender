@@ -68,7 +68,7 @@ export function AppShell({
                     "rounded-2xl px-4 py-3 text-sm font-semibold transition",
                     active
                       ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white shadow-[0_16px_38px_rgba(57,74,216,0.28)]"
-                      : "text-muted hover:bg-white/35 hover:text-foreground dark:hover:bg-white/10",
+                      : "text-muted hover:bg-background-strong hover:text-foreground",
                   )}
                 >
                   {item.label}
@@ -103,7 +103,7 @@ export function AppShell({
                   "flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-center text-[11px] font-semibold transition",
                   active
                     ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white shadow-[0_16px_38px_rgba(57,74,216,0.22)]"
-                    : "text-muted hover:bg-white/35 hover:text-foreground dark:hover:bg-white/10",
+                    : "text-muted hover:bg-background-strong hover:text-foreground",
                 )}
               >
                 <Icon className="size-4" />

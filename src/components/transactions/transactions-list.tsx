@@ -43,7 +43,7 @@ export function TransactionsList({
   return (
     <Panel className="space-y-5">
       <div>
-        <p className="text-sm font-semibold text-muted">Riwayat bulan ini</p>
+        <p className="text-sm font-semibold text-muted">Catatan bulan ini</p>
         <h2 className="text-2xl font-bold text-foreground">{title}</h2>
       </div>
       <div className="space-y-3">
@@ -58,7 +58,7 @@ export function TransactionsList({
                   <p className="text-base font-semibold text-foreground">
                     {record.category_label || "Tanpa kategori"}
                   </p>
-                  <p className="text-sm text-muted">{record.reason || "Tanpa catatan tambahan"}</p>
+                  <p className="text-sm text-muted">{record.reason || "Tanpa catatan"}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <p className="text-lg font-bold text-foreground">
@@ -79,7 +79,7 @@ export function TransactionsList({
           ))
         ) : (
           <div className="rounded-[26px] border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
-            Belum ada transaksi pada bulan ini.
+            Belum ada transaksi bulan ini.
           </div>
         )}
       </div>

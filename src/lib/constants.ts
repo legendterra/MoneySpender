@@ -1,6 +1,6 @@
 export const APP_NAME = "MoneySpender";
 export const APP_DESCRIPTION =
-  "Aplikasi laporan keuangan yang lembut, cepat, dan nyaman dipakai di web maupun mobile.";
+  "Tempat simpel buat nyatet uang masuk, uang keluar, hutang, dan target bulanan.";
 export const DEFAULT_CURRENCY = "IDR";
 export const APP_TIMEZONE = "Asia/Jakarta";
 export const MORNING_SLOT_HOUR = 7;
@@ -9,11 +9,11 @@ export const MONTHS_TO_SHOW = 6;
 
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/all-transactions", label: "Semua transaksi" },
+  { href: "/all-transactions", label: "Riwayat" },
   { href: "/income", label: "Pemasukan" },
   { href: "/expenses", label: "Pengeluaran" },
   { href: "/debts", label: "Hutang" },
-  { href: "/settings", label: "Setting" },
+  { href: "/settings", label: "Atur" },
 ] as const;
 
 export const DEFAULT_INCOME_CATEGORIES = [

@@ -86,10 +86,10 @@ export function DebtsList({
       <Panel className="space-y-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-muted">Grid hutang</p>
+            <p className="text-sm font-semibold text-muted">Daftar hutang</p>
             <h2 className="text-2xl font-bold text-foreground">{title}</h2>
           </div>
-          <p className="text-xs text-muted">Tidak bisa dihapus. Hanya bisa ditandai lunas.</p>
+          <p className="text-xs text-muted">Tidak ada tombol hapus. Kalau sudah selesai, tandai lunas.</p>
         </div>
         <div className="space-y-3">
           {records.length ? (
@@ -131,7 +131,7 @@ export function DebtsList({
             ))
           ) : (
             <div className="rounded-[26px] border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
-              Belum ada data hutang pada bulan ini.
+              Belum ada hutang bulan ini.
             </div>
           )}
         </div>
@@ -145,7 +145,7 @@ export function DebtsList({
                 <div className="flex items-center gap-3">
                   <AlertTriangle className="size-5 text-danger" />
                   <div>
-                    <p className="text-sm font-semibold text-danger">Konfirmasi pertama</p>
+                    <p className="text-sm font-semibold text-danger">Cek dulu</p>
                     <h3 className="text-2xl font-bold text-foreground">Hutang ini sudah dibayar?</h3>
                   </div>
                 </div>
@@ -163,7 +163,7 @@ export function DebtsList({
                       setCountdown(10);
                     }}
                   >
-                    Ya, lanjutkan
+                    Ya, lanjut
                   </Button>
                 </div>
               </div>
@@ -172,12 +172,12 @@ export function DebtsList({
                 <div className="flex items-center gap-3">
                   <Clock3 className="size-5 text-danger" />
                   <div>
-                    <p className="text-sm font-semibold text-danger">Konfirmasi kedua</p>
-                    <h3 className="text-2xl font-bold text-foreground">Yakin benar-benar sudah lunas?</h3>
+                    <p className="text-sm font-semibold text-danger">Satu kali lagi</p>
+                    <h3 className="text-2xl font-bold text-foreground">Yakin sudah lunas?</h3>
                   </div>
                 </div>
                 <p className="text-sm leading-7 text-muted">
-                  Tombol final baru aktif setelah countdown selesai supaya tidak salah tekan.
+                  Tombol final baru aktif setelah hitungan selesai, biar tidak kepencet.
                 </p>
                 <div className="rounded-[24px] border border-danger/20 bg-danger/8 px-4 py-4 text-sm text-danger">
                   Countdown: <span className="font-bold">{countdown}</span> detik

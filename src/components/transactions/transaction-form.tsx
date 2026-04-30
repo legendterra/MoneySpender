@@ -111,20 +111,20 @@ export function TransactionForm({
     <Panel className="space-y-6" id="form">
       <div className="space-y-2">
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent-strong">
-          Form {type === "income" ? "masukan" : "pengeluaran"}
+          {type === "income" ? "Uang masuk" : "Uang keluar"}
         </p>
         <h2 className="text-3xl font-bold text-foreground">{title}</h2>
         <p className="text-sm leading-7 text-muted">{description}</p>
       </div>
 
       <div className="rounded-[28px] border border-border bg-background-strong p-5">
-        <p className="text-xs uppercase tracking-[0.22em] text-muted">Preview nominal</p>
+        <p className="text-xs uppercase tracking-[0.22em] text-muted">Nominal yang akan disimpan</p>
         <p className="mt-2 text-4xl font-bold text-foreground">{preview}</p>
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Angka" error={form.formState.errors.amount?.message}>
+          <Field label="Nominal" error={form.formState.errors.amount?.message}>
             <div className="relative">
               <CircleDollarSign className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
               <Input
@@ -168,25 +168,24 @@ export function TransactionForm({
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Reason" error={form.formState.errors.reason?.message}>
-            <Textarea placeholder="Tulis alasan transaksi ini" {...form.register("reason")} />
+          <Field label="Catatan" error={form.formState.errors.reason?.message}>
+            <Textarea placeholder="Contoh: makan siang, invoice freelance, belanja bulanan" {...form.register("reason")} />
           </Field>
-          <Field label="Tambahan yang cocok">
+          <Field label="Detail tambahan">
             <div className="space-y-4 rounded-[28px] border border-border bg-background-strong p-4">
               <div className="relative">
                 <Store className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
-                <Input className="pl-11" placeholder="Toko / sumber dana" {...form.register("merchant")} />
+                <Input className="pl-11" placeholder="Toko, klien, atau sumber dana" {...form.register("merchant")} />
               </div>
               <div className="rounded-2xl bg-accent-soft px-4 py-3 text-sm leading-7 text-muted">
-                Saya tambahkan kolom <span className="font-semibold text-foreground">metode</span>
-                {" "}dan <span className="font-semibold text-foreground">sumber/toko</span> supaya laporan lebih rapi saat dicari kembali.
+                Isi kalau ingat. Detail kecil seperti metode bayar atau toko sering berguna saat kamu cek riwayat.
               </div>
             </div>
           </Field>
         </div>
 
         <Button type="submit" size="lg" fullWidth isLoading={isSubmitting}>
-          Simpan {type === "income" ? "Pemasukan" : "Pengeluaran"}
+          Simpan {type === "income" ? "uang masuk" : "uang keluar"}
         </Button>
       </form>
     </Panel>

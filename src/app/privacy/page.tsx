@@ -10,35 +10,35 @@ export const metadata: Metadata = {
 
 const sections = [
   {
-    title: "Informasi yang kami kumpulkan",
+    title: "Data yang dipakai",
     items: [
-      "Data akun seperti nama, email, dan identitas dasar yang Anda berikan saat mendaftar atau menggunakan Google Sign-In.",
-      "Data penggunaan aplikasi seperti transaksi pemasukan, pengeluaran, hutang, kategori, target, dan preferensi pengingat yang Anda simpan di MoneySpender.",
-      "Data teknis seperti cookie sesi login, endpoint push notification, dan log dasar yang dibutuhkan untuk menjaga keamanan aplikasi.",
+      "Nama, email, dan info dasar yang kamu pakai saat daftar atau login dengan Google.",
+      "Catatan yang kamu simpan di MoneySpender, seperti pemasukan, pengeluaran, hutang, kategori, target, dan reminder.",
+      "Data teknis seperlunya, misalnya sesi login, endpoint push notification, dan log dasar untuk keamanan.",
     ],
   },
   {
-    title: "Bagaimana data digunakan",
+    title: "Buat apa datanya",
     items: [
-      "Menyediakan fitur inti MoneySpender seperti login, dashboard laporan, pengingat, sinkronisasi data, dan pemulihan akun.",
-      "Menjaga keamanan akun, mencegah penyalahgunaan, dan membantu investigasi bila ada gangguan teknis.",
-      "Mengirim pengingat transaksi atau notifikasi yang memang Anda aktifkan di dalam aplikasi.",
+      "Menjalankan fitur utama: login, dashboard, catatan transaksi, reminder, sinkronisasi, dan reset akun.",
+      "Menjaga akun tetap aman dan membantu cek masalah teknis kalau ada gangguan.",
+      "Mengirim reminder hanya kalau kamu memang menyalakannya.",
     ],
   },
   {
-    title: "Pembagian dan penyimpanan data",
+    title: "Penyimpanan dan pihak lain",
     items: [
-      "Data disimpan melalui infrastruktur yang mendukung aplikasi, termasuk layanan hosting, autentikasi, database, dan notifikasi.",
-      "Kami tidak menjual data pribadi pengguna kepada pihak ketiga.",
-      "Data hanya dibagikan sejauh diperlukan untuk menjalankan layanan, mematuhi kewajiban hukum, atau melindungi keamanan pengguna dan aplikasi.",
+      "Data disimpan di layanan yang dibutuhkan aplikasi, seperti hosting, autentikasi, database, dan notifikasi.",
+      "Data pribadi kamu tidak dijual.",
+      "Data hanya dibagikan kalau diperlukan untuk menjalankan layanan, memenuhi kewajiban hukum, atau menjaga keamanan.",
     ],
   },
   {
     title: "Hak pengguna",
     items: [
-      "Anda dapat memperbarui informasi akun dan data penggunaan langsung dari aplikasi selama fitur terkait tersedia.",
-      "Anda dapat meminta penghapusan akun atau penonaktifan akses dengan menghubungi kontak resmi yang tercantum di halaman ini.",
-      "Anda dapat berhenti memakai Google Sign-In kapan saja dengan mencabut akses aplikasi dari akun Google Anda.",
+      "Kamu bisa memperbarui data akun dan catatan langsung dari aplikasi selama fiturnya tersedia.",
+      "Kamu bisa meminta penghapusan akun atau penonaktifan akses lewat kontak di halaman ini.",
+      "Kamu bisa berhenti memakai Google Sign-In kapan saja dari pengaturan akun Google.",
     ],
   },
 ] as const;
@@ -46,18 +46,18 @@ const sections = [
 export default function PrivacyPage() {
   return (
     <PublicSiteShell
-      eyebrow="Privacy Policy"
-      title="Kebijakan privasi untuk pengguna MoneySpender"
-      description="Halaman ini menjelaskan bagaimana MoneySpender mengumpulkan, memakai, menyimpan, dan melindungi data pengguna saat Anda mengakses aplikasi, termasuk saat login memakai email atau Google Sign-In."
+      eyebrow="Privasi"
+      title="Data kamu dipakai seperlunya."
+      description="MoneySpender butuh beberapa data agar login, catatan, dashboard, dan reminder bisa berjalan. Halaman ini menjelaskan versi singkat dan jelasnya."
     >
       <div className="grid gap-6">
         <Panel className="rounded-[32px] p-7 sm:p-8">
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-foreground">Ringkasan</h2>
             <p className="text-sm leading-8 text-muted sm:text-base">
-              MoneySpender adalah aplikasi pencatatan keuangan pribadi. Kami memproses
-              data yang diperlukan untuk autentikasi, penyimpanan catatan transaksi,
-              personalisasi pengalaman, dan pengiriman pengingat yang Anda aktifkan.
+              MoneySpender adalah aplikasi catatan keuangan pribadi. Data dipakai untuk
+              menyimpan catatanmu, menampilkan dashboard, menjaga login, dan mengirim
+              reminder yang kamu aktifkan.
             </p>
             <p className="text-sm leading-8 text-muted sm:text-base">
               Tanggal pembaruan terakhir: <span className="font-semibold text-foreground">2 April 2026</span>
@@ -84,8 +84,7 @@ export default function PrivacyPage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-foreground">Kontak privasi</h2>
             <p className="text-sm leading-8 text-muted sm:text-base">
-              Untuk pertanyaan terkait privasi, permintaan penghapusan data, atau isu
-              seputar penggunaan Google Sign-In, silakan hubungi:
+              Ada pertanyaan soal privasi, penghapusan data, atau Google Sign-In? Hubungi:
             </p>
             <a
               href="mailto:legendterra@gmail.com"

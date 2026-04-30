@@ -72,8 +72,8 @@ export function DashboardCharts({
       <Panel className="space-y-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-muted">Grafik cashflow</p>
-            <h2 className="text-2xl font-bold text-foreground">Tren pemasukan vs pengeluaran</h2>
+            <p className="text-sm font-semibold text-muted">Cashflow</p>
+            <h2 className="text-2xl font-bold text-foreground">Uang masuk vs uang keluar</h2>
           </div>
           <p className="text-xs text-muted">6 bulan terakhir</p>
         </div>
@@ -128,8 +128,8 @@ export function DashboardCharts({
       <div className="grid gap-4">
         <Panel className="space-y-5">
           <div>
-            <p className="text-sm font-semibold text-muted">Target tabungan</p>
-            <h2 className="text-2xl font-bold text-foreground">Progress goals</h2>
+            <p className="text-sm font-semibold text-muted">Target nabung</p>
+            <h2 className="text-2xl font-bold text-foreground">Sudah sejauh mana?</h2>
           </div>
           <GoalBar
             label="Target bulan ini"
@@ -148,10 +148,10 @@ export function DashboardCharts({
         <Panel className="space-y-5">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-muted">Komposisi belanja</p>
-              <h2 className="text-2xl font-bold text-foreground">Kategori pengeluaran</h2>
+              <p className="text-sm font-semibold text-muted">Belanja per kategori</p>
+              <h2 className="text-2xl font-bold text-foreground">Yang paling banyak makan budget</h2>
             </div>
-            <p className="text-xs text-muted">Bulan berjalan</p>
+            <p className="text-xs text-muted">Bulan ini</p>
           </div>
           <div className="grid items-center gap-4 md:grid-cols-[1fr_0.9fr]">
             <div className="h-[220px]">
@@ -204,7 +204,7 @@ export function DashboardCharts({
                 ))
               ) : (
                 <p className="text-sm leading-7 text-muted">
-                  Belum ada pengeluaran di bulan ini, jadi grafik kategori masih kosong.
+                  Belum ada pengeluaran bulan ini. Grafiknya masih kosong dulu.
                 </p>
               )}
             </div>

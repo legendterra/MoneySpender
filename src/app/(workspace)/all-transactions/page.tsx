@@ -28,16 +28,16 @@ export default async function AllTransactionsPage({
   return (
     <div className="space-y-6 pb-10">
       <PageHeading
-        eyebrow="Semua transaksi"
-        title="Riwayat seumur hidup dengan urutan terbaru ke terlama."
-        description={`Menampilkan ${data.pageSize} data per halaman. Saat ini ada ${data.totalItems} transaksi yang cocok dengan filter aktif dan semuanya bersifat read only.`}
+        eyebrow="Riwayat"
+        title="Cari transaksi lama tanpa scroll tanpa akhir."
+        description={`${data.totalItems} transaksi cocok dengan filter aktif. Data di halaman ini hanya untuk dibaca, jadi aman dari salah hapus.`}
       />
 
       <Panel className="space-y-5">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm font-semibold text-muted">Filter lifetime history</p>
-            <h2 className="text-2xl font-bold text-foreground">Filter berdasarkan tanggal, hari, dan tahun</h2>
+            <p className="text-sm font-semibold text-muted">Filter riwayat</p>
+            <h2 className="text-2xl font-bold text-foreground">Cari berdasarkan tanggal, hari, atau tahun</h2>
           </div>
           <div className="rounded-2xl border border-border bg-background-strong px-4 py-3 text-sm text-muted">
             Halaman {data.filters.page} dari {data.totalPages}
@@ -71,7 +71,7 @@ export default async function AllTransactionsPage({
             />
           </label>
           <label className="grid gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Page</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Halaman</span>
             <Select name="page" defaultValue={String(data.filters.page)}>
               {pageOptions.map((page) => (
                 <option key={page} value={page}>
@@ -102,7 +102,7 @@ export default async function AllTransactionsPage({
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-[22px] border border-border bg-background-strong px-4 py-4">
             <p className="text-xs uppercase tracking-[0.22em] text-muted">Urutan list</p>
-            <p className="mt-2 text-sm font-semibold text-foreground">Hari ini ke bawah lalu tanggal sebelumnya</p>
+            <p className="mt-2 text-sm font-semibold text-foreground">Terbaru dulu, lalu mundur ke tanggal lama</p>
           </div>
           <div className="rounded-[22px] border border-border bg-background-strong px-4 py-4">
             <p className="text-xs uppercase tracking-[0.22em] text-muted">Hari aktif</p>
@@ -110,7 +110,7 @@ export default async function AllTransactionsPage({
           </div>
           <div className="rounded-[22px] border border-border bg-background-strong px-4 py-4">
             <p className="text-xs uppercase tracking-[0.22em] text-muted">Mode data</p>
-            <p className="mt-2 text-sm font-semibold text-foreground">Read only, tidak bisa dihapus</p>
+            <p className="mt-2 text-sm font-semibold text-foreground">Baca saja, tanpa tombol hapus</p>
           </div>
         </div>
       </Panel>

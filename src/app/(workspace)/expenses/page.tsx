@@ -18,19 +18,19 @@ export default async function ExpensesPage({
     <div className="space-y-6 pb-10">
       <PageHeading
         eyebrow="Pengeluaran"
-        title="Pantau uang keluar dengan rapi per kategori."
-        description={`Total pengeluaran ${data.selectedMonthLabel}: ${formatCurrency(data.total, currency)}.`}
+        title="Biar uang keluar tidak cuma terasa hilang."
+        description={`${data.selectedMonthLabel}: total pengeluaran ${formatCurrency(data.total, currency)}.`}
         right={<MonthFilter monthValue={data.monthValue} actionPath="/expenses" />}
       />
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
         <TransactionForm
-          title="Tambah pengeluaran"
-          description="Tinggal isi nominal, kategori, tanggal, alasan, dan sumber transaksi agar pengeluaran besar mudah dilacak."
+          title="Tambah uang keluar"
+          description="Catat jumlah, kategori, tanggal, dan toko/sumbernya. Nanti gampang dicek lagi kalau ada yang terasa boros."
           categories={data.categories}
           type="expense"
         />
         <TransactionsList
-          title="Daftar pengeluaran"
+          title="Pengeluaran bulan ini"
           records={data.transactions}
           currencyCode={currency}
         />

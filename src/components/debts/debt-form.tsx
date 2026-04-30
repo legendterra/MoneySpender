@@ -103,13 +103,13 @@ export function DebtForm({
   return (
     <Panel className="space-y-6" id="form">
       <div className="space-y-2">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-danger">Form hutang</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-danger">Catatan hutang</p>
         <h2 className="text-3xl font-bold text-foreground">{title}</h2>
         <p className="text-sm leading-7 text-muted">{description}</p>
       </div>
 
       <div className="rounded-[28px] border border-danger/20 bg-danger/8 p-5">
-        <p className="text-xs uppercase tracking-[0.22em] text-danger">Preview nominal hutang</p>
+        <p className="text-xs uppercase tracking-[0.22em] text-danger">Nominal hutang</p>
         <p className="mt-2 text-4xl font-bold text-foreground">{preview}</p>
       </div>
 
@@ -127,7 +127,7 @@ export function DebtForm({
               />
             </div>
           </Field>
-          <Field label="Date" error={form.formState.errors.debtDate?.message}>
+          <Field label="Tanggal" error={form.formState.errors.debtDate?.message}>
             <div className="relative">
               <CalendarDays className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
               <Input type="date" className="pl-11" {...form.register("debtDate")} />
@@ -136,13 +136,13 @@ export function DebtForm({
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Transaksi dari mana" error={form.formState.errors.sourceName?.message}>
+          <Field label="Dari mana" error={form.formState.errors.sourceName?.message}>
             <div className="relative">
               <Landmark className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
               <Input className="pl-11" placeholder="Contoh: Pinjol A / Teman / Koperasi" {...form.register("sourceName")} />
             </div>
           </Field>
-          <Field label="Transaksi hutang ke siapa" error={form.formState.errors.lenderName?.message}>
+          <Field label="Ke siapa" error={form.formState.errors.lenderName?.message}>
             <div className="relative">
               <UserRound className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
               <Input className="pl-11" placeholder="Nama orang / lembaga" {...form.register("lenderName")} />
@@ -152,17 +152,17 @@ export function DebtForm({
 
         <Field label="Alasan" error={form.formState.errors.reason?.message}>
           <Textarea
-            placeholder="Tulis alasan berhutang agar nanti lebih mudah dievaluasi"
+            placeholder="Tulis alasan singkat, biar nanti ingat konteksnya"
             {...form.register("reason")}
           />
         </Field>
 
         <div className="rounded-[24px] border border-danger/20 bg-danger/8 px-4 py-4 text-sm leading-7 text-danger">
-          Prioritaskan bayar hutang sesegera mungkin. Sebelum mengambil hutang baru, pastikan cicilan dan arus kas Anda masih aman.
+          Catatan kecil: pastikan ada rencana bayar sebelum menambah hutang baru.
         </div>
 
         <Button type="submit" size="lg" fullWidth isLoading={isSubmitting} variant="danger">
-          Simpan Hutang
+          Simpan hutang
         </Button>
       </form>
     </Panel>

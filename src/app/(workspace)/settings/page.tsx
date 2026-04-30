@@ -11,9 +11,9 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6 pb-10">
       <PageHeading
-        eyebrow="Setting"
-        title="Atur kategori, akun, target, dan reminder dari satu tempat."
-        description="Saya tambahkan area target tabungan, preferensi mata uang, dan kesiapan notifikasi supaya aplikasi terasa benar-benar siap dipakai."
+        eyebrow="Atur"
+        title="Bereskan preferensi biar aplikasi ikut gaya kamu."
+        description="Ubah target, mata uang, kategori, dan pengingat dari satu tempat."
       />
       <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="grid gap-4">

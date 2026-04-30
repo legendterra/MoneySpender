@@ -131,8 +131,8 @@ export function ReminderSettings({ reminder }: { reminder: ReminderPreferences }
     <Panel className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold text-muted">Notifikasi</p>
-          <h2 className="text-2xl font-bold text-foreground">Pengingat pagi & malam</h2>
+          <p className="text-sm font-semibold text-muted">Reminder</p>
+          <h2 className="text-2xl font-bold text-foreground">Biar tidak lupa catat</h2>
         </div>
         <div className="rounded-2xl bg-accent-soft p-3 text-accent-strong">
           <BellRing className="size-5" />
@@ -144,17 +144,17 @@ export function ReminderSettings({ reminder }: { reminder: ReminderPreferences }
             key: "push_enabled" as const,
             title: "Aktifkan web push",
             description:
-              "Agar pengingat muncul di Android dan iPhone saat aplikasi dipasang sebagai PWA.",
+              "Nyalakan kalau mau reminder muncul dari browser/PWA.",
           },
           {
             key: "reminder_morning_enabled" as const,
             title: "Pengingat pagi",
-            description: "Dikirim sekitar pukul 07.00 WIB.",
+            description: "Sekitar 07.00 WIB, cocok buat rencana hari ini.",
           },
           {
             key: "reminder_evening_enabled" as const,
             title: "Pengingat malam",
-            description: "Dikirim sekitar pukul 19.00 WIB.",
+            description: "Sekitar 19.00 WIB, cocok buat rekap belanja hari ini.",
           },
         ].map((item) => (
           <div
@@ -174,12 +174,11 @@ export function ReminderSettings({ reminder }: { reminder: ReminderPreferences }
       </div>
       <div className="rounded-[24px] border border-dashed border-border px-4 py-4 text-sm leading-7 text-muted">
         <ShieldCheck className="mb-2 size-4 text-accent-strong" />
-        Pengingat memakai service worker + web push. Setelah di-install ke home screen, notifikasi
-        dapat muncul di Android dan iPhone modern yang mendukung PWA push.
+        Reminder jalan lewat web push. Untuk hasil terbaik, install MoneySpender ke home screen.
       </div>
       {isBusy ? (
         <Button variant="secondary" isLoading fullWidth>
-          Menyimpan preferensi
+          Menyimpan
         </Button>
       ) : null}
     </Panel>

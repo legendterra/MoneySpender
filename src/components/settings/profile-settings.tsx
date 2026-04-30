@@ -77,17 +77,17 @@ export function ProfileSettings({ profile }: { profile: ProfileData }) {
   return (
     <Panel className="space-y-5">
       <div>
-        <p className="text-sm font-semibold text-muted">Preferensi utama</p>
-        <h2 className="text-2xl font-bold text-foreground">Profil & target tabungan</h2>
+        <p className="text-sm font-semibold text-muted">Profil</p>
+        <h2 className="text-2xl font-bold text-foreground">Nama, mata uang, dan target</h2>
       </div>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 md:grid-cols-2">
-        <Field label="Nama lengkap" error={form.formState.errors.fullName?.message}>
+        <Field label="Nama" error={form.formState.errors.fullName?.message}>
           <Input {...form.register("fullName")} />
         </Field>
         <Field label="Kode mata uang" hint="Default IDR">
           <Input {...form.register("currencyCode")} />
         </Field>
-        <Field label="Target tabungan bulanan">
+        <Field label="Target nabung bulanan">
           <Input
             type="number"
             min="0"
@@ -95,7 +95,7 @@ export function ProfileSettings({ profile }: { profile: ProfileData }) {
             {...form.register("monthlyGoal", { valueAsNumber: true })}
           />
         </Field>
-        <Field label="Target tabungan tahunan">
+        <Field label="Target nabung tahunan">
           <Input
             type="number"
             min="0"

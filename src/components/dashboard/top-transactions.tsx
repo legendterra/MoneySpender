@@ -23,7 +23,7 @@ function TransactionBlock({
         <div>
           <p className="text-sm font-semibold text-muted">{title}</p>
           <h2 className="text-2xl font-bold text-foreground">
-            Top 10 {type === "income" ? "pemasukan" : "pengeluaran"}
+            10 {type === "income" ? "pemasukan" : "pengeluaran"} terbesar
           </h2>
         </div>
         <div className="rounded-2xl bg-accent-soft p-3 text-accent-strong">
@@ -42,7 +42,7 @@ function TransactionBlock({
                   <p className="text-sm font-semibold text-foreground">
                     {index + 1}. {record.category_label || "Tanpa kategori"}
                   </p>
-                  <p className="text-xs text-muted">{record.reason || "Tanpa alasan tambahan"}</p>
+                  <p className="text-xs text-muted">{record.reason || "Tanpa catatan"}</p>
                 </div>
                 <p className="text-sm font-bold text-foreground">
                   {formatCurrency(record.amount, currencyCode)}
@@ -57,7 +57,7 @@ function TransactionBlock({
           ))
         ) : (
           <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm leading-7 text-muted">
-            Belum ada data untuk bulan ini.
+            Belum ada data bulan ini.
           </p>
         )}
       </div>
@@ -77,13 +77,13 @@ export function TopTransactions({
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <TransactionBlock
-        title="Nominal terbesar"
+        title="Paling besar"
         records={topIncome}
         currencyCode={currencyCode}
         type="income"
       />
       <TransactionBlock
-        title="Nominal terbesar"
+        title="Paling besar"
         records={topExpense}
         currencyCode={currencyCode}
         type="expense"

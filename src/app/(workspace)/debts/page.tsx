@@ -19,8 +19,8 @@ export default async function DebtsPage({
     <div className="space-y-6 pb-10">
       <PageHeading
         eyebrow="Hutang"
-        title="Catat dan pantau hutang tanpa kehilangan jejak pembayaran."
-        description={`Total hutang aktif: ${formatCurrency(data.summary.totalOutstanding, currency)}. Sisa hutang ${data.selectedMonthLabel}: ${formatCurrency(data.summary.currentMonthOutstanding, currency)}.`}
+        title="Tahu siapa, kapan, dan berapa yang masih harus dibayar."
+        description={`Total belum lunas: ${formatCurrency(data.summary.totalOutstanding, currency)}. Untuk ${data.selectedMonthLabel}: ${formatCurrency(data.summary.currentMonthOutstanding, currency)}.`}
         right={<MonthFilter monthValue={data.monthValue} actionPath="/debts" />}
       />
 
@@ -31,7 +31,7 @@ export default async function DebtsPage({
             {formatCurrency(data.summary.totalOutstanding, currency)}
           </p>
           <p className="mt-3 text-sm leading-7 text-muted">
-            Nilai ini menghitung semua hutang yang belum lunas dari seluruh bulan.
+            Gabungan semua hutang yang belum ditandai lunas.
           </p>
         </div>
         <div className="rounded-[24px] border border-danger/20 bg-danger/8 p-4">
@@ -40,14 +40,14 @@ export default async function DebtsPage({
             {formatCurrency(data.summary.currentMonthOutstanding, currency)}
           </p>
           <p className="mt-3 text-sm leading-7 text-danger">
-            Dahulukan pelunasan agar arus kas bulan berikutnya tetap aman. Ambil hutang baru hanya saat benar-benar mendesak dan sudah ada rencana bayar yang jelas.
+            Kalau bisa, selesaikan yang jatuhnya paling dekat dulu. Future you bakal berterima kasih.
           </p>
         </div>
         <div className="rounded-[24px] border border-border bg-background-strong p-4">
           <p className="text-xs uppercase tracking-[0.22em] text-muted">Status catatan aktif</p>
           <p className="mt-2 text-3xl font-bold text-foreground">{data.summary.unpaidCount} hutang</p>
           <p className="mt-3 text-sm leading-7 text-muted">
-            Setiap catatan hutang hanya bisa ditandai lunas melalui konfirmasi ganda. Data tidak saya beri tombol hapus supaya histori tetap aman.
+            Hutang hanya bisa ditandai lunas lewat konfirmasi ganda, supaya tidak kepencet tanpa sengaja.
           </p>
         </div>
       </Panel>
@@ -55,10 +55,10 @@ export default async function DebtsPage({
       <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
         <DebtForm
           title="Tambah hutang"
-          description="Isi nominal, tanggal, asal transaksi, hutang ke siapa, dan alasannya. Semua field utama wajib diisi agar evaluasi hutang tetap jelas."
+          description="Catat nominal, tanggal, dari mana, ke siapa, dan alasannya. Singkat saja, yang penting jelas."
           categories={data.categories}
         />
-        <DebtsList title="Daftar hutang bulan ini" records={data.debts} currencyCode={currency} />
+        <DebtsList title="Hutang bulan ini" records={data.debts} currencyCode={currency} />
       </div>
     </div>
   );

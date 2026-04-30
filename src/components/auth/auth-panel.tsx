@@ -27,33 +27,33 @@ type AuthPalette = {
 };
 
 const lightPalette: AuthPalette = {
-  page: "#f8f1ff",
+  page: "#f5f7ff",
   pagePattern:
-    "radial-gradient(circle at 0% 0%, rgba(173,123,255,.34) 0 14rem, transparent 14.2rem), radial-gradient(circle at 100% 100%, rgba(255,186,112,.54) 0 17rem, transparent 17.2rem), radial-gradient(circle at 11% 94%, rgba(51,103,255,.34) 0 14rem, transparent 14.2rem), linear-gradient(135deg, #f8f1ff 0%, #eef6ff 38%, #fff3ef 100%)",
-  card: "rgba(255,255,255,.58)",
-  border: "rgba(255,255,255,.72)",
-  text: "#11162f",
-  muted: "#68708e",
-  accent: "#5747ef",
-  accentHover: "#4333d8",
-  link: "#5747ef",
-  divider: "rgba(108,120,158,.24)",
-  inputBg: "rgba(255,255,255,.38)",
+    "linear-gradient(90deg, rgba(255,180,95,.2) 0 7rem, transparent 7rem), linear-gradient(180deg, rgba(90,61,240,.1) 0 13rem, transparent 13rem)",
+  card: "#ffffff",
+  border: "#dce3f5",
+  text: "#14162f",
+  muted: "#606987",
+  accent: "#5a3df0",
+  accentHover: "#412bd8",
+  link: "#5a3df0",
+  divider: "#dce3f5",
+  inputBg: "#f5f7ff",
 };
 
 const darkPalette: AuthPalette = {
-  page: "#080b1c",
+  page: "#101326",
   pagePattern:
-    "radial-gradient(circle at 0% 0%, rgba(118,86,255,.28) 0 14rem, transparent 14.2rem), radial-gradient(circle at 100% 100%, rgba(255,147,92,.22) 0 18rem, transparent 18.2rem), radial-gradient(circle at 8% 94%, rgba(52,96,255,.22) 0 15rem, transparent 15.2rem), linear-gradient(135deg, #080b1c 0%, #101834 46%, #170f23 100%)",
-  card: "rgba(20,25,54,.72)",
-  border: "rgba(178,189,255,.18)",
-  text: "#f4f6ff",
-  muted: "#a6aecb",
-  accent: "#7567ff",
-  accentHover: "#55b8ff",
-  link: "#a79cff",
-  divider: "rgba(178,189,255,.18)",
-  inputBg: "rgba(255,255,255,.08)",
+    "linear-gradient(90deg, rgba(255,196,119,.08) 0 7rem, transparent 7rem), linear-gradient(180deg, rgba(157,140,255,.1) 0 13rem, transparent 13rem)",
+  card: "#171b33",
+  border: "#303854",
+  text: "#f5f6ff",
+  muted: "#aab1cf",
+  accent: "#9d8cff",
+  accentHover: "#66b7ff",
+  link: "#9d8cff",
+  divider: "#303854",
+  inputBg: "#202641",
 };
 
 export function AuthPanel() {
@@ -173,8 +173,8 @@ export function AuthPanel() {
           <LogoMark
             className={
               isDark
-                ? "[&_span:first-child]:text-[#a79cff] [&_span:last-child]:text-[#f4f6ff]"
-                : "[&_span:first-child]:text-[#5747ef] [&_span:last-child]:text-[#11162f]"
+                ? "[&_span:first-child]:text-[#9d8cff] [&_span:last-child]:text-[#f5f6ff]"
+                : "[&_span:first-child]:text-[#5a3df0] [&_span:last-child]:text-[#14162f]"
             }
           />
           <ThemeToggle
@@ -189,17 +189,17 @@ export function AuthPanel() {
 
         <main className="flex flex-1 items-center justify-center">
           <section
-            className="w-full rounded-[24px] border-2 p-5 shadow-[0_22px_70px_rgba(54,74,155,.2)] backdrop-blur-[22px] sm:p-6"
+            className="w-full rounded-[24px] border p-5 shadow-[0_12px_0_rgba(20,22,47,.04)] sm:p-6"
             style={{ borderColor: palette.border, background: palette.card }}
           >
             {mode === "signin" ? (
               <form className="space-y-3" onSubmit={handlePasswordLogin}>
                 <div className="space-y-1">
                   <h1 className="text-2xl font-semibold" style={{ color: palette.text }}>
-                    Login
+                    Masuk ke MoneySpender
                   </h1>
                   <p className="text-[13px]" style={{ color: palette.muted }}>
-                    Masuk cepat dengan email dan password.
+                    Lanjutkan catatan uangmu dari email atau Google.
                   </p>
                 </div>
 
@@ -210,7 +210,7 @@ export function AuthPanel() {
                   <Input
                     type="email"
                     autoComplete="email"
-                    placeholder="you@email.com"
+                    placeholder="nama@email.com"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="min-h-11 rounded-2xl"
@@ -229,7 +229,7 @@ export function AuthPanel() {
                   <Input
                     type="password"
                     autoComplete="current-password"
-                    placeholder="Masukkan password"
+                    placeholder="Password kamu"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     className="min-h-11 rounded-2xl"
@@ -258,24 +258,24 @@ export function AuthPanel() {
                   className="w-full rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_18px_48px_rgba(57,74,216,.3)] transition disabled:opacity-60"
                   style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
                 >
-                  {isBusy ? "Memproses..." : "Login"}
+                  {isBusy ? "Sebentar..." : "Masuk"}
                 </button>
 
                 <p className="text-center text-sm" style={{ color: palette.muted }}>
-                  Belum punya akun?{" "}
+                  Baru di sini?{" "}
                   <button
                     type="button"
                     onClick={() => setMode("signup")}
                     className="font-semibold underline-offset-4 hover:underline"
                     style={{ color: palette.link }}
                   >
-                    Register
+                    Daftar dulu
                   </button>
                 </p>
 
                 <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em]" style={{ color: palette.muted }}>
                   <span className="h-px flex-1" style={{ backgroundColor: palette.divider }} />
-                  Or login with Google
+                  Atau pakai Google
                   <span className="h-px flex-1" style={{ backgroundColor: palette.divider }} />
                 </div>
 
@@ -286,8 +286,15 @@ export function AuthPanel() {
                   className="w-full rounded-full border px-4 py-3 text-sm font-bold transition disabled:opacity-60"
                   style={{ borderColor: palette.border, color: palette.text, backgroundColor: palette.card }}
                 >
-                  Login with Google
+                  Masuk dengan Google
                 </button>
+                <a
+                  href="https://moneyspender.net"
+                  className="block rounded-2xl border px-4 py-3 text-center text-sm font-bold transition hover:-translate-y-0.5"
+                  style={{ borderColor: palette.border, color: palette.link, backgroundColor: palette.inputBg }}
+                >
+                  Ganti aplikasi di MoneySpender
+                </a>
               </form>
             ) : null}
 
@@ -295,10 +302,10 @@ export function AuthPanel() {
               <form className="space-y-3" onSubmit={handleSignUp}>
                 <div className="space-y-1">
                   <h1 className="text-2xl font-semibold" style={{ color: palette.text }}>
-                    Register
+                    Bikin akun baru
                   </h1>
                   <p className="text-[13px]" style={{ color: palette.muted }}>
-                    Buat akun baru dan lanjutkan verifikasi email.
+                    Daftar sekali, lalu catatanmu bisa lanjut di perangkat lain.
                   </p>
                 </div>
 
@@ -308,7 +315,7 @@ export function AuthPanel() {
                   </span>
                   <Input
                     autoComplete="name"
-                    placeholder="Nama lengkap"
+                    placeholder="Nama kamu"
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
                     className="min-h-11 rounded-2xl"
@@ -327,7 +334,7 @@ export function AuthPanel() {
                   <Input
                     type="email"
                     autoComplete="email"
-                    placeholder="you@email.com"
+                    placeholder="nama@email.com"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="min-h-11 rounded-2xl"
@@ -364,7 +371,7 @@ export function AuthPanel() {
                   className="w-full rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_18px_48px_rgba(57,74,216,.3)] transition disabled:opacity-60"
                   style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
                 >
-                  {isBusy ? "Memproses..." : "Buat akun"}
+                  {isBusy ? "Sebentar..." : "Daftar"}
                 </button>
 
                 <p className="text-center text-sm" style={{ color: palette.muted }}>
@@ -375,9 +382,16 @@ export function AuthPanel() {
                     className="font-semibold underline-offset-4 hover:underline"
                     style={{ color: palette.link }}
                   >
-                    Login
+                    Masuk
                   </button>
                 </p>
+                <a
+                  href="https://moneyspender.net"
+                  className="block rounded-2xl border px-4 py-3 text-center text-sm font-bold transition hover:-translate-y-0.5"
+                  style={{ borderColor: palette.border, color: palette.link, backgroundColor: palette.inputBg }}
+                >
+                  Kembali ke pilihan aplikasi
+                </a>
               </form>
             ) : null}
 
@@ -385,10 +399,10 @@ export function AuthPanel() {
               <form className="space-y-3" onSubmit={handleResetPassword}>
                 <div className="space-y-1">
                   <h1 className="text-2xl font-semibold" style={{ color: palette.text }}>
-                    Lupa Password
+                    Reset password
                   </h1>
                   <p className="text-[13px]" style={{ color: palette.muted }}>
-                    Masukkan email akun. Kami kirim tautan reset.
+                    Tulis email akunmu. Link reset akan dikirim ke sana.
                   </p>
                 </div>
 
@@ -399,7 +413,7 @@ export function AuthPanel() {
                   <Input
                     type="email"
                     autoComplete="email"
-                    placeholder="you@email.com"
+                    placeholder="nama@email.com"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="min-h-11 rounded-2xl"
@@ -417,7 +431,7 @@ export function AuthPanel() {
                   className="w-full rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_18px_48px_rgba(57,74,216,.3)] transition disabled:opacity-60"
                   style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
                 >
-                  {isBusy ? "Memproses..." : "Kirim link reset"}
+                  {isBusy ? "Mengirim..." : "Kirim link reset"}
                 </button>
 
                 <div className="flex items-center justify-between text-sm" style={{ color: palette.muted }}>
@@ -427,7 +441,7 @@ export function AuthPanel() {
                     className="underline-offset-4 hover:underline"
                     style={{ color: palette.link }}
                   >
-                    Kembali ke login
+                    Balik ke login
                   </button>
                   <button
                     type="button"
@@ -435,9 +449,16 @@ export function AuthPanel() {
                     className="underline-offset-4 hover:underline"
                     style={{ color: palette.link }}
                   >
-                    Register
+                    Daftar
                   </button>
                 </div>
+                <a
+                  href="https://moneyspender.net"
+                  className="block rounded-2xl border px-4 py-3 text-center text-sm font-bold transition hover:-translate-y-0.5"
+                  style={{ borderColor: palette.border, color: palette.link, backgroundColor: palette.inputBg }}
+                >
+                  Pilih aplikasi lain
+                </a>
               </form>
             ) : null}
           </section>

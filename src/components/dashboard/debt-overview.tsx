@@ -18,8 +18,8 @@ export function DebtOverview({
     <Panel className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-muted">Ringkasan hutang</p>
-          <h2 className="text-2xl font-bold text-foreground">Pantau hutang aktif dari dashboard</h2>
+          <p className="text-sm font-semibold text-muted">Hutang aktif</p>
+          <h2 className="text-2xl font-bold text-foreground">Yang perlu kamu bereskan</h2>
         </div>
         <Link
           href="/debts#form"
@@ -31,12 +31,12 @@ export function DebtOverview({
       </div>
       <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
         <div className="rounded-[24px] border border-danger/20 bg-danger/8 p-5">
-          <p className="text-sm font-semibold text-danger">Sisa Hutang bulan ini</p>
+          <p className="text-sm font-semibold text-danger">Sisa bulan ini</p>
           <p className="mt-2 text-3xl font-bold text-foreground">
             {formatCurrency(summary.currentMonthOutstanding, currencyCode)}
           </p>
           <p className="mt-3 text-sm leading-7 text-danger">
-            Prioritaskan pelunasan secepatnya agar beban bulan depan tidak ikut menumpuk. Berhutang kembali hanya kalau benar-benar mendesak dan sudah ada rencana bayar yang jelas.
+            Coba bereskan yang ini dulu supaya bulan depan tidak ikut berat.
           </p>
         </div>
         <div className="space-y-3">
@@ -58,7 +58,7 @@ export function DebtOverview({
             ))
           ) : (
             <div className="rounded-[24px] border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
-              Tidak ada hutang aktif di bulan ini.
+              Tidak ada hutang aktif bulan ini. Bagus, napas sedikit lega.
             </div>
           )}
         </div>

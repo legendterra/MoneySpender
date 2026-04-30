@@ -16,21 +16,21 @@ import type { Category, TransactionType } from "@/lib/types";
 const typeOptions: { value: TransactionType; label: string; color: string; description: string }[] = [
   {
     value: "income",
-    label: "Masukan",
+    label: "Uang masuk",
     color: "#82A5FF",
-    description: "Kategori khusus uang masuk.",
+    description: "Gaji, freelance, bonus, dan sumber pemasukan lain.",
   },
   {
     value: "expense",
     label: "Pengeluaran",
     color: "#4D84FF",
-    description: "Kategori belanja dan uang keluar.",
+    description: "Makan, transport, belanja, dan kebutuhan lain.",
   },
   {
     value: "debt",
     label: "Hutang",
     color: "#FF8A8A",
-    description: "Kategori khusus pencatatan utang dan pinjaman aktif.",
+    description: "Pinjaman, cicilan, atau hutang yang masih aktif.",
   },
 ];
 
@@ -102,14 +102,14 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
     <Panel className="space-y-5">
       <div>
         <p className="text-sm font-semibold text-muted">Kategori</p>
-        <h2 className="text-2xl font-bold text-foreground">Tambah dan hapus kategori</h2>
+        <h2 className="text-2xl font-bold text-foreground">Bikin kategori versimu</h2>
       </div>
       <form onSubmit={handleAddCategory} className="grid gap-4 md:grid-cols-[1.3fr_0.9fr_auto]">
         <Field label="Nama kategori">
           <Input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Contoh: Operasional"
+            placeholder="Contoh: Nongkrong"
           />
         </Field>
         <Field label="Jenis">
