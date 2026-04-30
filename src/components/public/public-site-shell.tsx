@@ -104,7 +104,7 @@ export function PublicSiteShell({
                       href={item.href}
                       className="mt-2 block text-sm font-semibold text-accent-strong underline-offset-4 hover:underline"
                     >
-                      {`https://moneyspender.net${item.href === "/" ? "" : item.href}`}
+                      {`https://money.moneyspender.net${item.href === "/" ? "" : item.href}`}
                     </Link>
                   </div>
                 ))}

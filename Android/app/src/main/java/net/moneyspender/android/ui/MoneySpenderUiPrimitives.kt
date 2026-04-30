@@ -22,8 +22,10 @@ import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Insights
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Payments
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -192,6 +195,8 @@ fun MoneySpenderTopBar(
     subtitle: String,
     profile: Profile,
     userEmail: String,
+    isDarkMode: Boolean,
+    onToggleTheme: () -> Unit,
 ) {
     Surface(
         color = MaterialTheme.colorScheme.background,
@@ -254,6 +259,15 @@ fun MoneySpenderTopBar(
                         style = MaterialTheme.typography.labelLarge,
                         color = Color.White,
                     )
+                }
+                Surface(shape = CircleShape, color = Color.White.copy(alpha = 0.18f)) {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = if (isDarkMode) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                            contentDescription = "Toggle theme",
+                            tint = Color.White,
+                        )
+                    }
                 }
             }
         }

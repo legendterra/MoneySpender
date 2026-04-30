@@ -1,0 +1,280 @@
+Tutorial Subdomain MoneySpender dengan Rumahweb, Vercel, dan Supabase
+=====================================================================
+
+Target saat ini:
+
+- Aplikasi MoneySpender utama: https://money.moneyspender.net
+- Super apps / launcher project vibe coding: https://app.moneyspender.net
+- Untuk sekarang, fokus dulu ke MoneySpender. Super apps bisa diurus nanti.
+
+Jawaban singkat
+---------------
+
+Bisa. Domain moneyspender.net tetap di Rumahweb, sedangkan subdomain seperti
+money.moneyspender.net diarahkan ke project Vercel memakai DNS record CNAME.
+Supabase tidak perlu menjadi hosting domain aplikasi. Supabase cukup diatur
+agar Auth mengizinkan redirect dari subdomain production tersebut.
+
+Yang perlu dibuat:
+
+1. Di Vercel: tambahkan domain money.moneyspender.net ke project MoneySpender.
+2. Di Rumahweb DNS: buat CNAME untuk host money ke target DNS dari Vercel.
+3. Di Vercel Environment Variables: set NEXT_PUBLIC_APP_URL ke URL production.
+4. Di Supabase Auth URL Configuration: tambahkan Site URL dan Redirect URLs.
+5. Jika Google Login dipakai: update konfigurasi OAuth di Google Cloud Console.
+
+
+Catatan tentang DNS yang sekarang ada
+-------------------------------------
+
+DNS saat ini berisi beberapa A record untuk root domain:
+
+- moneyspender.net -> 216.198.79.1
+- moneyspender.net -> 206.189.42.180
+- www.moneyspender.net -> 206.189.42.180
+- TXT google-site-verification
+
+Untuk membuat subdomain money.moneyspender.net, record root di atas tidak harus
+diubah dulu. Cukup tambahkan record baru khusus subdomain money.
+
+Jangan tambahkan A record untuk money.moneyspender.net kecuali Vercel secara
+spesifik meminta A record. Untuk subdomain, Vercel biasanya meminta CNAME.
+
+
+Langkah 1 - Tambahkan domain di Vercel
+-------------------------------------
+
+Masuk ke Vercel Dashboard:
+
+1. Buka project MoneySpender.
+2. Buka Settings -> Domains.
+3. Tambahkan domain:
+
+   money.moneyspender.net
+
+4. Vercel akan menampilkan DNS record yang harus dipasang.
+5. Catat target CNAME yang diberikan Vercel.
+
+Menurut dokumentasi Vercel terbaru, subdomain diarahkan dengan CNAME. Contoh
+umumnya adalah:
+
+   Host/Name: money
+   Type: CNAME
+   Value/Target: cname.vercel-dns-0.com
+
+Namun, ikuti nilai yang ditampilkan Vercel untuk project Anda. Vercel sekarang
+bisa memberi target DNS yang lebih spesifik per domain/project.
+
+
+Langkah 2 - Tambahkan DNS record di Rumahweb
+-------------------------------------------
+
+Di panel DNS Rumahweb, tambahkan record baru:
+
+   Domain/Host: money
+   TTL: 14400 atau default Rumahweb
+   Class/Kelas: IN
+   Type/Tipe: CNAME
+   Destination/Destinasi: target CNAME dari Vercel
+
+Contoh jika Vercel memberi target umum:
+
+   money.moneyspender.net.  14400  IN  CNAME  cname.vercel-dns-0.com.
+
+Jika form Rumahweb meminta "Domain" atau "Host", biasanya isi cukup:
+
+   money
+
+Jika form meminta "Destinasi", isi:
+
+   cname.vercel-dns-0.com
+
+Setelah disimpan, tunggu propagasi DNS. Biasanya beberapa menit, tetapi bisa
+sampai beberapa jam tergantung cache DNS.
+
+
+Langkah 3 - Verifikasi di Vercel
+--------------------------------
+
+Kembali ke:
+
+   Vercel Project -> Settings -> Domains
+
+Pastikan money.moneyspender.net berubah menjadi valid/ready. Jika masih invalid:
+
+1. Klik inspect/check domain di Vercel.
+2. Cocokkan lagi record yang diminta Vercel.
+3. Pastikan tidak ada record A/AAAA/CNAME lain dengan host money.
+4. Tunggu propagasi DNS.
+
+Jika memakai Vercel CLI, urutan umumnya:
+
+   vercel link
+   vercel domains add money.moneyspender.net
+   vercel domains inspect money.moneyspender.net
+
+Tetap ikuti output dari perintah inspect karena itulah instruksi DNS yang paling
+akurat untuk domain tersebut.
+
+
+Langkah 4 - Set Environment Variables di Vercel
+----------------------------------------------
+
+Di Vercel:
+
+   Project Settings -> Environment Variables
+
+Pastikan production punya:
+
+   NEXT_PUBLIC_APP_URL=https://money.moneyspender.net
+
+Variable Supabase tetap memakai project Supabase yang sama:
+
+   NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+   SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
+
+Supabase custom domain tidak wajib untuk aplikasi ini. Custom domain Supabase
+hanya diperlukan kalau Anda ingin URL API Supabase ikut branded, misalnya
+api.moneyspender.net. Untuk kebutuhan app login/database biasa, pakai URL
+Supabase default saja sudah cukup.
+
+Setelah env production diubah, redeploy project di Vercel.
+
+
+Langkah 5 - Atur Supabase Auth
+------------------------------
+
+Masuk ke Supabase Dashboard:
+
+   Authentication -> URL Configuration
+
+Set Site URL production:
+
+   https://money.moneyspender.net
+
+Tambahkan Redirect URLs:
+
+   http://localhost:3000/**
+   http://localhost:3000/auth/callback
+   http://localhost:3000/auth/callback?next=/dashboard
+   http://localhost:3000/auth/callback?next=/reset-password
+   https://money.moneyspender.net/**
+   https://money.moneyspender.net/auth/callback
+   https://money.moneyspender.net/auth/callback?next=/dashboard
+   https://money.moneyspender.net/auth/callback?next=/reset-password
+
+Opsional untuk preview deployment Vercel:
+
+   https://*-NAMA_TEAM_ATAU_ACCOUNT_ANDA.vercel.app/**
+
+Ganti NAMA_TEAM_ATAU_ACCOUNT_ANDA dengan slug Vercel Anda.
+
+Catatan project ini:
+
+- Signup email memakai emailRedirectTo.
+- Reset password memakai redirectTo.
+- Google OAuth memakai redirectTo.
+- Semua redirect tersebut dibuat dari window.location.origin.
+
+Artinya saat user membuka https://money.moneyspender.net, redirect auth otomatis
+akan memakai subdomain tersebut.
+
+
+Langkah 6 - Update Google OAuth jika Google Login dipakai
+--------------------------------------------------------
+
+Di Google Cloud Console, buka OAuth Client yang dipakai Supabase.
+
+Tambahkan Authorized JavaScript origins:
+
+   https://money.moneyspender.net
+
+Untuk Authorized redirect URIs, jika Google Login lewat Supabase, biasanya yang
+dipakai tetap callback Supabase:
+
+   https://YOUR_PROJECT.supabase.co/auth/v1/callback
+
+Jangan ganti redirect URI Google ke /auth/callback aplikasi kecuali Anda memang
+membangun OAuth Google manual tanpa Supabase.
+
+
+Langkah 7 - Test production
+---------------------------
+
+Setelah domain valid dan Vercel sudah redeploy:
+
+1. Buka https://money.moneyspender.net
+2. Coba register akun baru.
+3. Cek email verification.
+4. Coba login email/password.
+5. Coba reset password.
+6. Coba Google Login.
+7. Pastikan setelah login masuk ke /dashboard.
+8. Coba tambah pemasukan/pengeluaran.
+9. Coba install sebagai PWA jika perlu.
+
+
+Rencana untuk app.moneyspender.net nanti
+----------------------------------------
+
+Nanti saat super apps siap, konsepnya sama:
+
+1. Buat project Vercel baru untuk super apps.
+2. Tambahkan domain app.moneyspender.net di project tersebut.
+3. Di Rumahweb tambahkan CNAME:
+
+   Host: app
+   Type: CNAME
+   Destination: target CNAME dari Vercel
+
+4. Jika super apps memakai Supabase Auth juga, tambahkan URL app.moneyspender.net
+   ke Supabase Redirect URLs project yang sesuai.
+
+
+Troubleshooting cepat
+---------------------
+
+Masalah: Vercel masih invalid.
+Solusi:
+- Pastikan host DNS adalah money, bukan money.moneyspender.net jika form Rumahweb
+  meminta host pendek.
+- Pastikan tipe record CNAME.
+- Pastikan destination sama persis dengan yang diminta Vercel.
+- Pastikan tidak ada record A/AAAA lain untuk host money.
+
+Masalah: Login redirect ke localhost.
+Solusi:
+- Set Supabase Site URL ke https://money.moneyspender.net.
+- Tambahkan redirect URLs production.
+- Redeploy Vercel setelah env production diperbarui.
+
+Masalah: Google Login gagal.
+Solusi:
+- Tambahkan https://money.moneyspender.net ke Authorized JavaScript origins.
+- Pastikan redirect URI Google tetap callback Supabase.
+- Pastikan provider Google di Supabase masih aktif.
+
+Masalah: www.moneyspender.net atau moneyspender.net ikut berubah.
+Solusi:
+- Jangan ubah root atau www dulu jika belum ingin memindahkan domain utama.
+- Untuk sekarang cukup tambah CNAME host money.
+
+
+Referensi resmi
+---------------
+
+- Vercel custom domain:
+  https://vercel.com/docs/domains/set-up-custom-domain
+
+- Vercel working with domains:
+  https://vercel.com/docs/domains/working-with-domains
+
+- Vercel DNS:
+  https://vercel.com/docs/domains/working-with-dns
+
+- Supabase Auth Redirect URLs:
+  https://supabase.com/docs/guides/auth/redirect-urls
+
+- Supabase Custom Domains:
+  https://supabase.com/docs/guides/platform/custom-domains

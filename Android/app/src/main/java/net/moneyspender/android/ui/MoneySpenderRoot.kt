@@ -38,9 +38,11 @@ import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Insights
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Payments
@@ -151,7 +153,11 @@ private data class ExpenseSlice(
 )
 
 @Composable
-fun MoneySpenderRoot(viewModel: MoneySpenderViewModel) {
+fun MoneySpenderRoot(
+    viewModel: MoneySpenderViewModel,
+    isDarkMode: Boolean,
+    onToggleTheme: () -> Unit,
+) {
     val state = viewModel.state
     val snackbar = remember { SnackbarHostState() }
 
@@ -169,7 +175,12 @@ fun MoneySpenderRoot(viewModel: MoneySpenderViewModel) {
     }
 
     if (!state.isAuthenticated) {
-        AuthScreen(viewModel = viewModel, snackbar = snackbar)
+        AuthScreen(
+            viewModel = viewModel,
+            snackbar = snackbar,
+            isDarkMode = isDarkMode,
+            onToggleTheme = onToggleTheme,
+        )
         return
     }
 
@@ -178,7 +189,12 @@ fun MoneySpenderRoot(viewModel: MoneySpenderViewModel) {
         return
     }
 
-    AppScaffold(viewModel = viewModel, snackbar = snackbar)
+    AppScaffold(
+        viewModel = viewModel,
+        snackbar = snackbar,
+        isDarkMode = isDarkMode,
+        onToggleTheme = onToggleTheme,
+    )
 }
 
 @Composable
@@ -222,13 +238,14 @@ private fun LoadingScreen() {
 private fun AuthScreen(
     viewModel: MoneySpenderViewModel,
     snackbar: SnackbarHostState,
+    isDarkMode: Boolean,
+    onToggleTheme: () -> Unit,
 ) {
     val state = viewModel.state
     val context = LocalContext.current
     val authTabs = listOf(
         AuthTab.SignIn to "Login",
         AuthTab.SignUp to "Register",
-        AuthTab.Otp to "Kode email",
         AuthTab.Reset to "Reset",
     )
 
@@ -236,96 +253,94 @@ private fun AuthScreen(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
     ) { inner ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(inner),
-            contentPadding = PaddingValues(18.dp),
+                .padding(inner)
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.extraLarge)
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(AccentColor, AccentStrongColor),
-                            ),
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = Color.White.copy(alpha = 0.14f),
-                            shape = MaterialTheme.shapes.extraLarge,
-                        )
-                        .padding(22.dp),
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        ) {
-                            AppBrandMark(modifier = Modifier.size(56.dp))
-                            Column {
-                                Text(
-                                    "MoneySpender Mobile",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    color = Color.White,
-                                )
-                                Text(
-                                    "Versi Android sekarang dibikin lebih hidup, rapi, dan mirip rasa website.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White.copy(alpha = 0.88f),
-                                )
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            authTabs.forEach { (tab, label) ->
-                                FilterChip(
-                                    selected = state.authTab == tab,
-                                    onClick = { viewModel.setAuthTab(tab) },
-                                    label = { Text(label) },
-                                )
-                            }
-                        }
-
+                    AppBrandMark(modifier = Modifier.size(44.dp))
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            "Login, OTP, Google sign-in, dan reset password tetap memakai backend Supabase yang sama dengan website.",
+                            "MoneySpender Mobile",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            "Auth minimalis untuk layar Android",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.88f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = if (isDarkMode) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                            contentDescription = "Toggle theme",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
             }
 
-            item {
-                AppPanel {
-                    SectionHeading(
-                        title = when (state.authTab) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)),
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        authTabs.forEach { (tab, label) ->
+                            FilterChip(
+                                selected = state.authTab == tab,
+                                onClick = { viewModel.setAuthTab(tab) },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = when (state.authTab) {
                             AuthTab.SignIn -> "Masuk ke akun"
                             AuthTab.SignUp -> "Bikin akun baru"
-                            AuthTab.Otp -> "Masuk pakai kode email"
+                            AuthTab.Otp -> "Login kode email dinonaktifkan"
                             AuthTab.Reset -> "Atur ulang password"
                         },
-                        subtitle = "Alur dibikin singkat supaya lebih enak dipakai di layar mobile.",
-                    )
-
-                    AppTextField(
-                        value = state.authForm.email,
-                        onValueChange = { value ->
-                            viewModel.updateAuthForm { form -> form.copy(email = value) }
-                        },
-                        label = "Email",
-                        leadingIcon = Icons.Outlined.Email,
-                        keyboardType = KeyboardType.Email,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
 
                     when (state.authTab) {
                         AuthTab.SignIn -> {
+                            AppTextField(
+                                value = state.authForm.email,
+                                onValueChange = { value ->
+                                    viewModel.updateAuthForm { form -> form.copy(email = value) }
+                                },
+                                label = "Email",
+                                leadingIcon = Icons.Outlined.Email,
+                                keyboardType = KeyboardType.Email,
+                            )
                             PasswordField(
                                 value = state.authForm.password,
                                 onValueChange = { value ->
@@ -335,9 +350,24 @@ private fun AuthScreen(
                             Button(onClick = viewModel::signIn, modifier = Modifier.fillMaxWidth()) {
                                 Text("Login")
                             }
+                            TextButton(
+                                onClick = { viewModel.setAuthTab(AuthTab.SignUp) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Register")
+                            }
                         }
 
                         AuthTab.SignUp -> {
+                            AppTextField(
+                                value = state.authForm.email,
+                                onValueChange = { value ->
+                                    viewModel.updateAuthForm { form -> form.copy(email = value) }
+                                },
+                                label = "Email",
+                                leadingIcon = Icons.Outlined.Email,
+                                keyboardType = KeyboardType.Email,
+                            )
                             AppTextField(
                                 value = state.authForm.fullName,
                                 onValueChange = { value ->
@@ -355,26 +385,38 @@ private fun AuthScreen(
                             Button(onClick = viewModel::signUp, modifier = Modifier.fillMaxWidth()) {
                                 Text("Register")
                             }
+                            TextButton(
+                                onClick = { viewModel.setAuthTab(AuthTab.SignIn) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Kembali ke login")
+                            }
                         }
 
                         AuthTab.Otp -> {
-                            AppTextField(
-                                value = state.authForm.otpToken,
-                                onValueChange = { value ->
-                                    viewModel.updateAuthForm { form -> form.copy(otpToken = value) }
-                                },
-                                label = "Kode OTP",
-                                leadingIcon = Icons.Outlined.Lock,
+                            Text(
+                                "Login kode email sudah disembunyikan agar alur auth lebih minimalis.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            OutlinedButton(onClick = viewModel::sendOtp, modifier = Modifier.fillMaxWidth()) {
-                                Text("Kirim kode")
-                            }
-                            Button(onClick = viewModel::verifyOtp, modifier = Modifier.fillMaxWidth()) {
-                                Text("Verifikasi")
+                            TextButton(
+                                onClick = { viewModel.setAuthTab(AuthTab.SignIn) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Pakai login biasa")
                             }
                         }
 
                         AuthTab.Reset -> {
+                            AppTextField(
+                                value = state.authForm.email,
+                                onValueChange = { value ->
+                                    viewModel.updateAuthForm { form -> form.copy(email = value) }
+                                },
+                                label = "Email",
+                                leadingIcon = Icons.Outlined.Email,
+                                keyboardType = KeyboardType.Email,
+                            )
                             PasswordField(
                                 value = state.authForm.newPassword,
                                 label = "Password baru",
@@ -396,14 +438,22 @@ private fun AuthScreen(
                                     Text("Simpan password baru")
                                 }
                             }
+                            TextButton(
+                                onClick = { viewModel.setAuthTab(AuthTab.SignIn) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Kembali ke login")
+                            }
                         }
                     }
 
-                    OutlinedButton(
-                        onClick = { context.startActivity(viewModel.createGoogleIntent()) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Login dengan Google")
+                    if (state.authTab == AuthTab.SignIn) {
+                        OutlinedButton(
+                            onClick = { context.startActivity(viewModel.createGoogleIntent()) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Login dengan Google")
+                        }
                     }
                 }
             }
@@ -432,6 +482,8 @@ private fun PasswordField(
 private fun AppScaffold(
     viewModel: MoneySpenderViewModel,
     snackbar: SnackbarHostState,
+    isDarkMode: Boolean,
+    onToggleTheme: () -> Unit,
 ) {
     val state = viewModel.state
     val snapshot = state.snapshot ?: return
@@ -470,6 +522,8 @@ private fun AppScaffold(
                     subtitle = screenSubtitle(state.selectedTab),
                     profile = snapshot.profile,
                     userEmail = snapshot.user.email.orEmpty(),
+                    isDarkMode = isDarkMode,
+                    onToggleTheme = onToggleTheme,
                 )
             }
         },

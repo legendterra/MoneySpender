@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberSaveable
 import androidx.compose.runtime.setValue
 import net.moneyspender.android.data.MoneySpenderRepository
 import net.moneyspender.android.ui.MoneySpenderRoot
@@ -22,12 +23,18 @@ class MainActivity : ComponentActivity() {
         deepLinkUrl = intent?.dataString
 
         setContent {
-            MoneySpenderTheme {
+            var darkModeEnabled by rememberSaveable { mutableStateOf(false) }
+
+            MoneySpenderTheme(darkTheme = darkModeEnabled) {
                 LaunchedEffect(deepLinkUrl) {
                     deepLinkUrl?.let { viewModel.handleIncomingUrl(it) }
                 }
 
-                MoneySpenderRoot(viewModel = viewModel)
+                MoneySpenderRoot(
+                    viewModel = viewModel,
+                    isDarkMode = darkModeEnabled,
+                    onToggleTheme = { darkModeEnabled = !darkModeEnabled },
+                )
             }
         }
     }
@@ -37,4 +44,3 @@ class MainActivity : ComponentActivity() {
         deepLinkUrl = intent.dataString
     }
 }
-
