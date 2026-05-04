@@ -6,16 +6,19 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: APP_NAME,
     short_name: APP_NAME,
-    description: APP_DESCRIPTION,
-    start_url: "/dashboard",
-    display: "standalone",
-    background_color: "#f6fbff",
-    theme_color: "#4d84ff",
-    lang: "id-ID",
-    orientation: "portrait",
-    icons: [
-      {
-        src: "/icon-192.png",
+      description: APP_DESCRIPTION,
+      id: "/",
+      start_url: "/dashboard",
+      scope: "/",
+      display: "standalone",
+      background_color: "#f7fbff",
+      theme_color: "#3f7cff",
+      lang: "id-ID",
+      orientation: "portrait",
+      categories: ["finance", "productivity"],
+      icons: [
+        {
+          src: "/icon-192.png",
         sizes: "192x192",
         type: "image/png",
       },
@@ -28,8 +31,31 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/icon-512-maskable.png",
         sizes: "512x512",
         type: "image/png",
-        purpose: "maskable",
-      },
-    ],
-  };
-}
+          purpose: "maskable",
+        },
+      ],
+      shortcuts: [
+        {
+          name: "Dashboard",
+          short_name: "Dashboard",
+          description: "Lihat ringkasan uang hari ini.",
+          url: "/dashboard",
+          icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+        },
+        {
+          name: "Tambah Pengeluaran",
+          short_name: "Pengeluaran",
+          description: "Catat uang keluar dengan cepat.",
+          url: "/expenses#form",
+          icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+        },
+        {
+          name: "Tambah Pemasukan",
+          short_name: "Pemasukan",
+          description: "Catat uang masuk dengan cepat.",
+          url: "/income#form",
+          icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+        },
+      ],
+    };
+  }

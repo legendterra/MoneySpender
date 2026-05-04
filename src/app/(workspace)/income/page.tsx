@@ -27,12 +27,15 @@ export default async function IncomePage({
           title="Tambah uang masuk"
           description="Isi jumlah, kategori, tanggal, dan catatan pendek. Cukup yang penting, tidak perlu panjang."
           categories={data.categories}
+          wallets={data.wallets}
           type="income"
         />
         <TransactionsList
           title="Pemasukan bulan ini"
           records={data.transactions}
           currencyCode={currency}
+          categories={data.categories}
+          wallets={data.wallets}
         />
       </div>
     </div>

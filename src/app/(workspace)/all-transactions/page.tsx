@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { AllTransactionsPanel } from "@/components/history/all-transactions-panel";
 import { PageHeading } from "@/components/page-heading";
+import { OfflineSnapshotCache } from "@/components/pwa/offline-snapshot-cache";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
@@ -18,6 +19,7 @@ export default async function AllTransactionsPage({
     weekday?: string;
     year?: string;
     page?: string;
+    q?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -27,6 +29,15 @@ export default async function AllTransactionsPage({
 
   return (
     <div className="space-y-6 pb-10">
+      <OfflineSnapshotCache
+        name="history"
+        payload={{
+          totalItems: data.totalItems,
+          items: data.items,
+          currency,
+          savedFilter: data.filters,
+        }}
+      />
       <PageHeading
         eyebrow="Riwayat"
         title="Cari transaksi lama tanpa scroll tanpa akhir."
@@ -44,7 +55,11 @@ export default async function AllTransactionsPage({
           </div>
         </div>
 
-        <form action="/all-transactions" className="grid gap-4 xl:grid-cols-[1fr_1fr_0.8fr_0.7fr_auto_auto]">
+        <form action="/all-transactions" className="grid gap-4 xl:grid-cols-[1.2fr_1fr_1fr_0.8fr_0.7fr_auto_auto]">
+          <label className="grid gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Cari</span>
+            <Input name="q" placeholder="Makan, QRIS, gaji, nama toko..." defaultValue={data.filters.q} />
+          </label>
           <label className="grid gap-1">
             <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Tanggal</span>
             <Input type="date" name="date" defaultValue={data.filters.date} />
@@ -90,9 +105,18 @@ export default async function AllTransactionsPage({
           </div>
           <div className="flex items-end">
             <Link
-              href="/all-transactions"
+              href={`/api/export/transactions?q=${encodeURIComponent(data.filters.q)}&date=${encodeURIComponent(data.filters.date)}&weekday=${encodeURIComponent(data.filters.weekday)}&year=${encodeURIComponent(data.filters.year)}`}
               prefetch={false}
               className={cn(buttonVariants({ variant: "secondary", size: "md", fullWidth: true }))}
+            >
+              Export CSV
+            </Link>
+          </div>
+          <div className="flex items-end xl:col-start-7">
+            <Link
+              href="/all-transactions"
+              prefetch={false}
+              className={cn(buttonVariants({ variant: "ghost", size: "md", fullWidth: true }))}
             >
               Reset
             </Link>
@@ -110,7 +134,7 @@ export default async function AllTransactionsPage({
           </div>
           <div className="rounded-[22px] border border-border bg-background-strong px-4 py-4">
             <p className="text-xs uppercase tracking-[0.22em] text-muted">Mode data</p>
-            <p className="mt-2 text-sm font-semibold text-foreground">Baca saja, tanpa tombol hapus</p>
+            <p className="mt-2 text-sm font-semibold text-foreground">Bisa dicari dan diekspor ke CSV</p>
           </div>
         </div>
       </Panel>

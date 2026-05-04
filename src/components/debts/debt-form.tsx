@@ -13,6 +13,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { Textarea } from "@/components/ui/textarea";
+import { enqueueOfflineMutation } from "@/lib/offline-queue";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Category } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -60,6 +61,31 @@ export function DebtForm({
 
   async function onSubmit(values: DebtFormValues) {
     setIsSubmitting(true);
+    const payload = {
+      amount: values.amount,
+      paid_amount: 0,
+      debt_date: values.debtDate,
+      source_name: values.sourceName,
+      lender_name: values.lenderName,
+      reason: values.reason,
+      category_id: defaultCategory?.id ?? null,
+      category_label: defaultCategory?.name ?? "Utang",
+    };
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      enqueueOfflineMutation("debts", payload);
+      setIsSubmitting(false);
+      toast.success("Hutang disimpan offline. Nanti otomatis sync saat koneksi balik.");
+      form.reset({
+        amount: 0,
+        debtDate: new Date().toISOString().slice(0, 10),
+        sourceName: "",
+        lenderName: "",
+        reason: "",
+      });
+      return;
+    }
+
     const supabase = createBrowserSupabaseClient();
     const {
       data: { user },
@@ -73,13 +99,7 @@ export function DebtForm({
 
     const { error } = await supabase.from("debts").insert({
       user_id: user.id,
-      amount: values.amount,
-      debt_date: values.debtDate,
-      source_name: values.sourceName,
-      lender_name: values.lenderName,
-      reason: values.reason,
-      category_id: defaultCategory?.id ?? null,
-      category_label: defaultCategory?.name ?? "Utang",
+      ...payload,
     });
 
     setIsSubmitting(false);

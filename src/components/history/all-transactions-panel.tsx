@@ -29,10 +29,10 @@ export function AllTransactionsPanel({
         items.map((item, index) => (
           <section
             key={`${item.source}-${item.id}`}
-            className="glass-panel rounded-[24px] p-5"
+            className="rounded-[24px] border border-border bg-background-strong p-5"
           >
             <div className="grid gap-4 md:grid-cols-[auto_1fr_auto] md:items-start">
-              <div className="rounded-2xl bg-white/34 px-4 py-3 text-sm font-bold text-foreground dark:bg-white/8">
+              <div className="rounded-2xl bg-background px-4 py-3 text-sm font-bold text-foreground">
                 {startIndex + index + 1}
               </div>
               <div className="space-y-2">
@@ -58,7 +58,7 @@ export function AllTransactionsPanel({
           </section>
         ))
       ) : (
-        <section className="glass-panel rounded-[24px] border-dashed p-6 text-sm leading-7 text-muted">
+        <section className="rounded-[24px] border border-dashed border-border bg-background-strong p-6 text-sm leading-7 text-muted">
           Tidak ada data yang cocok dengan filter ini.
         </section>
       )}

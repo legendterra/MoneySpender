@@ -2,10 +2,14 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 
 import { DebtOverview } from "@/components/dashboard/debt-overview";
+import { BudgetAlerts } from "@/components/dashboard/budget-alerts";
+import { InsightsPanel } from "@/components/dashboard/insights-panel";
 import { SummaryStrip } from "@/components/dashboard/summary-strip";
 import { TopTransactions } from "@/components/dashboard/top-transactions";
+import { WalletSnapshot } from "@/components/dashboard/wallet-snapshot";
 import { MonthFilter } from "@/components/month-filter";
 import { PageHeading } from "@/components/page-heading";
+import { OfflineSnapshotCache } from "@/components/pwa/offline-snapshot-cache";
 import { buttonVariants } from "@/components/ui/button-styles";
 import { Panel } from "@/components/ui/panel";
 import { getDashboardData } from "@/lib/data";
@@ -29,6 +33,17 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6 pb-10">
+      <OfflineSnapshotCache
+        name="dashboard"
+        payload={{
+          currency,
+          month: data.selectedMonthLabel,
+          income: data.summary.income,
+          expense: data.summary.expense,
+          balance: data.summary.balance,
+          debt: data.debtSummary.totalOutstanding,
+        }}
+      />
       <PageHeading
         eyebrow="Dashboard"
         title="Cek kondisi uangmu bulan ini."
@@ -108,6 +123,11 @@ export default async function DashboardPage({
       </Panel>
 
       <SummaryStrip currencyCode={currency} stats={data.summary} debtSummary={data.debtSummary} />
+      <InsightsPanel insights={data.insights} />
+      <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+        <BudgetAlerts alerts={data.budgetAlerts} currencyCode={currency} />
+        <WalletSnapshot wallets={data.wallets} currencyCode={currency} />
+      </div>
       <DebtOverview currencyCode={currency} summary={data.debtSummary} debts={data.recentDebts} />
       <DashboardCharts
         currencyCode={currency}

@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { DebtRecord } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type ModalStep = "prompt" | "confirm";
+type EditingDebt = DebtRecord | null;
 
 export function DebtsList({
   title,
@@ -27,6 +29,8 @@ export function DebtsList({
   const [step, setStep] = useState<ModalStep>("prompt");
   const [countdown, setCountdown] = useState(10);
   const [isSaving, setIsSaving] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [editingDebt, setEditingDebt] = useState<EditingDebt>(null);
 
   useEffect(() => {
     if (!selectedDebt || step !== "confirm" || countdown <= 0) {
@@ -46,12 +50,14 @@ export function DebtsList({
     setSelectedDebt(debt);
     setStep("prompt");
     setCountdown(10);
+    setPaymentAmount("");
   }
 
   function closeModal() {
     setSelectedDebt(null);
     setStep("prompt");
     setCountdown(10);
+    setPaymentAmount("");
   }
 
   async function markAsPaid() {
@@ -61,13 +67,27 @@ export function DebtsList({
 
     setIsSaving(true);
     const supabase = createBrowserSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("debts")
       .update({
+        paid_amount: selectedDebt.amount,
         is_paid: true,
         paid_at: new Date().toISOString(),
       })
       .eq("id", selectedDebt.id);
+
+    if (!error && user) {
+      await supabase.from("debt_payments").insert({
+        user_id: user.id,
+        debt_id: selectedDebt.id,
+        amount: selectedDebt.remaining_amount,
+        paid_date: new Date().toISOString().slice(0, 10),
+        note: "Pelunasan",
+      });
+    }
 
     setIsSaving(false);
 
@@ -78,6 +98,91 @@ export function DebtsList({
 
     toast.success("Hutang ditandai sudah dibayar.");
     closeModal();
+    router.refresh();
+  }
+
+  async function savePartialPayment() {
+    if (!selectedDebt) {
+      return;
+    }
+
+    const amount = Number(paymentAmount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Isi nominal bayar yang valid.");
+      return;
+    }
+
+    const nextPaidAmount = Math.min(selectedDebt.amount, selectedDebt.paid_amount + amount);
+    const isPaid = nextPaidAmount >= selectedDebt.amount;
+
+    setIsSaving(true);
+    const supabase = createBrowserSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("debts")
+      .update({
+        paid_amount: nextPaidAmount,
+        is_paid: isPaid,
+        paid_at: isPaid ? new Date().toISOString() : null,
+      })
+      .eq("id", selectedDebt.id);
+
+    if (!error && user) {
+      await supabase.from("debt_payments").insert({
+        user_id: user.id,
+        debt_id: selectedDebt.id,
+        amount,
+        paid_date: new Date().toISOString().slice(0, 10),
+        note: "Bayar sebagian",
+      });
+    }
+
+    setIsSaving(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success(isPaid ? "Hutang sudah lunas." : "Pembayaran sebagian tersimpan.");
+    closeModal();
+    router.refresh();
+  }
+
+  async function updateDebt(formData: FormData) {
+    const id = String(formData.get("id") ?? "");
+    const amount = Number(formData.get("amount") ?? 0);
+    const paidAmount = Number(formData.get("paidAmount") ?? 0);
+    const isPaid = paidAmount >= amount;
+
+    setIsSaving(true);
+    const supabase = createBrowserSupabaseClient();
+    const { error } = await supabase
+      .from("debts")
+      .update({
+        amount,
+        paid_amount: Math.min(amount, Math.max(0, paidAmount)),
+        debt_date: String(formData.get("debtDate") ?? ""),
+        source_name: String(formData.get("sourceName") ?? ""),
+        lender_name: String(formData.get("lenderName") ?? ""),
+        reason: String(formData.get("reason") ?? ""),
+        is_paid: isPaid,
+        paid_at: isPaid ? new Date().toISOString() : null,
+      })
+      .eq("id", id);
+
+    setIsSaving(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("Hutang berhasil diedit.");
+    setEditingDebt(null);
     router.refresh();
   }
 
@@ -98,12 +203,35 @@ export function DebtsList({
                 key={record.id}
                 className="grid gap-3 rounded-[26px] border border-border bg-background-strong p-4"
               >
+                {editingDebt?.id === record.id ? (
+                  <form action={updateDebt} className="grid gap-3">
+                    <input type="hidden" name="id" value={record.id} />
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <Input name="amount" type="number" min="1" step="1000" defaultValue={record.amount} />
+                      <Input name="paidAmount" type="number" min="0" step="1000" defaultValue={record.paid_amount} />
+                      <Input name="debtDate" type="date" defaultValue={record.debt_date} />
+                      <Input name="sourceName" defaultValue={record.source_name} />
+                      <Input name="lenderName" defaultValue={record.lender_name} />
+                      <Input name="reason" defaultValue={record.reason} />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" type="submit" isLoading={isSaving}>Simpan edit</Button>
+                      <Button size="sm" type="button" variant="secondary" onClick={() => setEditingDebt(null)}>Batal</Button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
                 <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto] md:items-center">
                   <div>
                     <p className="text-xs uppercase tracking-[0.22em] text-muted">Nominal</p>
                     <p className="text-lg font-bold text-foreground">
                       {formatCurrency(record.amount, currencyCode)}
                     </p>
+                    {record.paid_amount > 0 ? (
+                      <p className="text-xs text-muted">
+                        Sudah dibayar {formatCurrency(record.paid_amount, currencyCode)}
+                      </p>
+                    ) : null}
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.22em] text-muted">Siapa</p>
@@ -121,12 +249,32 @@ export function DebtsList({
                       </span>
                     ) : (
                       <Button variant="danger" size="sm" onClick={() => openModal(record)}>
-                        Cek bayar
+                        Bayar
                       </Button>
                     )}
                   </div>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" size="sm" onClick={() => setEditingDebt(record)}>
+                    Edit hutang
+                  </Button>
+                </div>
+                {record.payments?.length ? (
+                  <div className="rounded-2xl border border-border bg-background px-3 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Riwayat cicilan</p>
+                    <div className="mt-2 grid gap-2">
+                      {record.payments.map((payment) => (
+                        <p key={payment.id} className="text-xs text-muted">
+                          {formatDate(payment.paid_date)} | {formatCurrency(payment.amount, currencyCode)}
+                          {payment.note ? ` | ${payment.note}` : ""}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 <p className="text-sm leading-7 text-muted">{record.reason}</p>
+                  </>
+                )}
               </div>
             ))
           ) : (
@@ -150,8 +298,31 @@ export function DebtsList({
                   </div>
                 </div>
                 <p className="text-sm leading-7 text-muted">
-                  Nominal {formatCurrency(selectedDebt.amount, currencyCode)} untuk {selectedDebt.lender_name}.
+                  Sisa {formatCurrency(selectedDebt.remaining_amount, currencyCode)} dari total{" "}
+                  {formatCurrency(selectedDebt.amount, currencyCode)} untuk {selectedDebt.lender_name}.
                 </p>
+                <div className="grid gap-2 rounded-[24px] border border-border bg-background-strong p-4">
+                  <label className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
+                    Bayar sebagian
+                  </label>
+                  <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1000"
+                      placeholder="Contoh: 50000"
+                      value={paymentAmount}
+                      onChange={(event) => setPaymentAmount(event.target.value)}
+                    />
+                    <Button
+                      variant="secondary"
+                      onClick={() => void savePartialPayment()}
+                      isLoading={isSaving}
+                    >
+                      Simpan bayar
+                    </Button>
+                  </div>
+                </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <Button variant="secondary" onClick={closeModal}>
                     Belum

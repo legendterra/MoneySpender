@@ -9,7 +9,7 @@ export function MonthFilter({
   actionPath: string;
 }) {
   return (
-    <form action={actionPath} className="glass-panel flex flex-wrap items-center gap-3 rounded-[24px] p-3">
+    <form action={actionPath} className="flex flex-wrap items-center gap-3 rounded-[24px] border border-border bg-background p-3">
       <label className="grid gap-1">
         <span className="text-xs font-black uppercase text-muted">Bulan</span>
         <input

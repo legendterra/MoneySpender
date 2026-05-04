@@ -1,5 +1,6 @@
 import { ShieldCheck, Smartphone } from "lucide-react";
 
+import { DeleteAccountButton } from "@/components/settings/delete-account-button";
 import { LogoutButton } from "@/components/logout-button";
 import { Panel } from "@/components/ui/panel";
 
@@ -32,6 +33,15 @@ export function AccountPanel({ email }: { email: string }) {
           <p className="mt-2 text-sm leading-7 text-muted">
             Layout dibuat ringan untuk layar kecil, jadi enak dipakai sambil jalan.
           </p>
+        </div>
+      </div>
+      <div className="rounded-2xl border border-danger/25 bg-danger/8 px-4 py-4">
+        <p className="text-sm font-semibold text-danger">Zona serius</p>
+        <p className="mt-2 text-sm leading-7 text-muted">
+          Hapus akun akan menghapus profil, kategori, transaksi, hutang, pengingat, dan sesi login.
+        </p>
+        <div className="mt-4">
+          <DeleteAccountButton />
         </div>
       </div>
       <LogoutButton fullWidth variant="secondary" />

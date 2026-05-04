@@ -27,12 +27,15 @@ export default async function ExpensesPage({
           title="Tambah uang keluar"
           description="Catat jumlah, kategori, tanggal, dan toko/sumbernya. Nanti gampang dicek lagi kalau ada yang terasa boros."
           categories={data.categories}
+          wallets={data.wallets}
           type="expense"
         />
         <TransactionsList
           title="Pengeluaran bulan ini"
           records={data.transactions}
           currencyCode={currency}
+          categories={data.categories}
+          wallets={data.wallets}
         />
       </div>
     </div>
