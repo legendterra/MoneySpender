@@ -63,7 +63,6 @@ export function DebtForm({
     setIsSubmitting(true);
     const payload = {
       amount: values.amount,
-      paid_amount: 0,
       debt_date: values.debtDate,
       source_name: values.sourceName,
       lender_name: values.lenderName,
