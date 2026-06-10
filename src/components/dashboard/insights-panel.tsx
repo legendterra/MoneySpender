@@ -18,7 +18,7 @@ export function InsightsPanel({ insights }: { insights: DashboardInsight[] }) {
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {insights.map((insight) => (
-          <div key={insight.title} className={cn("rounded-2xl border p-4", toneClass[insight.tone])}>
+          <div key={insight.title} className={cn("rounded-md border p-4", toneClass[insight.tone])}>
             <p className="text-sm font-bold text-foreground">{insight.title}</p>
             <p className="mt-2 text-sm leading-7 text-muted">{insight.body}</p>
           </div>

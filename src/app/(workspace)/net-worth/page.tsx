@@ -39,7 +39,7 @@ export default async function NetWorthPage() {
           </div>
           <div className="grid gap-3">
             {data.wallets.map((wallet) => (
-              <div key={wallet.id} className="rounded-2xl border border-border bg-background-strong p-4">
+              <div key={wallet.id} className="rounded-md border border-border bg-background-strong p-4">
                 <p className="text-sm font-bold text-foreground">{wallet.name}</p>
                 <p className="mt-2 text-2xl font-black text-foreground">{formatCurrency(wallet.balance ?? 0, currency)}</p>
                 <p className="mt-1 text-xs text-muted">{wallet.kind}</p>
@@ -60,14 +60,14 @@ export default async function NetWorthPage() {
             const from = data.wallets.find((wallet) => wallet.id === transfer.from_wallet_id)?.name ?? "Dompet asal";
             const to = data.wallets.find((wallet) => wallet.id === transfer.to_wallet_id)?.name ?? "Dompet tujuan";
             return (
-              <div key={transfer.id} className="rounded-2xl border border-border bg-background-strong p-4">
+              <div key={transfer.id} className="rounded-md border border-border bg-background-strong p-4">
                 <p className="text-sm font-bold text-foreground">{from} ke {to}</p>
                 <p className="mt-1 text-sm text-muted">{formatDate(transfer.transfer_date)} | {formatCurrency(transfer.amount, currency)}</p>
                 {transfer.note ? <p className="mt-1 text-xs text-muted">{transfer.note}</p> : null}
               </div>
             );
           }) : (
-            <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted">Belum ada transfer dompet.</div>
+            <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted">Belum ada transfer dompet.</div>
           )}
         </div>
       </Panel>

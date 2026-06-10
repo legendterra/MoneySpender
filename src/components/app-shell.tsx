@@ -50,8 +50,8 @@ export function AppShell({
 
   return (
     <div className="mobile-safe min-h-screen pb-8">
-      <header className="sticky top-0 z-40 px-4 pb-3 pt-4 sm:px-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between rounded-[24px] border border-border bg-background px-4 py-3 shadow-[0_12px_36px_rgba(30,41,59,0.08)] sm:px-5 dark:shadow-[0_12px_36px_rgba(0,0,0,0.24)]">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex min-w-0 items-center gap-4">
             <LogoMark />
             <div className="hidden lg:grid">
@@ -68,9 +68,9 @@ export function AppShell({
                   href={item.href}
                   prefetch={false}
                   className={cn(
-                    "rounded-2xl px-4 py-3 text-sm font-semibold transition",
+                    "rounded-md px-3 py-2 text-sm font-semibold transition-colors",
                     active
-                      ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white shadow-[0_16px_38px_rgba(57,74,216,0.28)]"
+                      ? "bg-accent text-white"
                       : "text-muted hover:bg-background-strong hover:text-foreground",
                   )}
                 >
@@ -88,14 +88,14 @@ export function AppShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6">
+      <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
         <div>{children}</div>
       </main>
 
       <QuickAdd />
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 pb-[calc(0.9rem+env(safe-area-inset-bottom))] lg:hidden">
-        <div className="grid w-full grid-cols-3 gap-2 rounded-[24px] border border-border bg-background px-3 py-3 shadow-[0_12px_36px_rgba(30,41,59,0.12)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.28)]">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+        <div className="scrollbar-thin mx-auto flex max-w-2xl gap-1 overflow-x-auto px-3 py-2">
           {navItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
@@ -105,9 +105,9 @@ export function AppShell({
                 href={item.href}
                 prefetch={false}
                 className={cn(
-                  "flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl px-2 text-center text-[11px] font-semibold transition",
+                  "flex min-h-14 min-w-[4.75rem] flex-1 flex-col items-center justify-center gap-1 rounded-md px-2 text-center text-[10px] font-semibold transition-colors",
                   active
-                    ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white shadow-[0_16px_38px_rgba(57,74,216,0.22)]"
+                    ? "bg-accent text-white"
                     : "text-muted hover:bg-background-strong hover:text-foreground",
                 )}
               >

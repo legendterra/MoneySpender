@@ -57,11 +57,11 @@ export function ImportExportPanel() {
         <input
           type="file"
           accept=".csv,text/csv"
-          className="rounded-2xl border border-border bg-background-strong px-4 py-3 text-sm text-foreground"
+          className="rounded-md border border-border bg-background-strong px-4 py-3 text-sm text-foreground"
           onChange={(event) => setFile(event.target.files?.[0] ?? null)}
         />
         {preview ? (
-          <div className="rounded-2xl border border-border bg-background-strong p-4 text-sm text-muted">
+          <div className="rounded-md border border-border bg-background-strong p-4 text-sm text-muted">
             <p className="font-bold text-foreground">{preview.validRows} baris valid, {preview.skippedRows} dilewati.</p>
             <div className="mt-3 grid gap-2">
               {preview.preview.map((row, index) => (
@@ -77,7 +77,7 @@ export function ImportExportPanel() {
           <Button onClick={() => void submitCsv(false)} isLoading={isImporting}>
             Import CSV
           </Button>
-          <Link href="/api/export/transactions" className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-border bg-background-strong px-5 text-sm font-bold text-foreground">
+          <Link href="/api/export/transactions" className="inline-flex min-h-12 items-center justify-center rounded-md border border-border bg-background-strong px-5 text-sm font-bold text-foreground">
             Export semua CSV
           </Link>
         </div>

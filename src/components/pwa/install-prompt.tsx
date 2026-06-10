@@ -42,9 +42,9 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-md rounded-[24px] border border-border bg-background p-4 shadow-[0_18px_45px_rgba(30,41,59,0.16)] dark:shadow-[0_18px_45px_rgba(0,0,0,0.35)]">
+    <div className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-md rounded-lg border border-border bg-background p-4">
       <div className="flex items-start gap-3">
-        <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent text-white">
+        <div className="grid size-11 shrink-0 place-items-center rounded-md bg-accent text-white">
           <Download className="size-5" />
         </div>
         <div className="min-w-0 flex-1">

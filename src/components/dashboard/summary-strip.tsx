@@ -89,7 +89,7 @@ export function SummaryStrip({
                 <p className="text-2xl font-bold text-foreground">{item.value}</p>
                 <p className={cn("text-xs leading-6 text-muted", item.noteClassName)}>{item.note}</p>
               </div>
-              <div className="rounded-2xl bg-white/30 p-3 text-accent-strong shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] dark:bg-white/8">
+              <div className="rounded-md border border-border bg-background-elevated p-3 text-accent-strong">
                 <Icon className="size-5" />
               </div>
             </div>

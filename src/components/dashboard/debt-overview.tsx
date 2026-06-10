@@ -30,7 +30,7 @@ export function DebtOverview({
         </Link>
       </div>
       <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="rounded-[24px] border border-danger/20 bg-danger/8 p-5">
+        <div className="rounded-lg border border-danger/20 bg-danger/8 p-5">
           <p className="text-sm font-semibold text-danger">Sisa bulan ini</p>
           <p className="mt-2 text-3xl font-bold text-foreground">
             {formatCurrency(summary.currentMonthOutstanding, currencyCode)}
@@ -44,7 +44,7 @@ export function DebtOverview({
             debts.map((debt) => (
               <div
                 key={debt.id}
-                className="flex flex-col gap-2 rounded-[24px] border border-border bg-background-strong px-4 py-4 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-2 rounded-lg border border-border bg-background-strong px-4 py-4 md:flex-row md:items-center md:justify-between"
               >
                 <div>
                   <p className="text-base font-semibold text-foreground">{debt.lender_name}</p>
@@ -57,7 +57,7 @@ export function DebtOverview({
               </div>
             ))
           ) : (
-            <div className="rounded-[24px] border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
+            <div className="rounded-lg border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
               Tidak ada hutang aktif bulan ini. Bagus, napas sedikit lega.
             </div>
           )}

@@ -14,7 +14,6 @@ type AuthMode = "signin" | "signup" | "forgot";
 
 type AuthPalette = {
   page: string;
-  pagePattern?: string;
   card: string;
   border: string;
   text: string;
@@ -27,33 +26,29 @@ type AuthPalette = {
 };
 
 const lightPalette: AuthPalette = {
-  page: "#f5f7ff",
-  pagePattern:
-    "linear-gradient(90deg, rgba(255,180,95,.2) 0 7rem, transparent 7rem), linear-gradient(180deg, rgba(90,61,240,.1) 0 13rem, transparent 13rem)",
+  page: "#f6f7f9",
   card: "#ffffff",
-  border: "#dce3f5",
-  text: "#14162f",
-  muted: "#606987",
-  accent: "#5a3df0",
-  accentHover: "#412bd8",
-  link: "#5a3df0",
-  divider: "#dce3f5",
-  inputBg: "#f5f7ff",
+  border: "#d9dde3",
+  text: "#111318",
+  muted: "#626975",
+  accent: "#2563eb",
+  accentHover: "#1d4ed8",
+  link: "#1d4ed8",
+  divider: "#d9dde3",
+  inputBg: "#f6f7f9",
 };
 
 const darkPalette: AuthPalette = {
-  page: "#101326",
-  pagePattern:
-    "linear-gradient(90deg, rgba(255,196,119,.08) 0 7rem, transparent 7rem), linear-gradient(180deg, rgba(157,140,255,.1) 0 13rem, transparent 13rem)",
-  card: "#171b33",
-  border: "#303854",
-  text: "#f5f6ff",
-  muted: "#aab1cf",
-  accent: "#9d8cff",
-  accentHover: "#66b7ff",
-  link: "#9d8cff",
-  divider: "#303854",
-  inputBg: "#202641",
+  page: "#0f1115",
+  card: "#171a20",
+  border: "#303640",
+  text: "#f4f6f8",
+  muted: "#9da4af",
+  accent: "#6f9cff",
+  accentHover: "#8bb0ff",
+  link: "#8bb0ff",
+  divider: "#303640",
+  inputBg: "#20242c",
 };
 
 export function AuthPanel() {
@@ -162,21 +157,14 @@ export function AuthPanel() {
 
   return (
     <div
-      className="min-h-[100dvh] overflow-hidden"
+      className="min-h-[100dvh]"
       style={{
         backgroundColor: palette.page,
-        backgroundImage: palette.pagePattern,
       }}
     >
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-4 py-5 sm:px-5">
         <header className="flex items-center justify-between pb-1">
-          <LogoMark
-            className={
-              isDark
-                ? "[&_span:first-child]:text-[#9d8cff] [&_span:last-child]:text-[#f5f6ff]"
-                : "[&_span:first-child]:text-[#5a3df0] [&_span:last-child]:text-[#14162f]"
-            }
-          />
+          <LogoMark />
           <ThemeToggle
             className="h-9 w-9 rounded-lg"
             style={{
@@ -189,7 +177,7 @@ export function AuthPanel() {
 
         <main className="flex flex-1 items-center justify-center">
           <section
-            className="w-full rounded-[24px] border p-5 shadow-[0_12px_0_rgba(20,22,47,.04)] sm:p-6"
+            className="w-full rounded-lg border p-5 sm:p-6"
             style={{ borderColor: palette.border, background: palette.card }}
           >
             {mode === "signin" ? (
@@ -213,7 +201,7 @@ export function AuthPanel() {
                     placeholder="nama@email.com"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="min-h-11 rounded-2xl"
+                    className="min-h-11 rounded-md"
                     style={{
                       borderColor: palette.border,
                       backgroundColor: palette.inputBg,
@@ -232,7 +220,7 @@ export function AuthPanel() {
                     placeholder="Password kamu"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="min-h-11 rounded-2xl"
+                    className="min-h-11 rounded-md"
                     style={{
                       borderColor: palette.border,
                       backgroundColor: palette.inputBg,
@@ -255,7 +243,7 @@ export function AuthPanel() {
                 <button
                   type="submit"
                   disabled={isBusy}
-                  className="w-full rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_18px_48px_rgba(57,74,216,.3)] transition disabled:opacity-60"
+                  className="w-full rounded-md border border-transparent px-4 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60"
                   style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
                 >
                   {isBusy ? "Sebentar..." : "Masuk"}
@@ -283,14 +271,14 @@ export function AuthPanel() {
                   type="button"
                   onClick={() => void handleGoogleLogin()}
                   disabled={isBusy}
-                  className="w-full rounded-full border px-4 py-3 text-sm font-bold transition disabled:opacity-60"
+                  className="w-full rounded-md border px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-60"
                   style={{ borderColor: palette.border, color: palette.text, backgroundColor: palette.card }}
                 >
                   Masuk dengan Google
                 </button>
                 <a
                   href="https://moneyspender.net"
-                  className="block rounded-2xl border px-4 py-3 text-center text-sm font-bold transition hover:-translate-y-0.5"
+                  className="block rounded-md border px-4 py-3 text-center text-sm font-semibold transition-colors"
                   style={{ borderColor: palette.border, color: palette.link, backgroundColor: palette.inputBg }}
                 >
                   Ganti aplikasi di MoneySpender
@@ -318,7 +306,7 @@ export function AuthPanel() {
                     placeholder="Nama kamu"
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
-                    className="min-h-11 rounded-2xl"
+                    className="min-h-11 rounded-md"
                     style={{
                       borderColor: palette.border,
                       backgroundColor: palette.inputBg,
@@ -337,7 +325,7 @@ export function AuthPanel() {
                     placeholder="nama@email.com"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="min-h-11 rounded-2xl"
+                    className="min-h-11 rounded-md"
                     style={{
                       borderColor: palette.border,
                       backgroundColor: palette.inputBg,
@@ -356,7 +344,7 @@ export function AuthPanel() {
                     placeholder="Minimal 8 karakter"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="min-h-11 rounded-2xl"
+                    className="min-h-11 rounded-md"
                     style={{
                       borderColor: palette.border,
                       backgroundColor: palette.inputBg,
@@ -368,7 +356,7 @@ export function AuthPanel() {
                 <button
                   type="submit"
                   disabled={isBusy}
-                  className="w-full rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_18px_48px_rgba(57,74,216,.3)] transition disabled:opacity-60"
+                  className="w-full rounded-md border border-transparent px-4 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60"
                   style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
                 >
                   {isBusy ? "Sebentar..." : "Daftar"}
@@ -387,7 +375,7 @@ export function AuthPanel() {
                 </p>
                 <a
                   href="https://moneyspender.net"
-                  className="block rounded-2xl border px-4 py-3 text-center text-sm font-bold transition hover:-translate-y-0.5"
+                  className="block rounded-md border px-4 py-3 text-center text-sm font-semibold transition-colors"
                   style={{ borderColor: palette.border, color: palette.link, backgroundColor: palette.inputBg }}
                 >
                   Kembali ke pilihan aplikasi
@@ -416,7 +404,7 @@ export function AuthPanel() {
                     placeholder="nama@email.com"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="min-h-11 rounded-2xl"
+                    className="min-h-11 rounded-md"
                     style={{
                       borderColor: palette.border,
                       backgroundColor: palette.inputBg,
@@ -428,7 +416,7 @@ export function AuthPanel() {
                 <button
                   type="submit"
                   disabled={isBusy}
-                  className="w-full rounded-full px-4 py-3 text-sm font-bold text-white shadow-[0_18px_48px_rgba(57,74,216,.3)] transition disabled:opacity-60"
+                  className="w-full rounded-md border border-transparent px-4 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60"
                   style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
                 >
                   {isBusy ? "Mengirim..." : "Kirim link reset"}
@@ -454,7 +442,7 @@ export function AuthPanel() {
                 </div>
                 <a
                   href="https://moneyspender.net"
-                  className="block rounded-2xl border px-4 py-3 text-center text-sm font-bold transition hover:-translate-y-0.5"
+                  className="block rounded-md border px-4 py-3 text-center text-sm font-semibold transition-colors"
                   style={{ borderColor: palette.border, color: palette.link, backgroundColor: palette.inputBg }}
                 >
                   Pilih aplikasi lain

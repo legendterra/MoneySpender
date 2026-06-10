@@ -201,7 +201,7 @@ export function DebtsList({
             records.map((record) => (
               <div
                 key={record.id}
-                className="grid gap-3 rounded-[26px] border border-border bg-background-strong p-4"
+                className="grid gap-3 rounded-lg border border-border bg-background-strong p-4"
               >
                 {editingDebt?.id === record.id ? (
                   <form action={updateDebt} className="grid gap-3">
@@ -260,7 +260,7 @@ export function DebtsList({
                   </Button>
                 </div>
                 {record.payments?.length ? (
-                  <div className="rounded-2xl border border-border bg-background px-3 py-3">
+                  <div className="rounded-md border border-border bg-background px-3 py-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Riwayat cicilan</p>
                     <div className="mt-2 grid gap-2">
                       {record.payments.map((payment) => (
@@ -278,7 +278,7 @@ export function DebtsList({
               </div>
             ))
           ) : (
-            <div className="rounded-[26px] border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
+            <div className="rounded-lg border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
               Belum ada hutang bulan ini.
             </div>
           )}
@@ -287,7 +287,7 @@ export function DebtsList({
 
       {selectedDebt ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
-          <div className="glass-panel w-full max-w-lg rounded-[30px] p-6">
+          <div className="glass-panel w-full max-w-lg rounded-lg p-6">
             {step === "prompt" ? (
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
@@ -301,7 +301,7 @@ export function DebtsList({
                   Sisa {formatCurrency(selectedDebt.remaining_amount, currencyCode)} dari total{" "}
                   {formatCurrency(selectedDebt.amount, currencyCode)} untuk {selectedDebt.lender_name}.
                 </p>
-                <div className="grid gap-2 rounded-[24px] border border-border bg-background-strong p-4">
+                <div className="grid gap-2 rounded-lg border border-border bg-background-strong p-4">
                   <label className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
                     Bayar sebagian
                   </label>
@@ -350,7 +350,7 @@ export function DebtsList({
                 <p className="text-sm leading-7 text-muted">
                   Tombol final baru aktif setelah hitungan selesai, biar tidak kepencet.
                 </p>
-                <div className="rounded-[24px] border border-danger/20 bg-danger/8 px-4 py-4 text-sm text-danger">
+                <div className="rounded-lg border border-danger/20 bg-danger/8 px-4 py-4 text-sm text-danger">
                   Countdown: <span className="font-bold">{countdown}</span> detik
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">

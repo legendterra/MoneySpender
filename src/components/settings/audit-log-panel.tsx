@@ -12,14 +12,14 @@ export function AuditLogPanel({ logs }: { logs: AuditLog[] }) {
       <div className="grid gap-3">
         {logs.length ? (
           logs.map((log) => (
-            <div key={log.id} className="rounded-2xl border border-border bg-background-strong p-4">
+            <div key={log.id} className="rounded-md border border-border bg-background-strong p-4">
               <p className="text-sm font-bold text-foreground">{log.action.replaceAll("_", " ")}</p>
               <p className="mt-1 text-xs text-muted">{formatDate(log.created_at)}</p>
               <p className="mt-2 text-xs leading-6 text-muted">{JSON.stringify(log.metadata)}</p>
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted">
+          <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted">
             Belum ada aktivitas penting.
           </div>
         )}

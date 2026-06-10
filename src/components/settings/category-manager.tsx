@@ -134,7 +134,7 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
           return (
             <div
               key={group.value}
-              className="rounded-[26px] border border-border bg-background-strong p-4"
+              className="rounded-lg border border-border bg-background-strong p-4"
             >
               <div className="mb-4">
                 <p className="text-sm font-semibold text-foreground">{group.label}</p>
@@ -145,7 +145,7 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
                   grouped.map((category) => (
                     <div
                       key={category.id}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-border/80 bg-background px-3 py-3"
+                      className="flex items-center justify-between gap-3 rounded-md border border-border/80 bg-background px-3 py-3"
                     >
                       <div className="flex items-center gap-3">
                         <span
@@ -161,7 +161,7 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-border px-3 py-5 text-sm text-muted">
+                  <div className="rounded-md border border-dashed border-border px-3 py-5 text-sm text-muted">
                     Belum ada kategori {group.label.toLowerCase()}.
                   </div>
                 )}

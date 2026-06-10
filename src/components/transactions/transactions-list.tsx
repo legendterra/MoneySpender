@@ -101,7 +101,7 @@ export function TransactionsList({
           records.map((record) => (
             <div
               key={record.id}
-              className="grid gap-3 rounded-[26px] border border-border bg-background-strong p-4"
+              className="grid gap-3 rounded-lg border border-border bg-background-strong p-4"
             >
               {editingId === record.id ? (
                 <form action={handleUpdate} className="grid gap-3">
@@ -196,7 +196,7 @@ export function TransactionsList({
             </div>
           ))
         ) : (
-          <div className="rounded-[26px] border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
+          <div className="rounded-lg border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
             Belum ada transaksi bulan ini.
           </div>
         )}

@@ -18,7 +18,7 @@ export function WalletSnapshot({
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {wallets.length ? (
           wallets.map((wallet) => (
-            <div key={wallet.id} className="rounded-2xl border border-border bg-background-strong p-4">
+            <div key={wallet.id} className="rounded-md border border-border bg-background-strong p-4">
               <p className="text-sm font-bold text-foreground">{wallet.name}</p>
               <p className="mt-2 text-xl font-black text-foreground">
                 {formatCurrency(wallet.balance ?? wallet.opening_balance, currencyCode)}
@@ -27,7 +27,7 @@ export function WalletSnapshot({
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted md:col-span-2 xl:col-span-5">
+          <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted md:col-span-2 xl:col-span-5">
             Belum ada dompet. Tambahkan di Settings supaya saldo per tempat bisa kebaca.
           </div>
         )}

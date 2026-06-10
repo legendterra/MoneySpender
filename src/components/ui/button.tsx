@@ -27,8 +27,6 @@ export function Button({
     <button
       className={cn(
         buttonVariants({ variant, size, fullWidth }),
-        !(disabled || isLoading) &&
-          "transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]",
         className,
       )}
       disabled={disabled || isLoading}

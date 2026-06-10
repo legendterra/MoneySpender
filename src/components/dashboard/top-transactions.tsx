@@ -26,7 +26,7 @@ function TransactionBlock({
             10 {type === "income" ? "pemasukan" : "pengeluaran"} terbesar
           </h2>
         </div>
-        <div className="rounded-2xl bg-accent-soft p-3 text-accent-strong">
+        <div className="rounded-md bg-accent-soft p-3 text-accent-strong">
           <Icon className="size-5" />
         </div>
       </div>
@@ -35,7 +35,7 @@ function TransactionBlock({
           records.map((record, index) => (
             <div
               key={record.id}
-              className="grid gap-2 rounded-2xl border border-border/70 bg-background-strong px-4 py-3"
+              className="grid gap-2 rounded-md border border-border/70 bg-background-strong px-4 py-3"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -56,7 +56,7 @@ function TransactionBlock({
             </div>
           ))
         ) : (
-          <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-sm leading-7 text-muted">
+          <p className="rounded-md border border-dashed border-border px-4 py-6 text-sm leading-7 text-muted">
             Belum ada data bulan ini.
           </p>
         )}

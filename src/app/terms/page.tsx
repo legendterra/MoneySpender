@@ -51,7 +51,7 @@ export default function TermsPage() {
       description="Dengan memakai MoneySpender, kamu setuju memakai aplikasi secara wajar, menjaga akun sendiri, dan memahami batas layanan."
     >
       <div className="grid gap-6">
-        <Panel className="rounded-[32px] p-7 sm:p-8">
+        <Panel className="rounded-lg p-7 sm:p-8">
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-foreground">Ringkasan</h2>
             <p className="text-sm leading-8 text-muted sm:text-base">
@@ -66,7 +66,7 @@ export default function TermsPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {sections.map((section) => (
-            <Panel key={section.title} className="rounded-[32px] p-7 sm:p-8">
+            <Panel key={section.title} className="rounded-lg p-7 sm:p-8">
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold text-foreground">{section.title}</h2>
                 <div className="space-y-3 text-sm leading-8 text-muted sm:text-base">
@@ -79,7 +79,7 @@ export default function TermsPage() {
           ))}
         </div>
 
-        <Panel className="rounded-[32px] p-7 sm:p-8">
+        <Panel className="rounded-lg p-7 sm:p-8">
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-foreground">Kontak layanan</h2>
             <p className="text-sm leading-8 text-muted sm:text-base">

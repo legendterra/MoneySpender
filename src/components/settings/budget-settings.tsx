@@ -75,14 +75,14 @@ export function BudgetSettings({
           Set angka per kategori supaya pengeluaran punya pagar yang jelas, bukan cuma feeling.
         </p>
       </div>
-      <div className="rounded-2xl border border-border bg-background-strong px-4 py-4">
+      <div className="rounded-md border border-border bg-background-strong px-4 py-4">
         <p className="text-xs uppercase tracking-[0.22em] text-muted">Total budget {month}</p>
         <p className="mt-2 text-2xl font-bold text-foreground">{formatCurrency(totalBudget, currencyCode)}</p>
       </div>
       <form action={saveBudgets} className="grid gap-3">
         {expenseCategories.length ? (
           expenseCategories.map((category) => (
-            <label key={category.id} className="grid gap-2 rounded-2xl border border-border bg-background-strong p-4">
+            <label key={category.id} className="grid gap-2 rounded-md border border-border bg-background-strong p-4">
               <span className="text-sm font-semibold text-foreground">{category.name}</span>
               <Input
                 name={category.id}
@@ -94,7 +94,7 @@ export function BudgetSettings({
             </label>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-border p-4 text-sm leading-7 text-muted">
+          <div className="rounded-md border border-dashed border-border p-4 text-sm leading-7 text-muted">
             Buat kategori pengeluaran dulu, baru budget bisa diisi.
           </div>
         )}

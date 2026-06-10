@@ -50,7 +50,7 @@ export default async function AllTransactionsPage({
             <p className="text-sm font-semibold text-muted">Filter riwayat</p>
             <h2 className="text-2xl font-bold text-foreground">Cari berdasarkan tanggal, hari, atau tahun</h2>
           </div>
-          <div className="rounded-2xl border border-border bg-background-strong px-4 py-3 text-sm text-muted">
+          <div className="rounded-md border border-border bg-background-strong px-4 py-3 text-sm text-muted">
             Halaman {data.filters.page} dari {data.totalPages}
           </div>
         </div>
@@ -124,15 +124,15 @@ export default async function AllTransactionsPage({
         </form>
 
         <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-[22px] border border-border bg-background-strong px-4 py-4">
+          <div className="rounded-lg border border-border bg-background-strong px-4 py-4">
             <p className="text-xs uppercase tracking-[0.22em] text-muted">Urutan list</p>
             <p className="mt-2 text-sm font-semibold text-foreground">Terbaru dulu, lalu mundur ke tanggal lama</p>
           </div>
-          <div className="rounded-[22px] border border-border bg-background-strong px-4 py-4">
+          <div className="rounded-lg border border-border bg-background-strong px-4 py-4">
             <p className="text-xs uppercase tracking-[0.22em] text-muted">Hari aktif</p>
             <p className="mt-2 text-sm font-semibold text-foreground">{data.filters.weekdayLabel}</p>
           </div>
-          <div className="rounded-[22px] border border-border bg-background-strong px-4 py-4">
+          <div className="rounded-lg border border-border bg-background-strong px-4 py-4">
             <p className="text-xs uppercase tracking-[0.22em] text-muted">Mode data</p>
             <p className="mt-2 text-sm font-semibold text-foreground">Bisa dicari dan diekspor ke CSV</p>
           </div>

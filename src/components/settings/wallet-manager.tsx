@@ -103,7 +103,7 @@ export function WalletManager({ wallets, currencyCode }: { wallets: Wallet[]; cu
       <div className="grid gap-3">
         {wallets.length ? (
           wallets.map((wallet) => (
-            <div key={wallet.id} className="flex flex-col gap-2 rounded-2xl border border-border bg-background-strong p-4 md:flex-row md:items-center md:justify-between">
+            <div key={wallet.id} className="flex flex-col gap-2 rounded-md border border-border bg-background-strong p-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm font-bold text-foreground">{wallet.name}</p>
                 <p className="text-xs text-muted">
@@ -120,7 +120,7 @@ export function WalletManager({ wallets, currencyCode }: { wallets: Wallet[]; cu
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-border p-4 text-sm text-muted">
+          <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted">
             Belum ada dompet. Tambahkan minimal satu supaya saldo per tempat bisa kebaca.
           </div>
         )}

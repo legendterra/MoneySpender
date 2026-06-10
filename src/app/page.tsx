@@ -39,7 +39,7 @@ export default function HomePage() {
       description="MoneySpender dibuat buat kebiasaan kecil yang sering kelupaan: nyatet transaksi. Buka, isi sebentar, lalu lihat gambaran uangmu dengan lebih jelas."
     >
       <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <Panel className="rounded-[32px] p-7 sm:p-8">
+        <Panel className="rounded-lg p-7 sm:p-8">
           <div className="space-y-5">
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-foreground">Yang bisa kamu pakai</h2>
@@ -52,7 +52,7 @@ export default function HomePage() {
               {highlights.map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-[18px] border border-border bg-background-strong p-4"
+                  className="border-t border-border py-4 first:border-t-0"
                 >
                   <p className="text-base font-semibold text-foreground">{item.title}</p>
                   <p className="mt-2 text-sm leading-7 text-muted">{item.description}</p>
@@ -62,7 +62,7 @@ export default function HomePage() {
           </div>
         </Panel>
 
-          <Panel className="rounded-[32px] p-7 sm:p-8">
+          <Panel className="rounded-lg p-7 sm:p-8">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <ShieldCheck className="size-5 text-accent-strong" />

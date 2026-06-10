@@ -7,7 +7,7 @@ export function Panel({ className, children, ...props }: PanelProps) {
     <section
       {...props}
       className={cn(
-        "glass-panel rounded-[24px] p-5 md:p-6",
+        "glass-panel min-w-0 rounded-lg p-5 md:p-6",
         className,
       )}
     >

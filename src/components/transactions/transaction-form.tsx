@@ -204,7 +204,7 @@ export function TransactionForm({
         <p className="text-sm leading-7 text-muted">{description}</p>
       </div>
 
-      <div className="rounded-[28px] border border-border bg-background-strong p-5">
+      <div className="rounded-lg border border-border bg-background-strong p-5">
         <p className="text-xs uppercase tracking-[0.22em] text-muted">Nominal yang akan disimpan</p>
         <p className="mt-2 text-4xl font-bold text-foreground">{preview}</p>
       </div>
@@ -269,13 +269,13 @@ export function TransactionForm({
             <Textarea placeholder="Contoh: makan siang, invoice freelance, belanja bulanan" {...form.register("reason")} />
           </Field>
           <Field label="Detail tambahan">
-            <div className="space-y-4 rounded-[28px] border border-border bg-background-strong p-4">
+            <div className="space-y-4 rounded-lg border border-border bg-background-strong p-4">
               <div className="relative">
                 <Store className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
                 <Input className="pl-11" placeholder="Toko, klien, atau sumber dana" {...form.register("merchant")} />
               </div>
               <Input placeholder="Link struk / bukti transfer (opsional)" {...form.register("attachmentUrl")} />
-              <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground">
+              <label className="flex cursor-pointer items-center gap-3 rounded-md border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground">
                 <Upload className="size-4 text-accent-strong" />
                 <span className="min-w-0 flex-1 truncate">
                   {receiptFile ? receiptFile.name : "Upload struk / bukti transfer"}
@@ -287,14 +287,14 @@ export function TransactionForm({
                   onChange={(event) => setReceiptFile(event.target.files?.[0] ?? null)}
                 />
               </label>
-              <div className="rounded-2xl bg-accent-soft px-4 py-3 text-sm leading-7 text-muted">
+              <div className="rounded-md bg-accent-soft px-4 py-3 text-sm leading-7 text-muted">
                 Isi kalau ingat. Detail kecil seperti metode bayar atau toko sering berguna saat kamu cek riwayat.
               </div>
             </div>
           </Field>
         </div>
 
-        <div className="rounded-[28px] border border-border bg-background-strong p-4">
+        <div className="rounded-lg border border-border bg-background-strong p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm font-bold text-foreground">Split kategori</p>

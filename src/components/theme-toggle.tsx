@@ -19,7 +19,7 @@ export function ThemeToggle({ className, style }: { className?: string; style?: 
     return (
       <div
         className={cn(
-          "h-11 w-11 rounded-2xl border border-border bg-background-elevated",
+          "h-10 w-10 rounded-md border border-border bg-background-elevated",
           className,
         )}
         style={style}
@@ -33,7 +33,7 @@ export function ThemeToggle({ className, style }: { className?: string; style?: 
     <button
       type="button"
       className={cn(
-        "inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-background-elevated text-foreground shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:bg-background-strong",
+        "inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background-elevated text-foreground transition-colors hover:bg-background-strong",
         className,
       )}
       style={style}

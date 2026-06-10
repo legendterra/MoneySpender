@@ -188,7 +188,7 @@ export function DashboardCharts({
                 expenseBreakdown.map((entry, index) => (
                   <div
                     key={entry.name}
-                    className="flex items-center justify-between gap-4 rounded-2xl bg-accent-soft/50 px-3 py-2"
+                    className="flex items-center justify-between gap-4 rounded-md bg-accent-soft/50 px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
                       <span

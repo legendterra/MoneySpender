@@ -127,7 +127,7 @@ export function DebtForm({
         <p className="text-sm leading-7 text-muted">{description}</p>
       </div>
 
-      <div className="rounded-[28px] border border-danger/20 bg-danger/8 p-5">
+      <div className="rounded-lg border border-danger/20 bg-danger/8 p-5">
         <p className="text-xs uppercase tracking-[0.22em] text-danger">Nominal hutang</p>
         <p className="mt-2 text-4xl font-bold text-foreground">{preview}</p>
       </div>
@@ -176,7 +176,7 @@ export function DebtForm({
           />
         </Field>
 
-        <div className="rounded-[24px] border border-danger/20 bg-danger/8 px-4 py-4 text-sm leading-7 text-danger">
+        <div className="rounded-lg border border-danger/20 bg-danger/8 px-4 py-4 text-sm leading-7 text-danger">
           Catatan kecil: pastikan ada rencana bayar sebelum menambah hutang baru.
         </div>
 

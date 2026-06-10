@@ -94,16 +94,16 @@ export default async function DashboardPage({
               </Link>
             </div>
           </div>
-          <div className="rounded-[28px] border border-border bg-background-strong p-5">
+          <div className="rounded-lg border border-border bg-background-strong p-5">
             <p className="text-sm font-semibold text-muted">Snapshot bulan ini</p>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-[24px] bg-accent-soft p-4">
+              <div className="rounded-lg bg-accent-soft p-4">
                 <p className="text-xs uppercase tracking-[0.24em] text-accent-strong">Pemasukan</p>
                 <p className="mt-2 text-2xl font-bold text-foreground">
                   {formatCurrency(data.summary.income, currency)}
                 </p>
               </div>
-              <div className="rounded-[24px] bg-background p-4">
+              <div className="rounded-lg bg-background p-4">
                 <p className="text-xs uppercase tracking-[0.24em] text-muted">Pengeluaran</p>
                 <p className="mt-2 text-2xl font-bold text-foreground">
                   {formatCurrency(data.summary.expense, currency)}

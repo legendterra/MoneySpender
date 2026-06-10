@@ -25,7 +25,7 @@ export function BudgetAlerts({
             const Icon = danger || warning ? AlertTriangle : CheckCircle2;
 
             return (
-              <div key={alert.categoryId ?? alert.categoryName} className="rounded-2xl border border-border bg-background-strong p-4">
+              <div key={alert.categoryId ?? alert.categoryName} className="rounded-md border border-border bg-background-strong p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-bold text-foreground">{alert.categoryName}</p>
@@ -48,7 +48,7 @@ export function BudgetAlerts({
             );
           })
         ) : (
-          <div className="rounded-2xl border border-dashed border-border p-4 text-sm leading-7 text-muted">
+          <div className="rounded-md border border-dashed border-border p-4 text-sm leading-7 text-muted">
             Belum ada budget. Set di Settings supaya dashboard bisa kasih warning.
           </div>
         )}

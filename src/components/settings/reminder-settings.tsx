@@ -134,7 +134,7 @@ export function ReminderSettings({ reminder }: { reminder: ReminderPreferences }
           <p className="text-sm font-semibold text-muted">Reminder</p>
           <h2 className="text-2xl font-bold text-foreground">Biar tidak lupa catat</h2>
         </div>
-        <div className="rounded-2xl bg-accent-soft p-3 text-accent-strong">
+        <div className="rounded-md bg-accent-soft p-3 text-accent-strong">
           <BellRing className="size-5" />
         </div>
       </div>
@@ -159,7 +159,7 @@ export function ReminderSettings({ reminder }: { reminder: ReminderPreferences }
         ].map((item) => (
           <div
             key={item.key}
-            className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-background-strong px-4 py-4"
+            className="flex items-center justify-between gap-4 rounded-md border border-border bg-background-strong px-4 py-4"
           >
             <div className="space-y-1">
               <p className="text-sm font-semibold text-foreground">{item.title}</p>
@@ -172,7 +172,7 @@ export function ReminderSettings({ reminder }: { reminder: ReminderPreferences }
           </div>
         ))}
       </div>
-      <div className="rounded-[24px] border border-dashed border-border px-4 py-4 text-sm leading-7 text-muted">
+      <div className="rounded-lg border border-dashed border-border px-4 py-4 text-sm leading-7 text-muted">
         <ShieldCheck className="mb-2 size-4 text-accent-strong" />
         Reminder jalan lewat web push. Untuk hasil terbaik, install MoneySpender ke home screen.
       </div>

@@ -19,7 +19,7 @@ export function Switch({
       onClick={() => onCheckedChange(!checked)}
       className={cn(
         "relative inline-flex h-7 w-13 items-center rounded-full border border-border transition",
-        checked ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))]" : "bg-background-strong",
+        checked ? "bg-accent" : "bg-background-strong",
         className,
       )}
     >

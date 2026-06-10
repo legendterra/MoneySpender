@@ -157,7 +157,7 @@ export function RecurringSettings({
       <div className="grid gap-3">
         {recurringTransactions.length ? (
           recurringTransactions.map((item) => (
-            <div key={item.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-background-strong p-4 md:flex-row md:items-center md:justify-between">
+            <div key={item.id} className="flex flex-col gap-3 rounded-md border border-border bg-background-strong p-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm font-bold text-foreground">{item.reason}</p>
                 <p className="mt-1 text-xs text-muted">
@@ -178,7 +178,7 @@ export function RecurringSettings({
             </div>
           ))
         ) : (
-          <div className="rounded-2xl border border-dashed border-border p-4 text-sm leading-7 text-muted">
+          <div className="rounded-md border border-dashed border-border p-4 text-sm leading-7 text-muted">
             Belum ada template rutin.
           </div>
         )}

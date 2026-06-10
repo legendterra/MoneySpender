@@ -25,7 +25,7 @@ export default async function DebtsPage({
       />
 
       <Panel className="grid gap-4 lg:grid-cols-[0.9fr_0.9fr_1.2fr]">
-        <div className="rounded-[24px] border border-danger/20 bg-danger/8 p-4">
+        <div className="rounded-lg border border-danger/20 bg-danger/8 p-4">
           <p className="text-xs uppercase tracking-[0.22em] text-danger">Total Hutang</p>
           <p className="mt-2 text-3xl font-bold text-foreground">
             {formatCurrency(data.summary.totalOutstanding, currency)}
@@ -34,7 +34,7 @@ export default async function DebtsPage({
             Gabungan semua hutang yang belum ditandai lunas.
           </p>
         </div>
-        <div className="rounded-[24px] border border-danger/20 bg-danger/8 p-4">
+        <div className="rounded-lg border border-danger/20 bg-danger/8 p-4">
           <p className="text-xs uppercase tracking-[0.22em] text-danger">Sisa Hutang bulan ini</p>
           <p className="mt-2 text-3xl font-bold text-foreground">
             {formatCurrency(data.summary.currentMonthOutstanding, currency)}
@@ -43,7 +43,7 @@ export default async function DebtsPage({
             Kalau bisa, selesaikan yang jatuhnya paling dekat dulu. Future you bakal berterima kasih.
           </p>
         </div>
-        <div className="rounded-[24px] border border-border bg-background-strong p-4">
+        <div className="rounded-lg border border-border bg-background-strong p-4">
           <p className="text-xs uppercase tracking-[0.22em] text-muted">Status catatan aktif</p>
           <p className="mt-2 text-3xl font-bold text-foreground">{data.summary.unpaidCount} hutang</p>
           <p className="mt-3 text-sm leading-7 text-muted">

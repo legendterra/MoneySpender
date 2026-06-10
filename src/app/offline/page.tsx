@@ -8,7 +8,7 @@ export default function OfflinePage() {
   return (
     <main className="min-h-screen bg-background px-5 py-10 text-foreground">
       <div className="mx-auto flex min-h-[70vh] max-w-2xl flex-col justify-center gap-6">
-        <div className="inline-flex w-fit rounded-2xl bg-accent px-4 py-2 text-sm font-bold text-white">
+        <div className="inline-flex w-fit rounded-md bg-accent px-4 py-2 text-sm font-bold text-white">
           Offline mode
         </div>
         <div className="space-y-3">
