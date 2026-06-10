@@ -22,12 +22,11 @@ export default async function ExpensesPage({
         description={`${data.selectedMonthLabel}: total pengeluaran ${formatCurrency(data.total, currency)}.`}
         right={<MonthFilter monthValue={data.monthValue} actionPath="/expenses" />}
       />
-      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-4">
         <TransactionForm
           title="Tambah uang keluar"
           description="Catat jumlah, kategori, tanggal, dan toko/sumbernya. Nanti gampang dicek lagi kalau ada yang terasa boros."
           categories={data.categories}
-          wallets={data.wallets}
           type="expense"
         />
         <TransactionsList
@@ -35,7 +34,6 @@ export default async function ExpensesPage({
           records={data.transactions}
           currencyCode={currency}
           categories={data.categories}
-          wallets={data.wallets}
         />
       </div>
     </div>

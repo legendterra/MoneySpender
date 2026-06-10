@@ -51,7 +51,7 @@ export function AppShell({
   return (
     <div className="mobile-safe min-h-screen pb-8">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:px-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+        <div className="flex w-full items-center justify-between">
           <div className="flex min-w-0 items-center gap-4">
             <LogoMark />
             <div className="hidden lg:grid">
@@ -88,7 +88,7 @@ export function AppShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+      <main className="w-full px-4 pt-6 sm:px-6">
         <div>{children}</div>
       </main>
 

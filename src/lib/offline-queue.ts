@@ -71,9 +71,16 @@ export async function flushOfflineMutations(supabase: SupabaseClient) {
   let synced = 0;
 
   for (const item of queue) {
+    const payload = { ...item.payload };
+
+    if (item.table === "transactions") {
+      delete payload.wallet_id;
+      delete payload.wallet_label;
+    }
+
     const { error } = await supabase.from(item.table).insert({
       user_id: user.id,
-      ...item.payload,
+      ...payload,
     });
 
     if (error) {

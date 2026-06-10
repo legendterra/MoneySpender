@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarDays, CircleDollarSign, CreditCard, Plus, Store, Trash2, Upload } from "lucide-react";
+import { CalendarDays, CircleDollarSign, CreditCard, Store } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -26,30 +26,23 @@ const transactionSchema = z.object({
   reason: z.string().min(2, "Isi alasan minimal 2 karakter"),
   merchant: z.string().optional(),
   paymentMethod: z.string().optional(),
-  walletId: z.string().optional(),
-  attachmentUrl: z.string().url("Link lampiran harus berupa URL").optional().or(z.literal("")),
 });
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
-type SplitRow = { id: string; categoryId: string; amount: string };
 
 export function TransactionForm({
   title,
   description,
   categories,
-  wallets,
   type,
 }: {
   title: string;
   description: string;
   categories: Category[];
-  wallets?: import("@/lib/types").Wallet[];
   type: FinanceTransactionType;
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [splitRows, setSplitRows] = useState<SplitRow[]>([]);
 
   const defaultCategoryId = categories[0]?.id ?? "";
   const form = useForm<TransactionFormValues>({
@@ -61,8 +54,6 @@ export function TransactionForm({
       reason: "",
       merchant: "",
       paymentMethod: type === "income" ? "Transfer" : "QRIS",
-      walletId: wallets?.[0]?.id ?? "",
-      attachmentUrl: "",
     },
   });
 
@@ -75,14 +66,11 @@ export function TransactionForm({
   async function onSubmit(values: TransactionFormValues) {
     setIsSubmitting(true);
     const category = categories.find((item) => item.id === values.categoryId);
-    const wallet = wallets?.find((item) => item.id === values.walletId);
     const payload = {
       amount: values.amount,
       type,
       category_id: values.categoryId,
       category_label: category?.name ?? null,
-      wallet_id: values.walletId || null,
-      wallet_label: wallet?.name ?? null,
       transaction_date: values.transactionDate,
       reason: values.reason,
       merchant: values.merchant || null,
@@ -100,8 +88,6 @@ export function TransactionForm({
         reason: "",
         merchant: "",
         paymentMethod: type === "income" ? "Transfer" : "QRIS",
-        walletId: wallets?.[0]?.id ?? "",
-        attachmentUrl: "",
       });
       return;
     }
@@ -117,59 +103,12 @@ export function TransactionForm({
       return;
     }
 
-    const { data: insertedTransaction, error } = await supabase
+    const { error } = await supabase
       .from("transactions")
       .insert({
         user_id: user.id,
         ...payload,
-      })
-      .select("id")
-      .single();
-
-    if (!error && insertedTransaction?.id && receiptFile) {
-      const extension = receiptFile.name.split(".").pop() ?? "file";
-      const path = `${user.id}/receipts/${insertedTransaction.id}.${extension}`;
-      const { error: uploadError } = await supabase.storage.from("receipts").upload(path, receiptFile, {
-        upsert: false,
       });
-
-      if (uploadError) {
-        toast.error(`Transaksi tersimpan, tapi upload struk gagal: ${uploadError.message}`);
-      } else {
-        await supabase.from("transaction_attachments").insert({
-          user_id: user.id,
-          transaction_id: insertedTransaction.id,
-          label: receiptFile.name,
-          file_url: path,
-        });
-      }
-    } else if (!error && values.attachmentUrl) {
-      if (insertedTransaction?.id) {
-        await supabase.from("transaction_attachments").insert({
-          user_id: user.id,
-          transaction_id: insertedTransaction.id,
-          label: "Lampiran",
-          file_url: values.attachmentUrl,
-        });
-      }
-    }
-
-    const validSplits = splitRows
-      .map((row) => {
-        const splitCategory = categories.find((category) => category.id === row.categoryId);
-        return {
-          user_id: user.id,
-          transaction_id: insertedTransaction?.id,
-          category_id: row.categoryId || null,
-          category_label: splitCategory?.name ?? null,
-          amount: Number(row.amount),
-        };
-      })
-      .filter((row) => row.transaction_id && row.amount > 0);
-
-    if (!error && validSplits.length) {
-      await supabase.from("transaction_splits").insert(validSplits);
-    }
 
     setIsSubmitting(false);
 
@@ -186,11 +125,7 @@ export function TransactionForm({
       reason: "",
       merchant: "",
       paymentMethod: type === "income" ? "Transfer" : "QRIS",
-      walletId: wallets?.[0]?.id ?? "",
-      attachmentUrl: "",
     });
-    setReceiptFile(null);
-    setSplitRows([]);
     router.refresh();
   }
 
@@ -252,19 +187,9 @@ export function TransactionForm({
               />
             </div>
           </Field>
-          <Field label="Dompet / akun">
-            <Select {...form.register("walletId")}>
-              <option value="">Tanpa dompet</option>
-              {(wallets ?? []).map((wallet) => (
-                <option key={wallet.id} value={wallet.id}>
-                  {wallet.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4">
           <Field label="Catatan" error={form.formState.errors.reason?.message}>
             <Textarea placeholder="Contoh: makan siang, invoice freelance, belanja bulanan" {...form.register("reason")} />
           </Field>
@@ -274,80 +199,11 @@ export function TransactionForm({
                 <Store className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
                 <Input className="pl-11" placeholder="Toko, klien, atau sumber dana" {...form.register("merchant")} />
               </div>
-              <Input placeholder="Link struk / bukti transfer (opsional)" {...form.register("attachmentUrl")} />
-              <label className="flex cursor-pointer items-center gap-3 rounded-md border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground">
-                <Upload className="size-4 text-accent-strong" />
-                <span className="min-w-0 flex-1 truncate">
-                  {receiptFile ? receiptFile.name : "Upload struk / bukti transfer"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  className="sr-only"
-                  onChange={(event) => setReceiptFile(event.target.files?.[0] ?? null)}
-                />
-              </label>
               <div className="rounded-md bg-accent-soft px-4 py-3 text-sm leading-7 text-muted">
                 Isi kalau ingat. Detail kecil seperti metode bayar atau toko sering berguna saat kamu cek riwayat.
               </div>
             </div>
           </Field>
-        </div>
-
-        <div className="rounded-lg border border-border bg-background-strong p-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-sm font-bold text-foreground">Split kategori</p>
-              <p className="text-xs text-muted">Opsional, untuk satu transaksi yang isinya campuran beberapa kategori.</p>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => setSplitRows((rows) => [...rows, { id: crypto.randomUUID(), categoryId: "", amount: "" }])}
-            >
-              <Plus className="size-4" />
-              Tambah split
-            </Button>
-          </div>
-          {splitRows.length ? (
-            <div className="mt-4 grid gap-3">
-              {splitRows.map((row) => (
-                <div key={row.id} className="grid gap-2 md:grid-cols-[1fr_0.8fr_auto]">
-                  <Select
-                    value={row.categoryId}
-                    onChange={(event) =>
-                      setSplitRows((rows) => rows.map((item) => item.id === row.id ? { ...item, categoryId: event.target.value } : item))
-                    }
-                  >
-                    <option value="">Pilih kategori split</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>{category.name}</option>
-                    ))}
-                  </Select>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="1000"
-                    placeholder="Nominal split"
-                    value={row.amount}
-                    onChange={(event) =>
-                      setSplitRows((rows) => rows.map((item) => item.id === row.id ? { ...item, amount: event.target.value } : item))
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSplitRows((rows) => rows.filter((item) => item.id !== row.id))}
-                  >
-                    <Trash2 className="size-4" />
-                    Hapus
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : null}
         </div>
 
         <Button type="submit" size="lg" fullWidth isLoading={isSubmitting}>

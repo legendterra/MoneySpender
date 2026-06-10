@@ -19,16 +19,17 @@ export function SupabaseAuthListener() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
-      if (
-        event === "INITIAL_SESSION" ||
-        event === "TOKEN_REFRESHED" ||
-        event === "SIGNED_IN"
-      ) {
+      if (event === "SIGNED_IN" && pathname === "/auth") {
+        window.location.assign("/dashboard");
         return;
       }
 
-      if (event === "SIGNED_OUT" && pathname !== "/auth") {
-        router.replace("/auth");
+      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        window.location.assign("/");
         return;
       }
 

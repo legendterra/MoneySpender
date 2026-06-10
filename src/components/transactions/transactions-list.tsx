@@ -19,13 +19,11 @@ export function TransactionsList({
   records,
   currencyCode,
   categories = [],
-  wallets = [],
 }: {
   title: string;
   records: TransactionRecord[];
   currencyCode: string;
   categories?: Category[];
-  wallets?: import("@/lib/types").Wallet[];
 }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -58,9 +56,6 @@ export function TransactionsList({
     const id = String(formData.get("id") ?? "");
     const categoryId = String(formData.get("categoryId") ?? "");
     const category = categories.find((item) => item.id === categoryId);
-    const walletId = String(formData.get("walletId") ?? "");
-    const wallet = wallets.find((item) => item.id === walletId);
-
     setIsSaving(true);
     const supabase = createBrowserSupabaseClient();
     const { error } = await supabase
@@ -69,8 +64,6 @@ export function TransactionsList({
         amount: Number(formData.get("amount") ?? 0),
         category_id: categoryId || null,
         category_label: category?.name ?? null,
-        wallet_id: walletId || null,
-        wallet_label: wallet?.name ?? null,
         transaction_date: String(formData.get("transactionDate") ?? ""),
         reason: String(formData.get("reason") ?? ""),
         merchant: String(formData.get("merchant") ?? "") || null,
@@ -130,19 +123,8 @@ export function TransactionsList({
                       <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Metode</span>
                       <Input name="paymentMethod" defaultValue={record.payment_method ?? ""} />
                     </label>
-                    <label className="grid gap-1">
-                      <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Dompet</span>
-                      <Select name="walletId" defaultValue={record.wallet_id ?? ""}>
-                        <option value="">Tanpa dompet</option>
-                        {wallets.map((wallet) => (
-                          <option key={wallet.id} value={wallet.id}>
-                            {wallet.name}
-                          </option>
-                        ))}
-                      </Select>
-                    </label>
                   </div>
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-3">
                     <label className="grid gap-1">
                       <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Catatan</span>
                       <Textarea name="reason" defaultValue={record.reason ?? ""} />
@@ -189,7 +171,6 @@ export function TransactionsList({
                     <span>{formatDate(record.transaction_date)}</span>
                     {record.merchant ? <span>| {record.merchant}</span> : null}
                     {record.payment_method ? <span>| {record.payment_method}</span> : null}
-                    {record.wallet_label ? <span>| {record.wallet_label}</span> : null}
                   </div>
                 </>
               )}

@@ -1,7 +1,6 @@
 "use client";
 
 import { LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,8 +13,6 @@ export function LogoutButton({
   fullWidth?: boolean;
   variant?: "ghost" | "secondary" | "danger";
 }) {
-  const router = useRouter();
-
   async function handleLogout() {
     const supabase = createBrowserSupabaseClient();
     const { error } = await supabase.auth.signOut();
@@ -25,8 +22,7 @@ export function LogoutButton({
       return;
     }
 
-    router.replace("/auth");
-    router.refresh();
+    window.location.assign(process.env.NEXT_PUBLIC_APP_URL ?? "/");
   }
 
   return (

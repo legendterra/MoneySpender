@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { flushOfflineMutations } from "@/lib/offline-queue";
+import { flushOfflineMutations, getOfflineQueueCount } from "@/lib/offline-queue";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function PwaRegister() {
@@ -19,6 +19,10 @@ export function PwaRegister() {
 
   useEffect(() => {
     async function syncQueue() {
+      if (getOfflineQueueCount() === 0) {
+        return;
+      }
+
       const supabase = createBrowserSupabaseClient();
       const result = await flushOfflineMutations(supabase);
 

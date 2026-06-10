@@ -10,7 +10,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 
-async function ensureUserSetup(
+export async function ensureUserSetup(
   supabase: ServerSupabaseClient,
   user: {
     id: string;
@@ -117,8 +117,6 @@ export const getAuthedContext = cache(async () => {
   if (!user) {
     redirect("/auth");
   }
-
-  await ensureUserSetup(supabase, user);
 
   return { supabase, user };
 });

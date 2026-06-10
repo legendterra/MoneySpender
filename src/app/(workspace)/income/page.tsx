@@ -22,12 +22,11 @@ export default async function IncomePage({
         description={`${data.selectedMonthLabel}: total pemasukan ${formatCurrency(data.total, currency)}.`}
         right={<MonthFilter monthValue={data.monthValue} actionPath="/income" />}
       />
-      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-4">
         <TransactionForm
           title="Tambah uang masuk"
           description="Isi jumlah, kategori, tanggal, dan catatan pendek. Cukup yang penting, tidak perlu panjang."
           categories={data.categories}
-          wallets={data.wallets}
           type="income"
         />
         <TransactionsList
@@ -35,7 +34,6 @@ export default async function IncomePage({
           records={data.transactions}
           currencyCode={currency}
           categories={data.categories}
-          wallets={data.wallets}
         />
       </div>
     </div>

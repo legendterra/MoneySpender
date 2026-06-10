@@ -27,7 +27,6 @@ import type {
   SummaryStats,
   TransactionRecord,
   Wallet,
-  WalletTransfer,
 } from "@/lib/types";
 import { calculateRate, toMonthInput } from "@/lib/utils";
 
@@ -73,37 +72,6 @@ function mapTransaction(record: Record<string, unknown>): TransactionRecord {
     category_label: record.category_label ? String(record.category_label) : null,
     wallet_id: record.wallet_id ? String(record.wallet_id) : null,
     wallet_label: record.wallet_label ? String(record.wallet_label) : null,
-  };
-}
-
-function mapWallet(record: Record<string, unknown>): Wallet {
-  return {
-    id: String(record.id),
-    name: String(record.name ?? ""),
-    kind: (record.kind ?? "cash") as Wallet["kind"],
-    opening_balance: Number(record.opening_balance ?? 0),
-    color: record.color ? String(record.color) : null,
-    is_archived: Boolean(record.is_archived),
-  };
-}
-
-function mapWalletTransfer(record: Record<string, unknown>): WalletTransfer {
-  return {
-    id: String(record.id),
-    from_wallet_id: String(record.from_wallet_id),
-    to_wallet_id: String(record.to_wallet_id),
-    amount: Number(record.amount ?? 0),
-    transfer_date: String(record.transfer_date),
-    note: record.note ? String(record.note) : null,
-  };
-}
-
-function mapAuditLog(record: Record<string, unknown>): AuditLog {
-  return {
-    id: String(record.id),
-    action: String(record.action ?? ""),
-    metadata: (record.metadata ?? {}) as Record<string, unknown>,
-    created_at: String(record.created_at),
   };
 }
 
@@ -169,38 +137,6 @@ function buildCategoryBreakdown(transactions: TransactionRecord[]) {
     .slice(0, 6) as CategorySlice[];
 }
 
-function buildBudgetAlerts(
-  budgets: MonthlyBudget[],
-  categories: Category[],
-  transactions: TransactionRecord[],
-): BudgetAlert[] {
-  const spentByCategory = new Map<string, number>();
-
-  transactions
-    .filter((transaction) => transaction.type === "expense")
-    .forEach((transaction) => {
-      const key = transaction.category_id ?? transaction.category_label ?? "unknown";
-      spentByCategory.set(key, (spentByCategory.get(key) ?? 0) + transaction.amount);
-    });
-
-  return budgets
-    .map((budget) => {
-      const category = categories.find((item) => item.id === budget.category_id);
-      const spent = spentByCategory.get(budget.category_id) ?? 0;
-      const ratio = budget.amount > 0 ? Math.round((spent / budget.amount) * 100) : 0;
-
-      return {
-        categoryId: budget.category_id,
-        categoryName: category?.name ?? "Kategori",
-        spent,
-        budget: budget.amount,
-        ratio,
-        status: ratio >= 100 ? "over" : ratio >= 80 ? "warning" : "safe",
-      } satisfies BudgetAlert;
-    })
-    .sort((left, right) => right.ratio - left.ratio);
-}
-
 function buildDashboardInsights(
   monthTransactions: TransactionRecord[],
   previousMonthTransactions: TransactionRecord[],
@@ -255,29 +191,6 @@ function buildDashboardInsights(
   }
 
   return insights.slice(0, 4);
-}
-
-function buildWalletBalances(wallets: Wallet[], transactions: TransactionRecord[], transfers: WalletTransfer[] = []) {
-  const balanceByWallet = new Map(wallets.map((wallet) => [wallet.id, wallet.opening_balance]));
-
-  transactions.forEach((transaction) => {
-    if (!transaction.wallet_id || !balanceByWallet.has(transaction.wallet_id)) {
-      return;
-    }
-
-    const signedAmount = transaction.type === "income" ? transaction.amount : -transaction.amount;
-    balanceByWallet.set(transaction.wallet_id, (balanceByWallet.get(transaction.wallet_id) ?? 0) + signedAmount);
-  });
-
-  transfers.forEach((transfer) => {
-    balanceByWallet.set(transfer.from_wallet_id, (balanceByWallet.get(transfer.from_wallet_id) ?? 0) - transfer.amount);
-    balanceByWallet.set(transfer.to_wallet_id, (balanceByWallet.get(transfer.to_wallet_id) ?? 0) + transfer.amount);
-  });
-
-  return wallets.map((wallet) => ({
-    ...wallet,
-    balance: balanceByWallet.get(wallet.id) ?? wallet.opening_balance,
-  }));
 }
 
 function buildHistory(transactions: TransactionRecord[], selectedMonthDate: Date): MonthlyPoint[] {
@@ -411,12 +324,7 @@ export async function getDashboardData(month?: string) {
     periodTransactionsResult,
     yearTransactionsResult,
     allDebtsResult,
-    categoriesResult,
-    budgetsResult,
     previousMonthTransactionsResult,
-    walletsResult,
-    allTransactionsForWalletsResult,
-    transfersResult,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -425,14 +333,14 @@ export async function getDashboardData(month?: string) {
       .maybeSingle(),
     supabase
       .from("transactions")
-      .select("id,amount,type,category_id,wallet_id,wallet_label,transaction_date,reason,merchant,payment_method,category_label")
+      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label")
       .eq("user_id", user.id)
       .gte("transaction_date", historyStart)
       .lte("transaction_date", monthEnd)
       .order("transaction_date", { ascending: true }),
     supabase
       .from("transactions")
-      .select("id,amount,type,category_id,wallet_id,wallet_label,transaction_date,reason,merchant,payment_method,category_label")
+      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label")
       .eq("user_id", user.id)
       .gte("transaction_date", yearStart)
       .lte("transaction_date", yearEnd)
@@ -442,32 +350,12 @@ export async function getDashboardData(month?: string) {
       .select("id,amount,paid_amount,debt_date,source_name,lender_name,reason,category_label,is_paid,paid_at")
       .eq("user_id", user.id)
       .order("debt_date", { ascending: false }),
-    supabase.from("categories").select("id,name,type,color").eq("user_id", user.id),
-    supabase
-      .from("monthly_budgets")
-      .select("id,category_id,month,amount")
-      .eq("user_id", user.id)
-      .eq("month", monthValue),
     supabase
       .from("transactions")
-      .select("id,amount,type,category_id,wallet_id,wallet_label,transaction_date,reason,merchant,payment_method,category_label")
+      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label")
       .eq("user_id", user.id)
       .gte("transaction_date", previousMonthStart)
       .lte("transaction_date", previousMonthEnd),
-    supabase
-      .from("wallets")
-      .select("id,name,kind,opening_balance,color,is_archived")
-      .eq("user_id", user.id)
-      .eq("is_archived", false)
-      .order("name"),
-    supabase
-      .from("transactions")
-      .select("id,amount,type,category_id,wallet_id,wallet_label,transaction_date,reason,merchant,payment_method,category_label")
-      .eq("user_id", user.id),
-    supabase
-      .from("wallet_transfers")
-      .select("id,from_wallet_id,to_wallet_id,amount,transfer_date,note")
-      .eq("user_id", user.id),
   ]);
 
   const profile = normalizeProfile(
@@ -477,21 +365,13 @@ export async function getDashboardData(month?: string) {
   const periodTransactions = (periodTransactionsResult.data ?? []).map(mapTransaction);
   const yearTransactions = (yearTransactionsResult.data ?? []).map(mapTransaction);
   const allDebts = (allDebtsResult.data ?? []).map(mapDebt);
-  const categories = (categoriesResult.data ?? []) as Category[];
-  const budgets = (budgetsResult.data ?? []).map((item) => ({
-    ...item,
-    amount: Number(item.amount ?? 0),
-  })) as MonthlyBudget[];
   const previousMonthTransactions = (previousMonthTransactionsResult.data ?? []).map(mapTransaction);
-  const wallets = (walletsResult.data ?? []).map(mapWallet);
-  const allTransactionsForWallets = (allTransactionsForWalletsResult.data ?? []).map(mapTransaction);
-  const transfers = (transfersResult.data ?? []).map(mapWalletTransfer);
   const monthTransactions = periodTransactions.filter(
     (transaction) => transaction.transaction_date >= monthStart && transaction.transaction_date <= monthEnd,
   );
   const summary = summarizeTransactions(monthTransactions);
   const debtSummary = summarizeDebts(allDebts, selectedMonthDate);
-  const budgetAlerts = buildBudgetAlerts(budgets, categories, monthTransactions);
+  const budgetAlerts: BudgetAlert[] = [];
   const unpaidMonthDebts = allDebts.filter(
     (debt) => !debt.is_paid && debt.debt_date >= monthStart && debt.debt_date <= monthEnd,
   );
@@ -514,7 +394,7 @@ export async function getDashboardData(month?: string) {
     expenseBreakdown: buildCategoryBreakdown(monthTransactions),
     budgetAlerts,
     insights: buildDashboardInsights(monthTransactions, previousMonthTransactions, budgetAlerts, debtSummary),
-    wallets: buildWalletBalances(wallets, allTransactionsForWallets, transfers).slice(0, 5),
+    wallets: [],
     debtSummary,
     recentDebts: unpaidMonthDebts.slice(0, 5),
   };
@@ -527,7 +407,7 @@ export async function getTransactionsPageData(type: FinanceTransactionType, mont
   const monthEnd = format(endOfMonth(selectedMonthDate), "yyyy-MM-dd");
   const { supabase, user } = await getAuthedContext();
 
-  const [profileResult, categoriesResult, transactionsResult, walletsResult] = await Promise.all([
+  const [profileResult, categoriesResult, transactionsResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
@@ -541,19 +421,13 @@ export async function getTransactionsPageData(type: FinanceTransactionType, mont
       .order("name"),
     supabase
       .from("transactions")
-      .select("id,amount,type,category_id,wallet_id,wallet_label,transaction_date,reason,merchant,payment_method,category_label")
+      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label")
       .eq("user_id", user.id)
       .eq("type", type)
       .gte("transaction_date", monthStart)
       .lte("transaction_date", monthEnd)
       .order("transaction_date", { ascending: false })
       .order("created_at", { ascending: false }),
-    supabase
-      .from("wallets")
-      .select("id,name,kind,opening_balance,color,is_archived")
-      .eq("user_id", user.id)
-      .eq("is_archived", false)
-      .order("name"),
   ]);
 
   const profile = normalizeProfile(
@@ -568,7 +442,6 @@ export async function getTransactionsPageData(type: FinanceTransactionType, mont
     selectedMonthLabel: format(selectedMonthDate, "MMMM yyyy", { locale: indonesiaLocale }),
     profile,
     categories: (categoriesResult.data ?? []) as Category[],
-    wallets: (walletsResult.data ?? []).map(mapWallet),
     transactions,
     total,
     type,
@@ -661,7 +534,7 @@ export async function getAllTransactionsData(filters?: {
       .maybeSingle(),
     supabase
       .from("transactions")
-      .select("id,amount,type,category_id,wallet_id,wallet_label,transaction_date,reason,merchant,payment_method,category_label")
+      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label")
       .eq("user_id", user.id)
       .order("transaction_date", { ascending: false })
       .order("created_at", { ascending: false }),
@@ -753,7 +626,7 @@ export async function getSettingsData() {
   const { supabase, user } = await getAuthedContext();
   const monthValue = toMonthInput();
 
-  const [profileResult, categoriesResult, reminderResult, budgetsResult, recurringResult, walletsResult, auditResult] = await Promise.all([
+  const [profileResult, categoriesResult, reminderResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
@@ -765,28 +638,6 @@ export async function getSettingsData() {
       .select("reminder_morning_enabled,reminder_evening_enabled,push_enabled")
       .eq("user_id", user.id)
       .maybeSingle(),
-    supabase
-      .from("monthly_budgets")
-      .select("id,category_id,month,amount")
-      .eq("user_id", user.id)
-      .eq("month", monthValue),
-    supabase
-      .from("recurring_transactions")
-      .select("id,type,category_id,category_label,amount,reason,merchant,payment_method,day_of_month,last_generated_month,is_active")
-      .eq("user_id", user.id)
-      .order("day_of_month"),
-    supabase
-      .from("wallets")
-      .select("id,name,kind,opening_balance,color,is_archived")
-      .eq("user_id", user.id)
-      .order("is_archived")
-      .order("name"),
-    supabase
-      .from("audit_logs")
-      .select("id,action,metadata,created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20),
   ]);
 
   const profile = normalizeProfile(
@@ -799,16 +650,10 @@ export async function getSettingsData() {
     categories: (categoriesResult.data ?? []) as Category[],
     reminder: normalizeReminder(reminderResult.data as ReminderPreferences | null),
     budgetMonth: monthValue,
-    budgets: (budgetsResult.data ?? []).map((item) => ({
-      ...item,
-      amount: Number(item.amount ?? 0),
-    })) as MonthlyBudget[],
-    recurringTransactions: (recurringResult.data ?? []).map((item) => ({
-      ...item,
-      amount: Number(item.amount ?? 0),
-    })) as RecurringTransaction[],
-    wallets: (walletsResult.data ?? []).map(mapWallet),
-    auditLogs: (auditResult.data ?? []).map(mapAuditLog),
+    budgets: [] as MonthlyBudget[],
+    recurringTransactions: [] as RecurringTransaction[],
+    wallets: [] as Wallet[],
+    auditLogs: [] as AuditLog[],
     user: {
       id: user.id,
       email: user.email ?? "",
@@ -819,27 +664,16 @@ export async function getSettingsData() {
 export async function getNetWorthData() {
   const { supabase, user } = await getAuthedContext();
 
-  const [profileResult, walletsResult, transactionsResult, transfersResult, debtsResult] = await Promise.all([
+  const [profileResult, transactionsResult, debtsResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
-      .from("wallets")
-      .select("id,name,kind,opening_balance,color,is_archived")
-      .eq("user_id", user.id)
-      .eq("is_archived", false)
-      .order("name"),
-    supabase
       .from("transactions")
-      .select("id,amount,type,category_id,wallet_id,wallet_label,transaction_date,reason,merchant,payment_method,category_label")
+      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label")
       .eq("user_id", user.id),
-    supabase
-      .from("wallet_transfers")
-      .select("id,from_wallet_id,to_wallet_id,amount,transfer_date,note")
-      .eq("user_id", user.id)
-      .order("transfer_date", { ascending: false }),
     supabase
       .from("debts")
       .select("id,amount,paid_amount,debt_date,source_name,lender_name,reason,category_label,is_paid,paid_at")
@@ -847,18 +681,16 @@ export async function getNetWorthData() {
   ]);
 
   const profile = normalizeProfile(profileResult.data as ProfileData | null, user.user_metadata?.full_name ?? null);
-  const wallets = (walletsResult.data ?? []).map(mapWallet);
   const transactions = (transactionsResult.data ?? []).map(mapTransaction);
-  const transfers = (transfersResult.data ?? []).map(mapWalletTransfer);
   const debts = (debtsResult.data ?? []).map(mapDebt);
-  const balancedWallets = buildWalletBalances(wallets, transactions, transfers);
-  const totalAssets = balancedWallets.reduce((sum, wallet) => sum + (wallet.balance ?? 0), 0);
+  const summary = summarizeTransactions(transactions);
+  const totalAssets = summary.balance;
   const totalDebt = summarizeDebts(debts, new Date()).totalOutstanding;
 
   return {
     profile,
-    wallets: balancedWallets,
-    transfers,
+    wallets: [],
+    transfers: [],
     totalAssets,
     totalDebt,
     netWorth: totalAssets - totalDebt,

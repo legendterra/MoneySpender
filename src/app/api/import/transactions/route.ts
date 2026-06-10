@@ -104,11 +104,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  await supabase.from("audit_logs").insert({
-    user_id: user.id,
-    action: "import_transactions",
-    metadata: { count: imports.length },
-  });
-
   return NextResponse.json({ imported: imports.length });
 }

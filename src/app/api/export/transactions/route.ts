@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
   const [transactionsResult, debtsResult] = await Promise.all([
     supabase
       .from("transactions")
-      .select("amount,type,transaction_date,reason,merchant,payment_method,category_label,wallet_label")
+      .select("amount,type,transaction_date,reason,merchant,payment_method,category_label")
       .eq("user_id", user.id)
       .order("transaction_date", { ascending: false }),
     supabase
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       amount: Number(item.amount ?? 0),
       status: "tersimpan",
       category: item.category_label ?? "",
-      wallet: item.wallet_label ?? "",
+      wallet: "",
       note: item.reason ?? "",
       detail: [item.merchant, item.payment_method].filter(Boolean).join(" | "),
     })),

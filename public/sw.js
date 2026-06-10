@@ -1,13 +1,7 @@
-const CACHE_VERSION = "moneyspender-v2";
+const CACHE_VERSION = "moneyspender-v3";
 const APP_SHELL = [
   "/",
   "/offline",
-  "/dashboard",
-  "/income",
-  "/expenses",
-  "/debts",
-  "/all-transactions",
-  "/settings",
   "/manifest.webmanifest",
   "/apple-touch-icon.png",
   "/icon-192.png",
@@ -18,7 +12,8 @@ const APP_SHELL = [
 function shouldSkipCache(requestUrl) {
   return (
     requestUrl.pathname.startsWith("/api/") ||
-    requestUrl.pathname.startsWith("/auth/") ||
+    requestUrl.pathname.startsWith("/auth") ||
+    ["/dashboard", "/income", "/expenses", "/debts", "/all-transactions", "/settings", "/net-worth"].includes(requestUrl.pathname) ||
     requestUrl.hostname.includes("supabase")
   );
 }
