@@ -28,6 +28,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? requestUrl.origin;
-  return NextResponse.redirect(new URL(next, appUrl));
+  return NextResponse.redirect(new URL(next, requestUrl.origin));
 }

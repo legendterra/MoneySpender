@@ -22,7 +22,7 @@ export function LogoutButton({
       return;
     }
 
-    window.location.assign(process.env.NEXT_PUBLIC_APP_URL ?? "/");
+    window.location.assign(window.location.origin);
   }
 
   return (
