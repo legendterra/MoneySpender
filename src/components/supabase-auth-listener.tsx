@@ -2,12 +2,13 @@
 
 import { startTransition, useEffect } from "react";
 import type { AuthChangeEvent } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export function SupabaseAuthListener() {
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -18,7 +19,16 @@ export function SupabaseAuthListener() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
-      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
+      if (
+        event === "INITIAL_SESSION" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "SIGNED_IN"
+      ) {
+        return;
+      }
+
+      if (event === "SIGNED_OUT" && pathname !== "/auth") {
+        router.replace("/auth");
         return;
       }
 
@@ -30,7 +40,7 @@ export function SupabaseAuthListener() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [router]);
+  }, [pathname, router]);
 
   return null;
 }
