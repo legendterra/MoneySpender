@@ -1,5 +1,6 @@
 import { endOfMonth, endOfYear, format, startOfMonth, startOfYear, subMonths } from "date-fns";
 import { id as indonesiaLocale } from "date-fns/locale";
+import { cache } from "react";
 
 import {
   DEFAULT_CURRENCY,
@@ -118,7 +119,7 @@ function mapDebt(record: Record<string, unknown>): DebtRecord {
   };
 }
 
-// ── Wallet balance computation ────────────────────────────────────────────────
+// ── Wallet balance computation ──────────────────────────────────────────────
 // balance = opening_balance + income_in - expense_out + transfers_in - transfers_out
 
 function computeWalletBalances(
@@ -222,8 +223,7 @@ function computeBudgetAlerts(
       spentMap.set(t.category_id!, (spentMap.get(t.category_id!) ?? 0) + t.amount);
     });
 
-  return budgets
-    .filter((b) => b.amount > 0)
+  return budgets    .filter((b) => b.amount > 0)
     .map((b) => {
       const cat = categories.find((c) => c.id === b.category_id);
       const spent = spentMap.get(b.category_id) ?? 0;
@@ -390,6 +390,19 @@ function parseLocalDate(value: string) {
 function getWeekdayLabel(value: string) {
   return WEEKDAY_OPTIONS.find((o) => o.value === value)?.label ?? "Semua Hari";
 }
+
+// ── Cached data fetchers (using React.cache for memoization) ─────────────────
+
+// Cached profile fetcher - reused across multiple page data fetchers
+const getCachedProfile = cache(async (userId: string, fallbackName: string | null) => {
+  const { supabase } = await getAuthedContext();
+  const { data } = await supabase
+    .from("profiles")
+    .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
+    .eq("id", userId)
+    .maybeSingle();
+  return normalizeProfile(data as ProfileData | null, fallbackName);
+});
 
 // ── Public data fetchers ──────────────────────────────────────────────────────
 

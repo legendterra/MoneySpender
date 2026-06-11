@@ -5,14 +5,19 @@ import "@/app/globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants";
 
+// Optimize font loading with display: 'swap' for faster first paint
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
 });
 
 const jetBrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: false, // Only load when needed
 });
 
 export const metadata: Metadata = {
