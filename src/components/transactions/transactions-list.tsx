@@ -102,7 +102,7 @@ export function TransactionsList({
                   <div className="grid gap-3 md:grid-cols-2">
                     <label className="grid gap-1">
                       <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Nominal</span>
-                      <Input name="amount" type="number" min="0" step="1000" defaultValue={record.amount} />
+                      <Input name="amount" type="number" min="0" step="1" defaultValue={record.amount} />
                     </label>
                     <label className="grid gap-1">
                       <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Kategori</span>

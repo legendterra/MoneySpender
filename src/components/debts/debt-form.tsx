@@ -240,7 +240,7 @@ export function DebtForm({
             <div className="relative">
               <CircleDollarSign className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
               <Input
-                type="number" min="0" step="1000" className="pl-11"
+                type="number" min="0" step="1" className="pl-11"
                 {...form.register("amount", { valueAsNumber: true })}
               />
             </div>

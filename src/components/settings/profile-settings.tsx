@@ -91,7 +91,7 @@ export function ProfileSettings({ profile }: { profile: ProfileData }) {
           <Input
             type="number"
             min="0"
-            step="1000"
+            step="1"
             {...form.register("monthlyGoal", { valueAsNumber: true })}
           />
         </Field>
@@ -99,7 +99,7 @@ export function ProfileSettings({ profile }: { profile: ProfileData }) {
           <Input
             type="number"
             min="0"
-            step="1000"
+            step="1"
             {...form.register("yearlyGoal", { valueAsNumber: true })}
           />
         </Field>

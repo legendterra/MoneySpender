@@ -147,7 +147,7 @@ export function TransactionForm({
               <Input
                 type="number"
                 min="0"
-                step="1000"
+                step="1"
                 className="pl-11"
                 {...form.register("amount", { valueAsNumber: true })}
               />

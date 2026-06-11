@@ -283,7 +283,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                         <input
                           type="number"
                           min="0"
-                          step="1000"
+                          step="1"
                           value={w.opening_balance || ""}
                           placeholder="0"
                           onChange={(e) => updateBalance(w.id, Number(e.target.value) || 0)}

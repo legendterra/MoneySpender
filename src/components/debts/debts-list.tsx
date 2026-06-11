@@ -166,8 +166,8 @@ export function DebtsList({
                     <form action={updateDebt} className="grid gap-3">
                       <input type="hidden" name="id" value={record.id} />
                       <div className="grid gap-3 md:grid-cols-2">
-                        <Input name="amount" type="number" min="1" step="1000" defaultValue={record.amount} />
-                        <Input name="paidAmount" type="number" min="0" step="1000" defaultValue={record.paid_amount} />
+                        <Input name="amount" type="number" min="1" step="1" defaultValue={record.amount} />
+                        <Input name="paidAmount" type="number" min="0" step="1" defaultValue={record.paid_amount} />
                         <Input name="debtDate" type="date" defaultValue={record.debt_date} />
                         <Input name="sourceName" placeholder="Asal / platform" defaultValue={record.source_name} />
                         <Input name="contactName" placeholder="Nama kontak" defaultValue={record.contact_name} />
@@ -298,7 +298,7 @@ export function DebtsList({
                     <Input
                       type="number"
                       min="0"
-                      step="1000"
+                      step="1"
                       placeholder="Contoh: 50000"
                       value={paymentAmount}
                       onChange={(e) => setPaymentAmount(e.target.value)}

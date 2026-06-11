@@ -88,7 +88,7 @@ export function BudgetSettings({
                 name={category.id}
                 type="number"
                 min="0"
-                step="1000"
+                step="1"
                 defaultValue={budgetMap.get(category.id) ?? 0}
               />
             </label>

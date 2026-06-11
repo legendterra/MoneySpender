@@ -82,7 +82,7 @@ export function TransferPanel({ wallets }: { wallets: Wallet[] }) {
           </Select>
         </Field>
         <Field label="Nominal">
-          <Input name="amount" type="number" min="1" step="1000" required />
+          <Input name="amount" type="number" min="1" step="1" required />
         </Field>
         <Field label="Tanggal">
           <Input name="transferDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />

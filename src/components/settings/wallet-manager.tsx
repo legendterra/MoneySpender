@@ -91,7 +91,7 @@ export function WalletManager({ wallets, currencyCode }: { wallets: Wallet[]; cu
           </Select>
         </Field>
         <Field label="Saldo awal">
-          <Input name="openingBalance" type="number" step="1000" defaultValue="0" />
+          <Input name="openingBalance" type="number" step="1" defaultValue="0" />
         </Field>
         <div className="flex items-end">
           <Button type="submit" isLoading={isSaving} fullWidth>

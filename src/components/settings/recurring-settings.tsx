@@ -143,7 +143,7 @@ export function RecurringSettings({
               </option>
             ))}
           </Select>
-          <Input name="amount" type="number" min="1" step="1000" placeholder="Nominal" required />
+          <Input name="amount" type="number" min="1" step="1" placeholder="Nominal" required />
           <Input name="dayOfMonth" type="number" min="1" max="28" defaultValue="1" placeholder="Tanggal tiap bulan" />
           <Input name="reason" placeholder="Catatan, contoh: Spotify / Gaji" required />
           <Input name="paymentMethod" placeholder="Metode, contoh: QRIS / Transfer" />
