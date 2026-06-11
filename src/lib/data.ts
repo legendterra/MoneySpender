@@ -92,7 +92,6 @@ function mapDebtPayment(record: Record<string, unknown>): DebtPayment {
 function mapDebt(record: Record<string, unknown>): DebtRecord {
   const amount = Number(record.amount ?? 0);
   const paidAmount = Math.min(amount, Number(record.paid_amount ?? 0));
-  // Support both old (lender_name) and new (contact_name / direction) schema
   const direction = (record.direction as DebtDirection | undefined) ?? "payable";
   const contactName =
     record.contact_name
@@ -111,6 +110,8 @@ function mapDebt(record: Record<string, unknown>): DebtRecord {
     source_name: String(record.source_name ?? ""),
     reason: String(record.reason ?? ""),
     direction,
+    wallet_id: record.wallet_id ? String(record.wallet_id) : null,
+    wallet_label: record.wallet_label ? String(record.wallet_label) : null,
     category_label: record.category_label ? String(record.category_label) : null,
     is_paid: Boolean(record.is_paid),
     paid_at: record.paid_at ? String(record.paid_at) : null,
@@ -616,7 +617,7 @@ export async function getDebtsPageData(month?: string) {
   const monthEnd = format(endOfMonth(selectedMonthDate), "yyyy-MM-dd");
   const { supabase, user } = await getAuthedContext();
 
-  const [profileResult, categoriesResult, debtsResult, allDebtsResult, debtPaymentsResult] =
+  const [profileResult, categoriesResult, debtsResult, allDebtsResult, debtPaymentsResult, walletsResult] =
     await Promise.all([
       supabase
         .from("profiles")
@@ -631,7 +632,7 @@ export async function getDebtsPageData(month?: string) {
         .order("name"),
       supabase
         .from("debts")
-        .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction")
+        .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction,wallet_id,wallet_label")
         .eq("user_id", user.id)
         .gte("debt_date", monthStart)
         .lte("debt_date", monthEnd)
@@ -639,7 +640,7 @@ export async function getDebtsPageData(month?: string) {
         .order("created_at", { ascending: false }),
       supabase
         .from("debts")
-        .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction")
+        .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction,wallet_id,wallet_label")
         .eq("user_id", user.id)
         .order("debt_date", { ascending: false }),
       supabase
@@ -647,6 +648,12 @@ export async function getDebtsPageData(month?: string) {
         .select("id,debt_id,amount,paid_date,note")
         .eq("user_id", user.id)
         .order("paid_date", { ascending: false }),
+      supabase
+        .from("wallets")
+        .select("id,name,kind,opening_balance,color,is_archived")
+        .eq("user_id", user.id)
+        .eq("is_archived", false)
+        .order("name"),
     ]);
 
   const profile = normalizeProfile(
@@ -663,12 +670,22 @@ export async function getDebtsPageData(month?: string) {
     payments: paymentsByDebt.get(d.id) ?? [],
   }));
   const allDebts = (allDebtsResult.data ?? []).map(mapDebt);
+  const rawWalletsDebt = (walletsResult.data ?? []) as Array<{
+    id: string; name: string; kind: string; opening_balance: number;
+    color: string | null; is_archived: boolean;
+  }>;
+  const wallets: Wallet[] = rawWalletsDebt.map((w) => ({
+    ...w,
+    kind: w.kind as Wallet["kind"],
+    balance: w.opening_balance,
+  }));
 
   return {
     monthValue,
     selectedMonthLabel: format(selectedMonthDate, "MMMM yyyy", { locale: indonesiaLocale }),
     profile,
     categories: (categoriesResult.data ?? []) as Category[],
+    wallets,
     debts,
     summary: summarizeDebts(allDebts, selectedMonthDate),
   };

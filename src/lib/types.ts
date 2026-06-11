@@ -67,6 +67,9 @@ export type DebtRecord = {
   source_name: string;
   reason: string;
   direction: DebtDirection;
+  /** Dompet yang terpengaruh saat debt dicatat */
+  wallet_id: string | null;
+  wallet_label: string | null;
   category_label: string | null;
   is_paid: boolean;
   paid_at: string | null;

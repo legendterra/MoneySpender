@@ -75,8 +75,9 @@ export default async function DebtsPage({
       <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
         <DebtForm
           title="Catat hutang / piutang"
-          description="Pilih jenis (hutang atau piutang), isi nominal, nama kontak, dan alasannya."
+          description="Pilih jenis, dompet yang terpengaruh, nama kontak, asal platform, dan alasannya."
           categories={data.categories}
+          wallets={data.wallets}
         />
         <DebtsList
           title={`Catatan ${data.selectedMonthLabel}`}
