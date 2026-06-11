@@ -7,9 +7,10 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const requestedNext = requestUrl.searchParams.get("next") ?? "/dashboard";
-  const next = requestedNext.startsWith("/") && !requestedNext.startsWith("//")
-    ? requestedNext
-    : "/dashboard";
+  const next =
+    requestedNext.startsWith("/") && !requestedNext.startsWith("//")
+      ? requestedNext
+      : "/dashboard";
 
   if (code) {
     const supabase = await createServerSupabaseClient();
@@ -24,6 +25,18 @@ export async function GET(request: NextRequest) {
         await ensureUserSetup(supabase, user).catch(() => {
           // Setup can recover on a later request; OAuth redirect must still complete.
         });
+
+        // Check if user has set up wallets — if not, redirect to onboarding
+        const { data: existingWallet } = await supabase
+          .from("wallets")
+          .select("id")
+          .eq("user_id", user.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (!existingWallet) {
+          return NextResponse.redirect(new URL("/onboarding", requestUrl.origin));
+        }
       }
     }
   }

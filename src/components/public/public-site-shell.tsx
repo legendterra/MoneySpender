@@ -38,6 +38,13 @@ export function PublicSiteShell({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <LogoMark />
             <nav className="flex flex-wrap items-center gap-2">
+              <a
+                href="https://hub.moneyspender.net"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                aria-label="Kembali ke MoneySpender Hub"
+              >
+                ← Hub
+              </a>
               {publicLinks.map((item) => (
                 <Link
                   key={item.href}

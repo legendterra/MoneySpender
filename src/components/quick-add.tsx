@@ -7,7 +7,7 @@ import { HandCoins, Plus, TrendingDown, TrendingUp, X } from "lucide-react";
 const actions = [
   { href: "/expenses#form", label: "Pengeluaran", icon: TrendingDown },
   { href: "/income#form", label: "Pemasukan", icon: TrendingUp },
-  { href: "/debts#form", label: "Hutang", icon: HandCoins },
+  { href: "/debts#form", label: "Hutang / Piutang", icon: HandCoins },
 ];
 
 export function QuickAdd() {

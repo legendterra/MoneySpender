@@ -1,6 +1,10 @@
 export type TransactionType = "income" | "expense" | "debt";
 export type FinanceTransactionType = Exclude<TransactionType, "debt">;
 
+/** Payable = kamu hutang ke orang lain (liability, kurangi net worth).
+ *  Receivable = orang lain hutang ke kamu (asset, tambah net worth). */
+export type DebtDirection = "payable" | "receivable";
+
 export type Category = {
   id: string;
   name: string;
@@ -15,7 +19,8 @@ export type Wallet = {
   opening_balance: number;
   color: string | null;
   is_archived: boolean;
-  balance?: number;
+  /** Dihitung: opening_balance + income - expense + transfers_in - transfers_out */
+  balance: number;
 };
 
 export type WalletTransfer = {
@@ -56,9 +61,12 @@ export type DebtRecord = {
   paid_amount: number;
   remaining_amount: number;
   debt_date: string;
+  /** Untuk payable: siapa yang kamu hutangi. Untuk receivable: siapa yang hutang ke kamu. */
+  contact_name: string;
+  /** Asal transaksi / keterangan sumber */
   source_name: string;
-  lender_name: string;
   reason: string;
+  direction: DebtDirection;
   category_label: string | null;
   is_paid: boolean;
   paid_at: string | null;
@@ -66,9 +74,18 @@ export type DebtRecord = {
 };
 
 export type DebtSummary = {
-  totalOutstanding: number;
-  currentMonthOutstanding: number;
+  /** Total hutang yang belum lunas (payable) */
+  totalPayable: number;
+  /** Total piutang yang belum lunas (receivable) */
+  totalReceivable: number;
+  /** Net liability = payable - receivable */
+  netLiability: number;
+  /** Jumlah item belum lunas */
   unpaidCount: number;
+  /** @deprecated gunakan totalPayable */
+  totalOutstanding: number;
+  /** @deprecated */
+  currentMonthOutstanding: number;
 };
 
 export type HistoryRecord = {

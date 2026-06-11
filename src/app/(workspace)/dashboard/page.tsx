@@ -110,14 +110,31 @@ export default async function DashboardPage({
                 </p>
               </div>
             </div>
-            <p className="mt-4 text-sm leading-7 text-muted">
-              Target nabung aktif: {formatCurrency(data.goalProgress.currentMonthGoal, currency)} per bulan
-              dan {formatCurrency(data.goalProgress.currentYearGoal, currency)} per tahun.
-            </p>
-            <p className="mt-2 text-sm leading-7 text-muted">
-              Hutang yang belum lunas: {formatCurrency(data.debtSummary.totalOutstanding, currency)} dari{" "}
-              {data.debtSummary.unpaidCount} catatan.
-            </p>
+            <div className="mt-4 grid gap-2 text-sm leading-7 text-muted">
+              <p>
+                Dompet aktif: <span className="font-semibold text-foreground">{data.wallets.length} tempat</span>
+                {data.wallets.length > 0 && (
+                  <> — likuid{" "}
+                    <span className="font-semibold text-foreground">
+                      {formatCurrency(data.wallets.reduce((s, w) => s + w.balance, 0), currency)}
+                    </span>
+                  </>
+                )}
+              </p>
+              <p>
+                Hutang aktif:{" "}
+                <span className="font-semibold text-danger">
+                  {formatCurrency(data.debtSummary.totalPayable, currency)}
+                </span>
+                {data.debtSummary.totalReceivable > 0 && (
+                  <> — piutang{" "}
+                    <span className="font-semibold text-accent">
+                      {formatCurrency(data.debtSummary.totalReceivable, currency)}
+                    </span>
+                  </>
+                )}
+              </p>
+            </div>
           </div>
         </div>
       </Panel>

@@ -63,16 +63,16 @@ export function SummaryStrip({
     },
     {
       key: "totalDebt",
-      label: "Total Hutang",
-      value: formatCompactCurrency(debtSummary.totalOutstanding, currencyCode),
-      note: "Akumulasi seluruh hutang yang belum lunas",
+      label: "Total Hutang (payable)",
+      value: formatCompactCurrency(debtSummary.totalPayable, currencyCode),
+      note: "Akumulasi hutang yang belum lunas — mengurangi Net Worth",
     },
     {
       key: "currentMonthDebt",
-      label: "Sisa Hutang bulan ini",
-      value: formatCompactCurrency(debtSummary.currentMonthOutstanding, currencyCode),
-      note: "Prioritaskan pelunasan bulan ini agar arus kas tetap sehat. Tambah hutang baru hanya saat benar-benar perlu.",
-      noteClassName: "text-danger",
+      label: "Piutang aktif",
+      value: formatCompactCurrency(debtSummary.totalReceivable, currencyCode),
+      note: "Uang orang lain yang akan masuk ke kamu — menambah Net Worth",
+      noteClassName: "text-accent",
     },
   ];
 

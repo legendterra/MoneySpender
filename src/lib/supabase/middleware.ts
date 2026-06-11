@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function updateSession(request: NextRequest) {
-  const publicPaths = new Set(["/", "/privacy", "/terms", "/offline", "/manifest.webmanifest"]);
+  const publicPaths = new Set(["/", "/privacy", "/terms", "/offline", "/manifest.webmanifest", "/onboarding"]);
 
   if (publicPaths.has(request.nextUrl.pathname)) {
     return NextResponse.next({ request });

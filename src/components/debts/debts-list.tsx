@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3 } from "lucide-react";
+import { AlertTriangle, ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock3 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -13,7 +13,6 @@ import type { DebtRecord } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type ModalStep = "prompt" | "confirm";
-type EditingDebt = DebtRecord | null;
 
 export function DebtsList({
   title,
@@ -30,20 +29,14 @@ export function DebtsList({
   const [countdown, setCountdown] = useState(10);
   const [isSaving, setIsSaving] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
-  const [editingDebt, setEditingDebt] = useState<EditingDebt>(null);
+  const [editingDebt, setEditingDebt] = useState<DebtRecord | null>(null);
 
   useEffect(() => {
-    if (!selectedDebt || step !== "confirm" || countdown <= 0) {
-      return;
-    }
-
+    if (!selectedDebt || step !== "confirm" || countdown <= 0) return;
     const timer = window.setInterval(() => {
-      setCountdown((current) => (current <= 1 ? 0 : current - 1));
+      setCountdown((c) => (c <= 1 ? 0 : c - 1));
     }, 1000);
-
-    return () => {
-      window.clearInterval(timer);
-    };
+    return () => window.clearInterval(timer);
   }, [selectedDebt, step, countdown]);
 
   function openModal(debt: DebtRecord) {
@@ -61,22 +54,13 @@ export function DebtsList({
   }
 
   async function markAsPaid() {
-    if (!selectedDebt) {
-      return;
-    }
-
+    if (!selectedDebt) return;
     setIsSaving(true);
     const supabase = createBrowserSupabaseClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("debts")
-      .update({
-        paid_amount: selectedDebt.amount,
-        is_paid: true,
-        paid_at: new Date().toISOString(),
-      })
+      .update({ paid_amount: selectedDebt.amount, is_paid: true, paid_at: new Date().toISOString() })
       .eq("id", selectedDebt.id);
 
     if (!error && user) {
@@ -85,49 +69,31 @@ export function DebtsList({
         debt_id: selectedDebt.id,
         amount: selectedDebt.remaining_amount,
         paid_date: new Date().toISOString().slice(0, 10),
-        note: "Pelunasan",
+        note: "Pelunasan penuh",
       });
     }
 
     setIsSaving(false);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success("Hutang ditandai sudah dibayar.");
+    if (error) { toast.error(error.message); return; }
+    toast.success(selectedDebt.direction === "payable" ? "Hutang ditandai lunas." : "Piutang ditandai lunas/diterima.");
     closeModal();
     router.refresh();
   }
 
   async function savePartialPayment() {
-    if (!selectedDebt) {
-      return;
-    }
-
+    if (!selectedDebt) return;
     const amount = Number(paymentAmount);
+    if (!Number.isFinite(amount) || amount <= 0) { toast.error("Isi nominal yang valid."); return; }
 
-    if (!Number.isFinite(amount) || amount <= 0) {
-      toast.error("Isi nominal bayar yang valid.");
-      return;
-    }
-
-    const nextPaidAmount = Math.min(selectedDebt.amount, selectedDebt.paid_amount + amount);
-    const isPaid = nextPaidAmount >= selectedDebt.amount;
+    const nextPaid = Math.min(selectedDebt.amount, selectedDebt.paid_amount + amount);
+    const isPaid = nextPaid >= selectedDebt.amount;
 
     setIsSaving(true);
     const supabase = createBrowserSupabaseClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase
       .from("debts")
-      .update({
-        paid_amount: nextPaidAmount,
-        is_paid: isPaid,
-        paid_at: isPaid ? new Date().toISOString() : null,
-      })
+      .update({ paid_amount: nextPaid, is_paid: isPaid, paid_at: isPaid ? new Date().toISOString() : null })
       .eq("id", selectedDebt.id);
 
     if (!error && user) {
@@ -141,13 +107,8 @@ export function DebtsList({
     }
 
     setIsSaving(false);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success(isPaid ? "Hutang sudah lunas." : "Pembayaran sebagian tersimpan.");
+    if (error) { toast.error(error.message); return; }
+    toast.success(isPaid ? "Lunas." : "Pembayaran sebagian tersimpan.");
     closeModal();
     router.refresh();
   }
@@ -167,7 +128,8 @@ export function DebtsList({
         paid_amount: Math.min(amount, Math.max(0, paidAmount)),
         debt_date: String(formData.get("debtDate") ?? ""),
         source_name: String(formData.get("sourceName") ?? ""),
-        lender_name: String(formData.get("lenderName") ?? ""),
+        contact_name: String(formData.get("contactName") ?? ""),
+        lender_name: String(formData.get("contactName") ?? ""), // backward compat
         reason: String(formData.get("reason") ?? ""),
         is_paid: isPaid,
         paid_at: isPaid ? new Date().toISOString() : null,
@@ -175,13 +137,8 @@ export function DebtsList({
       .eq("id", id);
 
     setIsSaving(false);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success("Hutang berhasil diedit.");
+    if (error) { toast.error(error.message); return; }
+    toast.success("Catatan berhasil diedit.");
     setEditingDebt(null);
     router.refresh();
   }
@@ -191,101 +148,131 @@ export function DebtsList({
       <Panel className="space-y-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-muted">Daftar hutang</p>
+            <p className="text-sm font-semibold text-muted">Daftar catatan</p>
             <h2 className="text-2xl font-bold text-foreground">{title}</h2>
           </div>
-          <p className="text-xs text-muted">Tidak ada tombol hapus. Kalau sudah selesai, tandai lunas.</p>
+          <p className="text-xs text-muted">Tandai lunas untuk menutup catatan.</p>
         </div>
         <div className="space-y-3">
           {records.length ? (
-            records.map((record) => (
-              <div
-                key={record.id}
-                className="grid gap-3 rounded-lg border border-border bg-background-strong p-4"
-              >
-                {editingDebt?.id === record.id ? (
-                  <form action={updateDebt} className="grid gap-3">
-                    <input type="hidden" name="id" value={record.id} />
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <Input name="amount" type="number" min="1" step="1000" defaultValue={record.amount} />
-                      <Input name="paidAmount" type="number" min="0" step="1000" defaultValue={record.paid_amount} />
-                      <Input name="debtDate" type="date" defaultValue={record.debt_date} />
-                      <Input name="sourceName" defaultValue={record.source_name} />
-                      <Input name="lenderName" defaultValue={record.lender_name} />
-                      <Input name="reason" defaultValue={record.reason} />
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" type="submit" isLoading={isSaving}>Simpan edit</Button>
-                      <Button size="sm" type="button" variant="secondary" onClick={() => setEditingDebt(null)}>Batal</Button>
-                    </div>
-                  </form>
-                ) : (
-                  <>
-                <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto] md:items-center">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted">Nominal</p>
-                    <p className="text-lg font-bold text-foreground">
-                      {formatCurrency(record.amount, currencyCode)}
-                    </p>
-                    {record.paid_amount > 0 ? (
-                      <p className="text-xs text-muted">
-                        Sudah dibayar {formatCurrency(record.paid_amount, currencyCode)}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted">Siapa</p>
-                    <p className="text-sm font-semibold text-foreground">{record.lender_name}</p>
-                    <p className="text-xs text-muted">Dari {record.source_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted">Tanggal</p>
-                    <p className="text-sm font-semibold text-foreground">{formatDate(record.debt_date)}</p>
-                  </div>
-                  <div className="flex items-center justify-start md:justify-end">
-                    {record.is_paid ? (
-                      <span className="rounded-full border border-success/30 bg-success/10 px-3 py-2 text-xs font-semibold text-success">
-                        Sudah dibayar
-                      </span>
-                    ) : (
-                      <Button variant="danger" size="sm" onClick={() => openModal(record)}>
-                        Bayar
-                      </Button>
-                    )}
-                  </div>
+            records.map((record) => {
+              const isPayable = record.direction === "payable";
+              return (
+                <div
+                  key={record.id}
+                  className="grid gap-3 rounded-lg border border-border bg-background-strong p-4"
+                >
+                  {editingDebt?.id === record.id ? (
+                    <form action={updateDebt} className="grid gap-3">
+                      <input type="hidden" name="id" value={record.id} />
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <Input name="amount" type="number" min="1" step="1000" defaultValue={record.amount} />
+                        <Input name="paidAmount" type="number" min="0" step="1000" defaultValue={record.paid_amount} />
+                        <Input name="debtDate" type="date" defaultValue={record.debt_date} />
+                        <Input name="sourceName" placeholder="Asal / platform" defaultValue={record.source_name} />
+                        <Input name="contactName" placeholder="Nama kontak" defaultValue={record.contact_name} />
+                        <Input name="reason" placeholder="Alasan" defaultValue={record.reason} />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" type="submit" isLoading={isSaving}>Simpan edit</Button>
+                        <Button size="sm" type="button" variant="secondary" onClick={() => setEditingDebt(null)}>Batal</Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      {/* Direction badge */}
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+                            isPayable
+                              ? "bg-danger/10 text-danger"
+                              : "bg-accent-soft text-accent"
+                          }`}
+                        >
+                          {isPayable
+                            ? <ArrowUpRight className="size-3" />
+                            : <ArrowDownLeft className="size-3" />}
+                          {isPayable ? "Hutang" : "Piutang"}
+                        </span>
+                        {record.is_paid && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
+                            <CheckCircle2 className="size-3" />
+                            Lunas
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto] md:items-center">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.22em] text-muted">Nominal</p>
+                          <p className="text-lg font-bold text-foreground">
+                            {formatCurrency(record.amount, currencyCode)}
+                          </p>
+                          {record.paid_amount > 0 && (
+                            <p className="text-xs text-muted">
+                              Sudah: {formatCurrency(record.paid_amount, currencyCode)}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.22em] text-muted">
+                            {isPayable ? "Kamu hutang ke" : "Yang berhutang ke kamu"}
+                          </p>
+                          <p className="text-sm font-semibold text-foreground">{record.contact_name}</p>
+                          {record.source_name && (
+                            <p className="text-xs text-muted">via {record.source_name}</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.22em] text-muted">Tanggal</p>
+                          <p className="text-sm font-semibold text-foreground">{formatDate(record.debt_date)}</p>
+                        </div>
+                        {!record.is_paid && (
+                          <Button
+                            variant={isPayable ? "danger" : "primary"}
+                            size="sm"
+                            onClick={() => openModal(record)}
+                          >
+                            {isPayable ? "Bayar" : "Terima"}
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="secondary" size="sm" onClick={() => setEditingDebt(record)}>
+                          Edit
+                        </Button>
+                      </div>
+
+                      {record.payments?.length ? (
+                        <div className="rounded-md border border-border bg-background px-3 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Riwayat cicilan</p>
+                          <div className="mt-2 grid gap-1">
+                            {record.payments.map((p) => (
+                              <p key={p.id} className="text-xs text-muted">
+                                {formatDate(p.paid_date)} — {formatCurrency(p.amount, currencyCode)}
+                                {p.note ? ` | ${p.note}` : ""}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <p className="text-sm leading-7 text-muted">{record.reason}</p>
+                    </>
+                  )}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => setEditingDebt(record)}>
-                    Edit hutang
-                  </Button>
-                </div>
-                {record.payments?.length ? (
-                  <div className="rounded-md border border-border bg-background px-3 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Riwayat cicilan</p>
-                    <div className="mt-2 grid gap-2">
-                      {record.payments.map((payment) => (
-                        <p key={payment.id} className="text-xs text-muted">
-                          {formatDate(payment.paid_date)} | {formatCurrency(payment.amount, currencyCode)}
-                          {payment.note ? ` | ${payment.note}` : ""}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                <p className="text-sm leading-7 text-muted">{record.reason}</p>
-                  </>
-                )}
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="rounded-lg border border-dashed border-border px-4 py-8 text-sm leading-7 text-muted">
-              Belum ada hutang bulan ini.
+              Belum ada catatan bulan ini.
             </div>
           )}
         </div>
       </Panel>
 
-      {selectedDebt ? (
+      {selectedDebt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
           <div className="glass-panel w-full max-w-lg rounded-lg p-6">
             {step === "prompt" ? (
@@ -294,16 +281,18 @@ export function DebtsList({
                   <AlertTriangle className="size-5 text-danger" />
                   <div>
                     <p className="text-sm font-semibold text-danger">Cek dulu</p>
-                    <h3 className="text-2xl font-bold text-foreground">Hutang ini sudah dibayar?</h3>
+                    <h3 className="text-2xl font-bold text-foreground">
+                      {selectedDebt.direction === "payable" ? "Hutang ini sudah dibayar?" : "Piutang ini sudah diterima?"}
+                    </h3>
                   </div>
                 </div>
                 <p className="text-sm leading-7 text-muted">
                   Sisa {formatCurrency(selectedDebt.remaining_amount, currencyCode)} dari total{" "}
-                  {formatCurrency(selectedDebt.amount, currencyCode)} untuk {selectedDebt.lender_name}.
+                  {formatCurrency(selectedDebt.amount, currencyCode)} untuk {selectedDebt.contact_name}.
                 </p>
                 <div className="grid gap-2 rounded-lg border border-border bg-background-strong p-4">
                   <label className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
-                    Bayar sebagian
+                    {selectedDebt.direction === "payable" ? "Bayar sebagian" : "Terima sebagian"}
                   </label>
                   <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
                     <Input
@@ -312,27 +301,18 @@ export function DebtsList({
                       step="1000"
                       placeholder="Contoh: 50000"
                       value={paymentAmount}
-                      onChange={(event) => setPaymentAmount(event.target.value)}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
                     />
-                    <Button
-                      variant="secondary"
-                      onClick={() => void savePartialPayment()}
-                      isLoading={isSaving}
-                    >
-                      Simpan bayar
+                    <Button variant="secondary" onClick={() => void savePartialPayment()} isLoading={isSaving}>
+                      Simpan
                     </Button>
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Button variant="secondary" onClick={closeModal}>
-                    Belum
-                  </Button>
+                  <Button variant="secondary" onClick={closeModal}>Belum</Button>
                   <Button
-                    variant="danger"
-                    onClick={() => {
-                      setStep("confirm");
-                      setCountdown(10);
-                    }}
+                    variant={selectedDebt.direction === "payable" ? "danger" : "primary"}
+                    onClick={() => { setStep("confirm"); setCountdown(10); }}
                   >
                     Ya, lanjut
                   </Button>
@@ -343,35 +323,33 @@ export function DebtsList({
                 <div className="flex items-center gap-3">
                   <Clock3 className="size-5 text-danger" />
                   <div>
-                    <p className="text-sm font-semibold text-danger">Satu kali lagi</p>
+                    <p className="text-sm font-semibold text-danger">Konfirmasi akhir</p>
                     <h3 className="text-2xl font-bold text-foreground">Yakin sudah lunas?</h3>
                   </div>
                 </div>
                 <p className="text-sm leading-7 text-muted">
-                  Tombol final baru aktif setelah hitungan selesai, biar tidak kepencet.
+                  Tombol aktif setelah countdown selesai, supaya tidak kepencet tidak sengaja.
                 </p>
                 <div className="rounded-lg border border-danger/20 bg-danger/8 px-4 py-4 text-sm text-danger">
                   Countdown: <span className="font-bold">{countdown}</span> detik
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Button variant="secondary" onClick={closeModal}>
-                    Batal
-                  </Button>
+                  <Button variant="secondary" onClick={closeModal}>Batal</Button>
                   <Button
-                    variant="danger"
+                    variant={selectedDebt.direction === "payable" ? "danger" : "primary"}
                     onClick={() => void markAsPaid()}
                     disabled={countdown > 0}
                     isLoading={isSaving}
                   >
                     <CheckCircle2 className="size-4" />
-                    Ya, tandai lunas
+                    Tandai lunas
                   </Button>
                 </div>
               </div>
             )}
           </div>
         </div>
-      ) : null}
+      )}
     </>
   );
 }

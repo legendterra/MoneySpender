@@ -25,8 +25,9 @@ export default async function ExpensesPage({
       <div className="grid gap-4">
         <TransactionForm
           title="Tambah uang keluar"
-          description="Catat jumlah, kategori, tanggal, dan toko/sumbernya. Nanti gampang dicek lagi kalau ada yang terasa boros."
+          description="Catat jumlah, kategori, dompet sumber, tanggal, dan toko/sumbernya."
           categories={data.categories}
+          wallets={data.wallets}
           type="expense"
         />
         <TransactionsList

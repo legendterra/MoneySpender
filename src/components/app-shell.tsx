@@ -80,6 +80,25 @@ export function AppShell({
             })}
           </nav>
           <div className="flex items-center gap-2">
+            <a
+              href="https://hub.moneyspender.net"
+              className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border bg-background-elevated px-3 text-sm font-semibold text-muted transition-colors hover:bg-background-strong hover:text-foreground"
+              aria-label="Kembali ke MoneySpender Hub"
+            >
+              <svg
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-3.5"
+                aria-hidden="true"
+              >
+                <path d="M10 3L5 8l5 5" />
+              </svg>
+              Hub
+            </a>
             <ThemeToggle />
             <div className="hidden md:block">
               <LogoutButton variant="secondary" />

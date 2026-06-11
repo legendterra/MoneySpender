@@ -25,8 +25,9 @@ export default async function IncomePage({
       <div className="grid gap-4">
         <TransactionForm
           title="Tambah uang masuk"
-          description="Isi jumlah, kategori, tanggal, dan catatan pendek. Cukup yang penting, tidak perlu panjang."
+          description="Isi jumlah, kategori, dompet tujuan, tanggal, dan catatan pendek."
           categories={data.categories}
+          wallets={data.wallets}
           type="income"
         />
         <TransactionsList
