@@ -81,7 +81,7 @@ export function AppShell({
           </nav>
           <div className="flex items-center gap-2">
             <a
-              href="https://hub.moneyspender.net"
+              href="https://moneyspender.net"
               className="inline-flex h-10 items-center gap-1.5 rounded-md border border-border bg-background-elevated px-3 text-sm font-semibold text-muted transition-colors hover:bg-background-strong hover:text-foreground"
               aria-label="Kembali ke MoneySpender Hub"
             >

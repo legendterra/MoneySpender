@@ -39,7 +39,7 @@ export function PublicSiteShell({
             <LogoMark />
             <nav className="flex flex-wrap items-center gap-2">
               <a
-                href="https://hub.moneyspender.net"
+                href="https://moneyspender.net"
                 className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
                 aria-label="Kembali ke MoneySpender Hub"
               >
