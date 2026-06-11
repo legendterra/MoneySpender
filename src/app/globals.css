@@ -158,6 +158,30 @@ textarea {
   padding-bottom: calc(6.25rem + env(safe-area-inset-bottom));
 }
 
+/* ── Mobile touch improvements ──────────────────────────────── */
+@media (max-width: 768px) {
+  /* Larger tap targets on mobile */
+  button, [role="button"], a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Better input sizing on mobile — prevent zoom on focus (iOS) */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="date"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Smoother scroll on mobile */
+  .scrollbar-thin {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 .report-rule {
   border-top: 1px solid var(--border);
 }
