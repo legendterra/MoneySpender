@@ -1,14 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable SWC minification for faster builds and smaller bundles
-  swcMinify: true,
-
   // Compress responses
   compress: true,
-
-  // Optimize production builds
-  productionBrowserSourceMaps: false,
 
   // Image optimization
   images: {

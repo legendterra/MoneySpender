@@ -70,7 +70,7 @@ export async function GET() {
     const emptyRow = templateSheet.addRow(["", "", "", "", "", "", "", "", "", ""]);
     emptyRow.height = 20;
     emptyRow.eachCell(cell => {
-      cell.border = { bottom: { style: "thin", color: { argb: "E5E7EB" }, style: "dashed" } };
+      cell.border = { bottom: { style: "dashed", color: { argb: "E5E7EB" } } };
     });
   }
 
