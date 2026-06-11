@@ -26,23 +26,23 @@ export async function ensureUserSetup(
         : user.email?.split("@")[0] ?? "Pengguna";
 
   const defaultCategories = [
-    ...DEFAULT_INCOME_CATEGORIES.map((name) => ({
+    ...DEFAULT_INCOME_CATEGORIES.map((cat) => ({
       user_id: user.id,
-      name,
+      name: cat.name,
       type: "income" as const,
-      color: "#82A5FF",
+      color: cat.color,
     })),
-    ...DEFAULT_EXPENSE_CATEGORIES.map((name) => ({
+    ...DEFAULT_EXPENSE_CATEGORIES.map((cat) => ({
       user_id: user.id,
-      name,
+      name: cat.name,
       type: "expense" as const,
-      color: "#4D84FF",
+      color: cat.color,
     })),
-    ...DEFAULT_DEBT_CATEGORIES.map((name) => ({
+    ...DEFAULT_DEBT_CATEGORIES.map((cat) => ({
       user_id: user.id,
-      name,
+      name: cat.name,
       type: "debt" as const,
-      color: "#FF8A8A",
+      color: cat.color,
     })),
   ];
 
