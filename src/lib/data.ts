@@ -31,7 +31,7 @@ import type {
   Wallet,
   WalletTransfer,
 } from "@/lib/types";
-import { calculateRate, toMonthInput } from "@/lib/utils";
+import { calculateRate, formatCompactCurrency, toMonthInput } from "@/lib/utils";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -251,6 +251,26 @@ function buildDashboardInsights(
   const prev = summarizeTransactions(previousMonthTransactions);
   const insights: DashboardInsight[] = [];
   const topExpense = buildCategoryBreakdown(monthTransactions)[0];
+  const hasWallets = wallets.filter((w) => !w.is_archived).length > 0;
+  const hasTransactions = monthTransactions.length > 0;
+
+  // New user guidance - no wallets yet
+  if (!hasWallets) {
+    insights.push({
+      title: "Mulai dengan dompet",
+      body: "Tambahkan dompet pertamamu di Settings. Tanpa dompet, saldo tidak bisa dilacak dengan benar.",
+      tone: "warning",
+    });
+  }
+
+  // New user guidance - no transactions yet
+  if (hasWallets && !hasTransactions) {
+    insights.push({
+      title: "Catat transaksi pertamamu",
+      body: "Pastikan dompet sudah ada, lalu catat pemasukan atau pengeluaran pertamamu hari ini.",
+      tone: "neutral",
+    });
+  }
 
   // Cashflow comparison
   if (cur.expense > prev.expense && prev.expense > 0) {
@@ -259,6 +279,16 @@ function buildDashboardInsights(
       title: "Pengeluaran naik",
       body: `Bulan ini pengeluaran naik ${diff}% dibanding bulan lalu. Cek kategori terbesar sebelum kebablasan.`,
       tone: diff > 30 ? "warning" : "neutral",
+    });
+  }
+
+  // Positive cashflow
+  if (cur.balance > 0 && prev.balance > 0 && cur.balance > prev.balance) {
+    const improvement = Math.round(((cur.balance - prev.balance) / prev.balance) * 100);
+    insights.push({
+      title: "Tabungan membaik",
+      body: `Saldo bulan ini naik ${improvement}% dibanding bulan lalu. Pertahankan!`,
+      tone: "good",
     });
   }
 
@@ -280,12 +310,31 @@ function buildDashboardInsights(
     });
   }
 
+  // Budget warning (80%+)
+  const warningBudget = budgetAlerts.find((a) => a.status === "warning");
+  if (warningBudget && !overBudget) {
+    insights.push({
+      title: "Budget hampir penuh",
+      body: `${warningBudget.categoryName} sudah ${warningBudget.ratio}% dari budget. Hati-hati剩下的 hari.`,
+      tone: "warning",
+    });
+  }
+
   // Debt warning
   if (debtSummary.totalPayable > 0) {
     insights.push({
       title: "Hutang aktif",
       body: `Ada ${debtSummary.unpaidCount} hutang belum lunas. Cicil sedikit-sedikit lebih baik daripada menunggu sempurna.`,
       tone: "warning",
+    });
+  }
+
+  // Receivable positive
+  if (debtSummary.totalReceivable > 0) {
+    insights.push({
+      title: "Piutang masuk",
+      body: `Ada ${formatCompactCurrency(debtSummary.totalReceivable)} yang akan masuk. Jangan lupa tagih!`,
+      tone: "good",
     });
   }
 

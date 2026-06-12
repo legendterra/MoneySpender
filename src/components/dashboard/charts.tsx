@@ -67,6 +67,11 @@ export function DashboardCharts({
   expenseBreakdown: CategorySlice[];
   goals: GoalProgress;
 }) {
+  // Check if there's any data in the trend chart
+  const hasTrendData = trendData.some((d) => d.income > 0 || d.expense > 0);
+  const hasExpenseData = expenseBreakdown.length > 0;
+  const hasGoals = goals.currentMonthGoal > 0 || goals.currentYearGoal > 0;
+
   return (
     <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
       <Panel className="space-y-5">
@@ -78,50 +83,59 @@ export function DashboardCharts({
           <p className="text-xs text-muted">6 bulan terakhir</p>
         </div>
         <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={trendData}>
-              <defs>
-                <linearGradient id="incomeGradient" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#4D84FF" stopOpacity={0.55} />
-                  <stop offset="100%" stopColor="#4D84FF" stopOpacity={0.04} />
-                </linearGradient>
-                <linearGradient id="expenseGradient" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#E55A7D" stopOpacity={0.42} />
-                  <stop offset="100%" stopColor="#E55A7D" stopOpacity={0.04} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke="rgba(99,128,193,0.12)" vertical={false} />
-              <XAxis dataKey="label" axisLine={false} tickLine={false} />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(value) => formatCompactCurrency(Number(value), currencyCode)}
-              />
-              <Tooltip
-                formatter={(value: unknown) => formatCurrency(Number(value ?? 0), currencyCode)}
-                contentStyle={{
-                  borderRadius: 18,
-                  border: "1px solid rgba(118, 151, 224, 0.18)",
-                  background: "rgba(10, 16, 36, 0.92)",
-                  color: "#F4F7FF",
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="income"
-                stroke="#4D84FF"
-                fill="url(#incomeGradient)"
-                strokeWidth={3}
-              />
-              <Area
-                type="monotone"
-                dataKey="expense"
-                stroke="#E55A7D"
-                fill="url(#expenseGradient)"
-                strokeWidth={3}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+          {hasTrendData ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trendData}>
+                <defs>
+                  <linearGradient id="incomeGradient" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#4D84FF" stopOpacity={0.55} />
+                    <stop offset="100%" stopColor="#4D84FF" stopOpacity={0.04} />
+                  </linearGradient>
+                  <linearGradient id="expenseGradient" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stopColor="#E55A7D" stopOpacity={0.42} />
+                    <stop offset="100%" stopColor="#E55A7D" stopOpacity={0.04} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="rgba(99,128,193,0.12)" vertical={false} />
+                <XAxis dataKey="label" axisLine={false} tickLine={false} />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(value) => formatCompactCurrency(Number(value), currencyCode)}
+                />
+                <Tooltip
+                  formatter={(value: unknown) => formatCurrency(Number(value ?? 0), currencyCode)}
+                  contentStyle={{
+                    borderRadius: 18,
+                    border: "1px solid rgba(118, 151, 224, 0.18)",
+                    background: "rgba(10, 16, 36, 0.92)",
+                    color: "#F4F7FF",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="income"
+                  stroke="#4D84FF"
+                  fill="url(#incomeGradient)"
+                  strokeWidth={3}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expense"
+                  stroke="#E55A7D"
+                  fill="url(#expenseGradient)"
+                  strokeWidth={3}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed border-border">
+              <p className="text-sm font-semibold text-foreground">Grafik Cashflow</p>
+              <p className="mt-2 text-center text-xs text-muted">
+                Catat transaksi untuk melihat pola<br />uang masuk dan keluar setiap bulan
+              </p>
+            </div>
+          )}
         </div>
       </Panel>
 
@@ -131,18 +145,28 @@ export function DashboardCharts({
             <p className="text-sm font-semibold text-muted">Target nabung</p>
             <h2 className="text-2xl font-bold text-foreground">Sudah sejauh mana?</h2>
           </div>
-          <GoalBar
-            label="Target bulan ini"
-            current={goals.currentMonthSaved}
-            target={goals.currentMonthGoal}
-            currencyCode={currencyCode}
-          />
-          <GoalBar
-            label="Target tahun ini"
-            current={goals.currentYearSaved}
-            target={goals.currentYearGoal}
-            currencyCode={currencyCode}
-          />
+          {hasGoals ? (
+            <>
+              <GoalBar
+                label="Target bulan ini"
+                current={goals.currentMonthSaved}
+                target={goals.currentMonthGoal}
+                currencyCode={currencyCode}
+              />
+              <GoalBar
+                label="Target tahun ini"
+                current={goals.currentYearSaved}
+                target={goals.currentYearGoal}
+                currencyCode={currencyCode}
+              />
+            </>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border p-4 text-center">
+              <p className="text-sm text-muted">
+                Atur target tabungan di Settings<br />untuk melihat progress
+              </p>
+            </div>
+          )}
         </Panel>
 
         <Panel className="space-y-5">
@@ -155,33 +179,41 @@ export function DashboardCharts({
           </div>
           <div className="grid items-center gap-4 md:grid-cols-[1fr_0.9fr]">
             <div className="h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={expenseBreakdown}
-                    dataKey="total"
-                    nameKey="name"
-                    innerRadius={54}
-                    outerRadius={84}
-                    paddingAngle={4}
-                  >
-                    {expenseBreakdown.map((entry, index) => (
-                      <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: unknown) =>
-                      formatCurrency(Number(value ?? 0), currencyCode)
-                    }
-                    contentStyle={{
-                      borderRadius: 18,
-                      border: "1px solid rgba(118, 151, 224, 0.18)",
-                      background: "rgba(10, 16, 36, 0.92)",
-                      color: "#F4F7FF",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {hasExpenseData ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={expenseBreakdown}
+                      dataKey="total"
+                      nameKey="name"
+                      innerRadius={54}
+                      outerRadius={84}
+                      paddingAngle={4}
+                    >
+                      {expenseBreakdown.map((entry, index) => (
+                        <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: unknown) =>
+                        formatCurrency(Number(value ?? 0), currencyCode)
+                      }
+                      contentStyle={{
+                        borderRadius: 18,
+                        border: "1px solid rgba(118, 151, 224, 0.18)",
+                        background: "rgba(10, 16, 36, 0.92)",
+                        color: "#F4F7FF",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed border-border">
+                  <p className="text-xs text-muted">
+                    Catat pengeluaran untuk<br />melihat distribusi per kategori
+                  </p>
+                </div>
+              )}
             </div>
             <div className="space-y-3">
               {expenseBreakdown.length ? (
@@ -204,7 +236,7 @@ export function DashboardCharts({
                 ))
               ) : (
                 <p className="text-sm leading-7 text-muted">
-                  Belum ada pengeluaran bulan ini. Grafiknya masih kosong dulu.
+                  Belum ada pengeluaran bulan ini.
                 </p>
               )}
             </div>
