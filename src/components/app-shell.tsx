@@ -10,6 +10,7 @@ import {
   Landmark,
   ScrollText,
   Settings2,
+  Target,
 } from "lucide-react";
 
 import { LogoMark } from "@/components/logo-mark";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 
 const iconsByHref = {
   "/dashboard": LayoutGrid,
+  "/goals": Target,
   "/net-worth": Landmark,
   "/all-transactions": ScrollText,
   "/income": ArrowDownCircle,

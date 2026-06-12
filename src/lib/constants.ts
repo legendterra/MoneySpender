@@ -9,6 +9,7 @@ export const MONTHS_TO_SHOW = 6;
 
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/goals", label: "Target" },
   { href: "/net-worth", label: "Net Worth" },
   { href: "/all-transactions", label: "Riwayat" },
   { href: "/income", label: "Pemasukan" },
