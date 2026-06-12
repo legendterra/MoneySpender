@@ -433,6 +433,7 @@ export async function getDashboardData(month?: string) {
     transfersResult,
     categoriesResult,
     budgetsResult,
+    allTimeTxResult,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -484,6 +485,10 @@ export async function getDashboardData(month?: string) {
       .select("id,category_id,month,amount")
       .eq("user_id", user.id)
       .eq("month", monthValue),
+    supabase
+      .from("transactions")
+      .select("id,amount,type,wallet_id,transaction_date")
+      .eq("user_id", user.id),
   ]);
 
   const profile = normalizeProfile(
@@ -498,8 +503,7 @@ export async function getDashboardData(month?: string) {
     id: string; name: string; kind: string; opening_balance: number;
     color: string | null; is_archived: boolean;
   }>;
-  // All transactions (not just current period) needed for wallet balance
-  const allTxForWallets = allPeriodTx; // We already have period; for real-time balances use all-time
+  const allTimeTx = ((allTimeTxResult.data ?? []) as unknown as TransactionRecord[]);
   const allTransfersRaw = (transfersResult.data ?? []) as Array<{
     id: string; from_wallet_id: string; to_wallet_id: string;
     amount: number; transfer_date: string; note: string | null;
@@ -512,14 +516,6 @@ export async function getDashboardData(month?: string) {
     transfer_date: t.transfer_date,
     note: t.note,
   }));
-
-  // For wallet balance we need ALL transactions, but we only fetched period+year
-  // Fetch all-time transactions separately for wallet balance calculation
-  const allTimeTxResult = await supabase
-    .from("transactions")
-    .select("id,amount,type,wallet_id,transaction_date")
-    .eq("user_id", user.id);
-  const allTimeTx = ((allTimeTxResult.data ?? []) as unknown as TransactionRecord[]);
 
   const wallets = computeWalletBalances(rawWallets, allTimeTx, allTransfers);
 
@@ -794,7 +790,7 @@ export async function getSettingsData() {
   const { supabase, user } = await getAuthedContext();
   const monthValue = toMonthInput();
 
-  const [profileResult, categoriesResult, reminderResult, budgetsResult, walletsResult, transfersResult, auditResult] =
+  const [profileResult, categoriesResult, reminderResult, budgetsResult, walletsResult, transfersResult, auditResult, allTxResult] =
     await Promise.all([
       supabase
         .from("profiles")
@@ -827,6 +823,10 @@ export async function getSettingsData() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(20),
+      supabase
+        .from("transactions")
+        .select("id,amount,type,wallet_id,transaction_date")
+        .eq("user_id", user.id),
     ]);
 
   const profile = normalizeProfile(
@@ -837,10 +837,6 @@ export async function getSettingsData() {
     id: string; name: string; kind: string; opening_balance: number;
     color: string | null; is_archived: boolean;
   }>;
-  const allTxResult = await supabase
-    .from("transactions")
-    .select("id,amount,type,wallet_id,transaction_date")
-    .eq("user_id", user.id);
   const allTimeTx = (allTxResult.data ?? []) as unknown as TransactionRecord[];
   const allTransfers: WalletTransfer[] = ((transfersResult.data ?? []) as Array<{
     id: string; from_wallet_id: string; to_wallet_id: string;
@@ -864,7 +860,7 @@ export async function getSettingsData() {
 export async function getNetWorthData() {
   const { supabase, user } = await getAuthedContext();
 
-  const [profileResult, debtsResult, walletsResult, transfersResult] = await Promise.all([
+  const [profileResult, debtsResult, walletsResult, transfersResult, allTxResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
@@ -884,6 +880,10 @@ export async function getNetWorthData() {
       .from("wallet_transfers")
       .select("id,from_wallet_id,to_wallet_id,amount,transfer_date,note")
       .eq("user_id", user.id),
+    supabase
+      .from("transactions")
+      .select("id,amount,type,wallet_id,transaction_date")
+      .eq("user_id", user.id),
   ]);
 
   const profile = normalizeProfile(
@@ -895,10 +895,6 @@ export async function getNetWorthData() {
     id: string; name: string; kind: string; opening_balance: number;
     color: string | null; is_archived: boolean;
   }>;
-  const allTxResult = await supabase
-    .from("transactions")
-    .select("id,amount,type,wallet_id,transaction_date")
-    .eq("user_id", user.id);
   const allTimeTx = (allTxResult.data ?? []) as unknown as TransactionRecord[];
   const allTransfers: WalletTransfer[] = ((transfersResult.data ?? []) as Array<{
     id: string; from_wallet_id: string; to_wallet_id: string;

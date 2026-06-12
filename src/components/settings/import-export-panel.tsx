@@ -72,7 +72,7 @@ export function ImportExportPanel() {
       </div>
 
       {/* Export & Template buttons */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <a href="/api/export/transactions" className="flex items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-5 py-4 text-sm font-semibold text-accent transition-colors hover:bg-accent/10">
           <FileDown className="size-5 flex-shrink-0" />
           <div>
@@ -80,10 +80,17 @@ export function ImportExportPanel() {
             <p className="text-xs font-normal text-muted">XLSX dengan ringkasan + statistik</p>
           </div>
         </a>
+        <a href="/api/export/template/csv" className="flex items-center gap-3 rounded-lg border border-border bg-background-strong px-5 py-4 text-sm font-semibold text-foreground transition-colors hover:border-accent/40 hover:bg-background-elevated">
+          <Download className="size-5 flex-shrink-0" />
+          <div>
+            <p>Template CSV</p>
+            <p className="text-xs font-normal text-muted">Buka langsung di Excel / spreadsheet</p>
+          </div>
+        </a>
         <a href="/api/export/template" className="flex items-center gap-3 rounded-lg border border-border bg-background-strong px-5 py-4 text-sm font-semibold text-foreground transition-colors hover:border-accent/40 hover:bg-background-elevated">
           <Download className="size-5 flex-shrink-0" />
           <div>
-            <p>Download template import</p>
+            <p>Template XLSX</p>
             <p className="text-xs font-normal text-muted">XLSX dengan panduan + contoh</p>
           </div>
         </a>
