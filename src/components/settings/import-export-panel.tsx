@@ -125,30 +125,42 @@ export function ImportExportPanel() {
         <p className="text-sm font-semibold text-muted">Backup & Restore</p>
         <h2 className="text-2xl font-bold text-foreground">Import dan export data</h2>
         <p className="mt-2 text-sm leading-7 text-muted">
-          Export semua transaksi ke XLSX, atau import dari file CSV/XLSX. Download template dulu kalau mau import data baru.
+          Export semua transaksi ke Excel, atau import dari file CSV/XLSX. Download template dulu kalau mau import data baru.
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <a href="/api/export/transactions" className="flex items-center gap-3 rounded-lg border border-accent/30 bg-accent-soft px-5 py-4 text-sm font-semibold text-accent transition-colors hover:bg-accent/10">
-          <FileDown className="size-5 flex-shrink-0" />
+      {/* Export & Template buttons */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        {/* Export semua data */}
+        <a href="/api/export/transactions" className="group flex items-center gap-4 rounded-xl border border-accent/20 bg-gradient-to-br from-accent/5 to-transparent px-5 py-4 transition-all hover:border-accent/40 hover:shadow-sm active:scale-[0.98]">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+            <FileDown className="size-5 text-accent" />
+          </div>
           <div>
-            <p>Export semua data</p>
-            <p className="text-xs font-normal text-muted">XLSX dengan ringkasan + statistik</p>
+            <p className="text-sm font-semibold text-foreground">Export semua data</p>
+            <p className="text-xs text-muted">XLSX dengan ringkasan + statistik</p>
           </div>
         </a>
-        <a href="/api/export/template/csv" className="flex items-center gap-3 rounded-lg border border-border bg-background-strong px-5 py-4 text-sm font-semibold text-foreground transition-colors hover:border-accent/40 hover:bg-background-elevated">
-          <Download className="size-5 flex-shrink-0" />
+
+        {/* Template import */}
+        <a href="/api/export/template" className="group flex items-center gap-4 rounded-xl border border-border bg-background-elevated px-5 py-4 transition-all hover:border-foreground/20 hover:shadow-sm active:scale-[0.98]">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-foreground/5">
+            <Download className="size-5 text-foreground/70" />
+          </div>
           <div>
-            <p>Template CSV</p>
-            <p className="text-xs font-normal text-muted">Buka langsung di Excel / spreadsheet</p>
+            <p className="text-sm font-semibold text-foreground">Template import</p>
+            <p className="text-xs text-muted">XLSX dengan panduan + contoh</p>
           </div>
         </a>
-        <a href="/api/export/template" className="flex items-center gap-3 rounded-lg border border-border bg-background-strong px-5 py-4 text-sm font-semibold text-foreground transition-colors hover:border-accent/40 hover:bg-background-elevated">
-          <Download className="size-5 flex-shrink-0" />
+
+        {/* Export riwayat */}
+        <a href="/api/export/transactions" className="group flex items-center gap-4 rounded-xl border border-border bg-background-elevated px-5 py-4 transition-all hover:border-foreground/20 hover:shadow-sm active:scale-[0.98]">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-foreground/5">
+            <FileDown className="size-5 text-foreground/70" />
+          </div>
           <div>
-            <p>Template XLSX</p>
-            <p className="text-xs font-normal text-muted">XLSX dengan panduan + contoh</p>
+            <p className="text-sm font-semibold text-foreground">Export riwayat</p>
+            <p className="text-xs text-muted">XLSX semua transaksi + hutang</p>
           </div>
         </a>
       </div>
@@ -157,12 +169,12 @@ export function ImportExportPanel() {
         <p className="mb-2 text-sm font-semibold text-muted">Import CSV / XLSX</p>
         <div
           className={cn(
-            "relative flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed transition-colors",
+            "relative flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed transition-all duration-200",
             isDragging
-              ? "border-accent bg-accent-soft"
+              ? "border-accent bg-accent/5 scale-[1.01]"
               : file
-                ? "border-accent/40 bg-accent-soft/30"
-                : "border-border bg-background-strong hover:border-accent/40",
+                ? "border-accent/40 bg-accent/5"
+                : "border-border bg-background-elevated hover:border-accent/30 hover:bg-background-elevated/80",
           )}
           onClick={() => inputRef.current?.click()}
           onDragOver={(event) => {
@@ -224,7 +236,7 @@ export function ImportExportPanel() {
       )}
 
       {preview && (
-        <div className="space-y-3 rounded-lg border border-border bg-background-strong p-4">
+        <div className="space-y-3 rounded-xl border border-border bg-background-elevated p-5">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-4 text-accent" />
             <p className="text-sm font-semibold text-foreground">
@@ -233,7 +245,7 @@ export function ImportExportPanel() {
           </div>
 
           {preview.skippedDetails?.length ? (
-            <div className="rounded-md border border-warning/20 bg-warning/10 p-3">
+            <div className="rounded-lg border border-warning/20 bg-warning/10 p-3">
               <p className="text-xs font-semibold text-warning">Baris yang dilewati:</p>
               {preview.skippedDetails.map((skipped) => (
                 <p key={`${skipped.line}-${skipped.reason}`} className="mt-1 text-xs text-muted">
@@ -244,7 +256,7 @@ export function ImportExportPanel() {
           ) : null}
 
           {previewHasWarnings ? (
-            <div className="rounded-md border border-warning/20 bg-warning/10 p-3 text-xs text-muted">
+            <div className="rounded-lg border border-warning/20 bg-warning/10 p-3 text-xs text-muted">
               <p className="font-semibold text-warning">Referensi yang belum cocok:</p>
               {preview.unmatchedWallets?.length ? <p className="mt-1">Dompet: {preview.unmatchedWallets.join(", ")}</p> : null}
               {preview.unmatchedCategories?.length ? <p className="mt-1">Kategori: {preview.unmatchedCategories.join(", ")}</p> : null}
@@ -285,7 +297,7 @@ export function ImportExportPanel() {
       )}
 
       {imported && (
-        <div className="flex items-start gap-3 rounded-lg border border-accent/20 bg-accent-soft px-4 py-4">
+        <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 px-5 py-4">
           <CheckCircle2 className="mt-0.5 size-5 flex-shrink-0 text-accent" />
           <div className="text-sm">
             <p className="font-semibold text-foreground">Import selesai</p>
@@ -300,7 +312,7 @@ export function ImportExportPanel() {
         </div>
       )}
 
-      <div className="rounded-lg border border-dashed border-border px-4 py-4 text-xs leading-7 text-muted">
+      <div className="rounded-xl border border-dashed border-border px-5 py-4 text-xs leading-7 text-muted">
         <p className="font-semibold text-foreground">Catatan:</p>
         <ul className="mt-1 list-disc space-y-1 pl-4">
           <li>Format tanggal: <code className="rounded bg-background-strong px-1">YYYY-MM-DD</code> atau <code className="rounded bg-background-strong px-1">DD/MM/YYYY</code></li>

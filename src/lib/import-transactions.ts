@@ -33,7 +33,6 @@ export type DebtImport = {
   wallet_label: string | null;
   is_paid: boolean;
   paid_at: string | null;
-  lender_name: string;
 };
 
 export type ParsedImport = {
@@ -310,7 +309,6 @@ export function parseImportRows(rows: ImportRow[]): ParsedImport {
       wallet_label: wallet || null,
       is_paid: isPaid,
       paid_at: isPaid ? new Date().toISOString() : null,
-      lender_name: contact || "Import",
     });
   }
 
