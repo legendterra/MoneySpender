@@ -2,12 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import ExcelJS from "exceljs";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-function formatRupiah(amount: number) {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(amount);
+function matchesWeekday(date: string, weekday: string) {
+  if (!weekday || weekday === "all") return true;
+  return new Date(`${date}T00:00:00`).getDay().toString() === weekday;
 }
 
 export async function GET(request: NextRequest) {
@@ -18,6 +15,7 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const filterQ = (params.get("q") ?? "").trim().toLowerCase();
   const filterDate = params.get("date") ?? "";
+  const filterWeekday = params.get("weekday") ?? "all";
   const filterYear = params.get("year") ?? "";
 
   const [txResult, debtResult, profileResult] = await Promise.all([
@@ -26,7 +24,6 @@ export async function GET(request: NextRequest) {
     supabase.from("profiles").select("full_name,currency_code").eq("id", user.id).maybeSingle(),
   ]);
 
-  const currency = (profileResult.data?.currency_code ?? "IDR") as string;
   const userName = (profileResult.data?.full_name ?? user.email ?? "User") as string;
   const exportDate = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
   const exportTime = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
@@ -53,6 +50,7 @@ export async function GET(request: NextRequest) {
   for (const t of txResult.data ?? []) {
     const d = t.transaction_date as string;
     if (filterDate && d !== filterDate) continue;
+    if (!matchesWeekday(d, filterWeekday)) continue;
     if (filterYear && d.slice(0, 4) !== filterYear) continue;
     const haystack = [t.type, t.category_label, t.reason, t.merchant, t.wallet_label, d].filter(Boolean).join(" ").toLowerCase();
     if (filterQ && !haystack.includes(filterQ)) continue;
@@ -62,6 +60,7 @@ export async function GET(request: NextRequest) {
   for (const d of debtResult.data ?? []) {
     const dt = d.debt_date as string;
     if (filterDate && dt !== filterDate) continue;
+    if (!matchesWeekday(dt, filterWeekday)) continue;
     if (filterYear && dt.slice(0, 4) !== filterYear) continue;
     const haystack = [d.direction, d.contact_name, d.reason, d.source_name, d.category_label, dt].filter(Boolean).join(" ").toLowerCase();
     if (filterQ && !haystack.includes(filterQ)) continue;

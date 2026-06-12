@@ -1,54 +1,72 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import ExcelJS from "exceljs";
+import { NextResponse } from "next/server";
 
-// CSV parser (for .csv files)
-function parseCsvLine(line: string): string[] {
-  const values: string[] = [];
-  let current = "";
-  let quoted = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    const next = line[i + 1];
-    if (ch === '"' && quoted && next === '"') { current += '"'; i++; }
-    else if (ch === '"') { quoted = !quoted; }
-    else if (ch === ',' && !quoted) { values.push(current); current = ""; }
-    else { current += ch; }
-  }
-  values.push(current);
-  return values.map(v => v.trim());
+import {
+  MAX_IMPORT_FILE_SIZE,
+  findImportHeaderIndex,
+  parseCsvImportRows,
+  parseImportRows,
+  type DebtImport,
+  type TransactionImport,
+} from "@/lib/import-transactions";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
+
+type ReferenceRow = {
+  id: string;
+  name: string;
+  type?: string;
+};
+
+function lookupKey(value: string | null) {
+  return value?.trim().toLocaleLowerCase("id-ID") ?? "";
 }
 
-function parseAmount(raw: string): number {
-  return Number(raw.replace(/[Rp\s.]/g, "").replace(",", ".")) || 0;
-}
-
-function parseDate(raw: string): string | null {
-  if (!raw) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  const dmY = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (dmY) return `${dmY[3]}-${dmY[2].padStart(2,"0")}-${dmY[1].padStart(2,"0")}`;
-  const mdY = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (mdY) return `${mdY[3]}-${mdY[1].padStart(2,"0")}-${mdY[2].padStart(2,"0")}`;
-  return null;
-}
-
-function normalizeKind(raw: string): "income" | "expense" | "debt" | null {
-  const v = raw.toLowerCase().trim();
-  if (["pemasukan","income","masuk","in"].includes(v)) return "income";
-  if (["pengeluaran","expense","keluar","out","belanja"].includes(v)) return "expense";
-  if (["hutang","debt","payable","utang","pinjam"].includes(v)) return "debt";
-  if (["piutang","receivable","tagih"].includes(v)) return "debt";
-  return null;
-}
-
-function parseXlsxRow(ws: ExcelJS.Worksheet, rowIdx: number, headers: string[]): Record<string, string> {
-  const row: Record<string, string> = {};
-  headers.forEach((h, i) => {
-    const cell = ws.getRow(rowIdx).getCell(i + 1);
-    row[h] = String(cell.value ?? "").trim();
+function toWorksheetRows(sheet: ExcelJS.Worksheet) {
+  return Array.from({ length: sheet.rowCount }, (_, index) => {
+    const row = sheet.getRow(index + 1);
+    return {
+      line: index + 1,
+      values: Array.from({ length: row.cellCount }, (__, cellIndex) => row.getCell(cellIndex + 1).value),
+    };
   });
-  return row;
+}
+
+function buildWarnings(
+  transactions: TransactionImport[],
+  debts: DebtImport[],
+  wallets: Map<string, ReferenceRow>,
+  categories: Map<string, ReferenceRow>,
+) {
+  const unmatchedWallets = new Set<string>();
+  const unmatchedCategories = new Set<string>();
+
+  for (const transaction of transactions) {
+    if (transaction.wallet_label && !wallets.has(lookupKey(transaction.wallet_label))) {
+      unmatchedWallets.add(transaction.wallet_label);
+    }
+    if (
+      transaction.category_label &&
+      !categories.has(`${transaction.type}:${lookupKey(transaction.category_label)}`)
+    ) {
+      unmatchedCategories.add(transaction.category_label);
+    }
+  }
+
+  for (const debt of debts) {
+    if (debt.wallet_label && !wallets.has(lookupKey(debt.wallet_label))) {
+      unmatchedWallets.add(debt.wallet_label);
+    }
+    if (debt.category_label && !categories.has(`debt:${lookupKey(debt.category_label)}`)) {
+      unmatchedCategories.add(debt.category_label);
+    }
+  }
+
+  return {
+    unmatchedWallets: [...unmatchedWallets],
+    unmatchedCategories: [...unmatchedCategories],
+  };
 }
 
 export async function POST(request: Request) {
@@ -56,183 +74,138 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_IMPORT_FILE_SIZE + 100_000) {
+    return NextResponse.json({ error: "Ukuran file maksimal 10 MB." }, { status: 413 });
+  }
+
   const formData = await request.formData();
   const file = formData.get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "File belum dipilih." }, { status: 400 });
+  if (file.size > MAX_IMPORT_FILE_SIZE) {
+    return NextResponse.json({ error: "Ukuran file maksimal 10 MB." }, { status: 413 });
+  }
 
   const fileName = file.name.toLowerCase();
-  const isXlsx = fileName.endsWith(".xlsx") || fileName.endsWith(".xls");
-  const isCsv = fileName.endsWith(".csv") || file.type === "text/csv";
-
-  if (!isXlsx && !isCsv) return NextResponse.json({ error: "Hanya file .csv atau .xlsx yang diterima." }, { status: 400 });
-
-  const txInserts: object[] = [];
-  const debtInserts: object[] = [];
-  const skipped: { line: number; reason: string }[] = [];
-
-  const get = (row: Record<string,string>, ...keys: string[]) => {
-    for (const k of keys) {
-      const val = row[k] ?? row[keys[0]];
-      if (val !== undefined && val !== "") return val;
-    }
-    return "";
-  };
-
-  if (isCsv) {
-    const text = await file.text();
-    const clean = text.replace(/^﻿/, "");
-    const lines = clean.split(/\r?\n/).filter(Boolean);
-
-    if (lines.length < 2) return NextResponse.json({ error: "File kosong atau hanya header." }, { status: 400 });
-
-    let headerIdx = 0;
-    for (let i = 0; i < Math.min(15, lines.length); i++) {
-      const lower = lines[i].toLowerCase();
-      if (lower.includes("jenis") || lower.includes("tanggal") || lower.includes("type") || lower.includes("date")) {
-        headerIdx = i;
-        break;
-      }
-    }
-
-    const headers = parseCsvLine(lines[headerIdx]).map(h => h.toLowerCase().replace(/\s+/g, "_"));
-    const dataLines = lines.slice(headerIdx + 1);
-
-    for (let i = 0; i < dataLines.length; i++) {
-      const raw = parseCsvLine(dataLines[i]);
-      if (raw.every(v => !v)) continue;
-
-      const row = Object.fromEntries(headers.map((h, idx) => [h, raw[idx] ?? ""]));
-      const lineNum = headerIdx + i + 2;
-
-      const kindRaw = get(row, "jenis", "type", "kind", "tipe");
-      const kind = normalizeKind(kindRaw);
-
-      if (!kind) {
-        if (!kindRaw || kindRaw.startsWith("total") || kindRaw.startsWith("ringkasan") || kindRaw.startsWith("©") || kindRaw.startsWith("money")) continue;
-        skipped.push({ line: lineNum, reason: `Jenis tidak dikenal: "${kindRaw}"` });
-        continue;
-      }
-
-      const dateRaw = get(row, "tanggal", "date", "transaction_date", "debt_date");
-      const date = parseDate(dateRaw);
-      if (!date) { skipped.push({ line: lineNum, reason: `Tanggal tidak valid: "${dateRaw}"` }); continue; }
-
-      const amountRaw = get(row, "nominal", "amount", "jumlah");
-      const amount = parseAmount(amountRaw);
-      if (amount <= 0) { skipped.push({ line: lineNum, reason: `Nominal tidak valid: "${amountRaw}"` }); continue; }
-
-      const category = get(row, "kategori", "category", "kategori_label");
-      const note = get(row, "keterangan", "catatan", "reason", "note");
-      const wallet = get(row, "dompet", "wallet", "wallet_label");
-      const kontak = get(row, "kontak_/_toko", "kontak", "merchant", "contact_name");
-      const platform = get(row, "platform_/_asal", "platform", "source_name", "asal");
-
-      if (kind === "income" || kind === "expense") {
-        txInserts.push({ user_id: user.id, type: kind, amount, transaction_date: date, category_label: category || null, wallet_label: wallet || null, reason: note || "Import XLSX", merchant: kontak || null });
-      } else {
-        const directionRaw = get(row, "jenis", "type", "kind").toLowerCase();
-        const direction = ["piutang","receivable","tagih"].some(v => directionRaw.includes(v)) ? "receivable" : "payable";
-        const paidRaw = get(row, "sudah_dibayar", "paid", "paid_amount");
-        const paid = parseAmount(paidRaw);
-        const isPaid = get(row, "status").toLowerCase().includes("lunas") && !get(row, "status").toLowerCase().includes("belum");
-        debtInserts.push({ user_id: user.id, direction, amount, paid_amount: Math.min(amount, paid), debt_date: date, contact_name: kontak || "Import", source_name: platform || wallet || "Import XLSX", reason: note || "Import XLSX", category_label: category || "Hutang", wallet_label: wallet || null, is_paid: isPaid, paid_at: isPaid ? new Date().toISOString() : null, lender_name: kontak || "Import" });
-      }
-    }
-  } else {
-    // XLSX parsing
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(arrayBuffer);
-    const sheet = workbook.getWorksheet(1);
-    if (!sheet) return NextResponse.json({ error: "Sheet tidak ditemukan." }, { status: 400 });
-
-    // Find header row
-    let headerRowIdx = 0;
-    for (let i = 1; i <= Math.min(15, sheet.rowCount); i++) {
-      const rowVal = String(sheet.getRow(i).getCell(1).value ?? "").toLowerCase();
-      if (rowVal.includes("jenis") || rowVal.includes("tanggal")) { headerRowIdx = i; break; }
-    }
-
-    if (headerRowIdx === 0) return NextResponse.json({ error: "Header tidak ditemukan." }, { status: 400 });
-
-    const headerRow = sheet.getRow(headerRowIdx);
-    const headers: string[] = [];
-    headerRow.eachCell(cell => { headers.push(String(cell.value ?? "").toLowerCase().replace(/\s+/g, "_")); });
-
-    for (let i = headerRowIdx + 1; i <= sheet.rowCount; i++) {
-      const row = parseXlsxRow(sheet, i, headers);
-      if (Object.values(row).every(v => !v)) continue;
-
-      const kindRaw = get(row, "jenis", "type", "kind", "tipe");
-      const kind = normalizeKind(kindRaw);
-
-      if (!kind) {
-        if (!kindRaw || kindRaw.startsWith("total") || kindRaw.startsWith("ringkasan")) continue;
-        skipped.push({ line: i + 1, reason: `Jenis tidak dikenal: "${kindRaw}"` });
-        continue;
-      }
-
-      const dateRaw = get(row, "tanggal", "date", "transaction_date", "debt_date");
-      const date = parseDate(dateRaw);
-      if (!date) { skipped.push({ line: i + 1, reason: `Tanggal tidak valid: "${dateRaw}"` }); continue; }
-
-      // Handle numeric values from xlsx
-      let amount: number;
-      const amountRaw = get(row, "nominal", "amount", "jumlah");
-      if (typeof amountRaw === "number" || !isNaN(Number(amountRaw))) {
-        amount = Number(amountRaw);
-      } else {
-        amount = parseAmount(String(amountRaw));
-      }
-      if (amount <= 0) { skipped.push({ line: i + 1, reason: `Nominal tidak valid: "${amountRaw}"` }); continue; }
-
-      const category = get(row, "kategori", "category", "kategori_label");
-      const note = get(row, "keterangan", "catatan", "reason", "note");
-      const wallet = get(row, "dompet", "wallet", "wallet_label");
-      const kontak = get(row, "kontak_/_toko", "kontak", "merchant", "contact_name");
-      const platform = get(row, "platform_/_asal", "platform", "source_name", "asal");
-
-      if (kind === "income" || kind === "expense") {
-        txInserts.push({ user_id: user.id, type: kind, amount, transaction_date: date, category_label: category || null, wallet_label: wallet || null, reason: note || "Import XLSX", merchant: kontak || null });
-      } else {
-        const directionRaw = get(row, "jenis", "type", "kind").toLowerCase();
-        const direction = ["piutang","receivable","tagih"].some(v => directionRaw.includes(v)) ? "receivable" : "payable";
-        const paidRaw = get(row, "sudah_dibayar", "paid", "paid_amount");
-        let paid: number;
-        if (typeof paidRaw === "number" || !isNaN(Number(paidRaw))) {
-          paid = Number(paidRaw);
-        } else {
-          paid = parseAmount(String(paidRaw));
-        }
-        const isPaid = get(row, "status").toLowerCase().includes("lunas") && !get(row, "status").toLowerCase().includes("belum");
-        debtInserts.push({ user_id: user.id, direction, amount, paid_amount: Math.min(amount, paid), debt_date: date, contact_name: kontak || "Import", source_name: platform || wallet || "Import XLSX", reason: note || "Import XLSX", category_label: category || "Hutang", wallet_label: wallet || null, is_paid: isPaid, paid_at: isPaid ? new Date().toISOString() : null, lender_name: kontak || "Import" });
-      }
-    }
+  const isXlsx = fileName.endsWith(".xlsx");
+  const isCsv = fileName.endsWith(".csv");
+  if (!isXlsx && !isCsv) {
+    return NextResponse.json({ error: "Hanya file .csv atau .xlsx yang diterima." }, { status: 400 });
   }
+
+  let parsed;
+  try {
+    if (isCsv) {
+      parsed = parseImportRows(parseCsvImportRows(await file.text()));
+    } else {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
+      const importRows = workbook.worksheets
+        .map(toWorksheetRows)
+        .find((rows) => findImportHeaderIndex(rows) >= 0);
+
+      if (!importRows) throw new Error("Sheet dengan header Jenis, Tanggal, dan Nominal tidak ditemukan.");
+      parsed = parseImportRows(importRows);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "File tidak dapat dibaca.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+
+  const validRows = parsed.transactions.length + parsed.debts.length;
+  if (validRows === 0) {
+    return NextResponse.json({
+      error: "Tidak ada baris valid untuk di-import.",
+      skippedDetails: parsed.skipped.slice(0, 10),
+    }, { status: 400 });
+  }
+
+  const [walletResult, categoryResult] = await Promise.all([
+    supabase.from("wallets").select("id,name").eq("user_id", user.id),
+    supabase.from("categories").select("id,name,type").eq("user_id", user.id),
+  ]);
+  if (walletResult.error || categoryResult.error) {
+    return NextResponse.json({ error: "Referensi dompet dan kategori gagal dimuat." }, { status: 500 });
+  }
+
+  const wallets = new Map(
+    ((walletResult.data ?? []) as ReferenceRow[]).map((wallet) => [lookupKey(wallet.name), wallet]),
+  );
+  const categories = new Map(
+    ((categoryResult.data ?? []) as ReferenceRow[]).map((category) => [
+      `${category.type}:${lookupKey(category.name)}`,
+      category,
+    ]),
+  );
+  const warnings = buildWarnings(parsed.transactions, parsed.debts, wallets, categories);
+
+  const txInserts = parsed.transactions.map((transaction) => ({
+    ...transaction,
+    user_id: user.id,
+    wallet_id: transaction.wallet_label ? wallets.get(lookupKey(transaction.wallet_label))?.id ?? null : null,
+    category_id: transaction.category_label
+      ? categories.get(`${transaction.type}:${lookupKey(transaction.category_label)}`)?.id ?? null
+      : null,
+  }));
+  const debtInserts = parsed.debts.map((debt) => ({
+    ...debt,
+    user_id: user.id,
+    wallet_id: debt.wallet_label ? wallets.get(lookupKey(debt.wallet_label))?.id ?? null : null,
+    category_id: debt.category_label ? categories.get(`debt:${lookupKey(debt.category_label)}`)?.id ?? null : null,
+  }));
 
   const isPreview = new URL(request.url).searchParams.get("preview") === "1";
-
   if (isPreview) {
-    const allRows = [
-      ...txInserts.map((r: any) => ({ jenis: r.type === "income" ? "Pemasukan" : "Pengeluaran", tanggal: r.transaction_date, nominal: r.amount, kategori: r.category_label, catatan: r.reason, dompet: r.wallet_label })),
-      ...debtInserts.map((r: any) => ({ jenis: r.direction === "receivable" ? "Piutang" : "Hutang", tanggal: r.debt_date, nominal: r.amount, kategori: r.category_label, catatan: r.reason, dompet: r.wallet_label })),
+    const preview = [
+      ...parsed.transactions.map((row) => ({
+        jenis: row.type === "income" ? "Pemasukan" : "Pengeluaran",
+        tanggal: row.transaction_date,
+        nominal: row.amount,
+        kategori: row.category_label,
+        catatan: row.reason,
+        dompet: row.wallet_label,
+      })),
+      ...parsed.debts.map((row) => ({
+        jenis: row.direction === "receivable" ? "Piutang" : "Hutang",
+        tanggal: row.debt_date,
+        nominal: row.amount,
+        kategori: row.category_label,
+        catatan: row.reason,
+        dompet: row.wallet_label,
+      })),
     ];
-    return NextResponse.json({ validRows: txInserts.length + debtInserts.length, skippedRows: skipped.length, skippedDetails: skipped.slice(0, 5), preview: allRows.slice(0, 10) });
+
+    return NextResponse.json({
+      validRows,
+      skippedRows: parsed.skipped.length,
+      skippedDetails: parsed.skipped.slice(0, 10),
+      preview: preview.slice(0, 10),
+      ...warnings,
+    });
   }
 
-  let importedCount = 0;
-
+  let insertedTransactionIds: string[] = [];
   if (txInserts.length) {
-    const { error } = await supabase.from("transactions").insert(txInserts);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    importedCount += txInserts.length;
+    const { data, error } = await supabase.from("transactions").insert(txInserts).select("id");
+    if (error) return NextResponse.json({ error: `Import transaksi gagal: ${error.message}` }, { status: 500 });
+    insertedTransactionIds = (data ?? []).map((row) => String(row.id));
   }
 
   if (debtInserts.length) {
     const { error } = await supabase.from("debts").insert(debtInserts);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    importedCount += debtInserts.length;
+    if (error) {
+      if (insertedTransactionIds.length) {
+        await supabase.from("transactions").delete().in("id", insertedTransactionIds);
+      }
+      return NextResponse.json({ error: `Import hutang/piutang gagal: ${error.message}` }, { status: 500 });
+    }
   }
 
-  return NextResponse.json({ imported: importedCount, transactions: txInserts.length, debts: debtInserts.length, skipped: skipped.length });
+  return NextResponse.json({
+    imported: validRows,
+    transactions: txInserts.length,
+    debts: debtInserts.length,
+    skipped: parsed.skipped.length,
+    ...warnings,
+  });
 }

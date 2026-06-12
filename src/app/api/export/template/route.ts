@@ -38,7 +38,7 @@ export async function GET() {
     ["Pengeluaran", "2025-06-12", "Tagihan", "Tagihan PLN", "Mandiri", 185000, "", "Selesai", "PLN", "Transfer Bank"],
   ];
 
-  examples.forEach((row, idx) => {
+  examples.forEach((row) => {
     const dataRow = templateSheet.addRow(row);
     dataRow.height = 20;
 
