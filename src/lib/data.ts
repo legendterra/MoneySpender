@@ -755,25 +755,59 @@ export async function getAllTransactionsData(filters?: {
   const year = filters?.year ?? "";
   const query = (filters?.q ?? "").trim().toLowerCase();
   const currentPage = Math.max(1, Number(filters?.page ?? "1") || 1);
+  const pageSize = 10;
 
-  const [profileResult, transactionsResult, debtsResult] = await Promise.all([
+  const isComplexFilter = weekday !== "all" || query !== "";
+  const kLimit = currentPage * pageSize;
+
+  let txQuery = supabase
+    .from("transactions")
+    .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label,wallet_id,wallet_label")
+    .eq("user_id", user.id)
+    .order("transaction_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  let debtQuery = supabase
+    .from("debts")
+    .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction")
+    .eq("user_id", user.id)
+    .order("debt_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  let txCountQuery = supabase.from("transactions").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+  let debtCountQuery = supabase.from("debts").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+
+  if (exactDate) {
+    txQuery = txQuery.eq("transaction_date", exactDate);
+    debtQuery = debtQuery.eq("debt_date", exactDate);
+    txCountQuery = txCountQuery.eq("transaction_date", exactDate);
+    debtCountQuery = debtCountQuery.eq("debt_date", exactDate);
+  }
+  
+  if (year) {
+    const yearStart = `${year}-01-01`;
+    const yearEnd = `${year}-12-31`;
+    txQuery = txQuery.gte("transaction_date", yearStart).lte("transaction_date", yearEnd);
+    debtQuery = debtQuery.gte("debt_date", yearStart).lte("debt_date", yearEnd);
+    txCountQuery = txCountQuery.gte("transaction_date", yearStart).lte("transaction_date", yearEnd);
+    debtCountQuery = debtCountQuery.gte("debt_date", yearStart).lte("debt_date", yearEnd);
+  }
+
+  if (!isComplexFilter) {
+    txQuery = txQuery.limit(kLimit);
+    debtQuery = debtQuery.limit(kLimit);
+  }
+
+  const [profileResult, transactionsResult, debtsResult, txCountResult, debtCountResult] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
       .eq("id", user.id)
       .maybeSingle(),
-    supabase
-      .from("transactions")
-      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label,wallet_id,wallet_label")
-      .eq("user_id", user.id)
-      .order("transaction_date", { ascending: false })
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("debts")
-      .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction")
-      .eq("user_id", user.id)
-      .order("debt_date", { ascending: false })
-      .order("created_at", { ascending: false }),
+    txQuery,
+    debtQuery,
+    txCountQuery,
+    debtCountQuery,
   ]);
 
   const profile = normalizeProfile(
@@ -781,11 +815,13 @@ export async function getAllTransactionsData(filters?: {
     user.user_metadata?.full_name ?? null,
   );
 
-  const history = [
+  let history = [
     ...(transactionsResult.data ?? []).map(mapTransaction).map(buildHistoryRecordFromTransaction),
     ...(debtsResult.data ?? []).map(mapDebt).map(buildHistoryRecordFromDebt),
-  ]
-    .filter((entry) => {
+  ];
+
+  if (isComplexFilter) {
+    history = history.filter((entry) => {
       if (exactDate && entry.date !== exactDate) return false;
       if (year && entry.date.slice(0, 4) !== year) return false;
       if (weekday !== "all") {
@@ -800,14 +836,19 @@ export async function getAllTransactionsData(filters?: {
         if (!haystack.includes(query)) return false;
       }
       return true;
-    })
-    .sort((a, b) => {
-      const diff = parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime();
-      return diff !== 0 ? diff : b.amount - a.amount;
     });
+  }
 
-  const pageSize = 10;
-  const totalPages = Math.max(1, Math.ceil(history.length / pageSize));
+  history.sort((a, b) => {
+    const diff = parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime();
+    return diff !== 0 ? diff : b.amount - a.amount;
+  });
+
+  const totalItems = isComplexFilter 
+    ? history.length 
+    : (txCountResult.count ?? 0) + (debtCountResult.count ?? 0);
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * pageSize;
 
@@ -821,7 +862,7 @@ export async function getAllTransactionsData(filters?: {
       q: query,
       page: safePage,
     },
-    totalItems: history.length,
+    totalItems,
     totalPages,
     pageSize,
     items: history.slice(startIndex, startIndex + pageSize),
