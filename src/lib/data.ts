@@ -529,7 +529,7 @@ export async function getDashboardData(month?: string) {
       .eq("month", monthValue),
     supabase
       .from("transactions")
-      .select("id,amount,type,wallet_id,transaction_date")
+      .select("amount,type,wallet_id")
       .eq("user_id", user.id),
   ]);
 
@@ -908,7 +908,7 @@ export async function getSettingsData() {
         .limit(20),
       supabase
         .from("transactions")
-        .select("id,amount,type,wallet_id,transaction_date")
+        .select("amount,type,wallet_id")
         .eq("user_id", user.id),
     ]);
 
@@ -965,7 +965,7 @@ export async function getNetWorthData() {
       .eq("user_id", user.id),
     supabase
       .from("transactions")
-      .select("id,amount,type,wallet_id,transaction_date")
+      .select("amount,type,wallet_id")
       .eq("user_id", user.id),
   ]);
 

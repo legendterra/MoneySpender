@@ -66,28 +66,24 @@ export default async function DashboardPage({
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/income#form"
-                prefetch={false}
                 className={cn(buttonVariants({ variant: "primary", size: "lg" }))}
               >
                 Tambah pemasukan
               </Link>
               <Link
                 href="/expenses#form"
-                prefetch={false}
                 className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}
               >
                 Tambah pengeluaran
               </Link>
               <Link
                 href="/debts#form"
-                prefetch={false}
                 className={cn(buttonVariants({ variant: "danger", size: "lg" }))}
               >
                 Tambah hutang
               </Link>
               <Link
                 href="/all-transactions"
-                prefetch={false}
                 className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}
               >
                 Semua transaksi

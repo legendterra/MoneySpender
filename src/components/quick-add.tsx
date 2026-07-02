@@ -23,7 +23,6 @@ export function QuickAdd() {
               <Link
                 key={action.href}
                 href={action.href}
-                prefetch={false}
                 onClick={() => setOpen(false)}
                 className="flex min-h-11 items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-semibold text-foreground"
               >

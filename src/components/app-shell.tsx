@@ -68,7 +68,6 @@ export function AppShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  prefetch={false}
                   className={cn(
                     "rounded-md px-3 py-2 text-sm font-semibold transition-colors",
                     active
@@ -124,7 +123,6 @@ export function AppShell({
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch={false}
                 className={cn(
                   "flex min-h-14 min-w-[4.75rem] flex-1 flex-col items-center justify-center gap-1 rounded-md px-2 text-center text-[10px] font-semibold transition-colors",
                   active
