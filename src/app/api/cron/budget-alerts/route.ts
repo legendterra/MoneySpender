@@ -83,20 +83,24 @@ export async function GET(request: NextRequest) {
       .eq("user_id", budget.user_id);
 
     for (const subscription of subscriptions ?? []) {
-      await webpush.sendNotification(
-        {
-          endpoint: subscription.endpoint,
-          keys: { p256dh: subscription.p256dh, auth: subscription.auth },
-        },
-        JSON.stringify({
-          title: `${APP_NAME} | Budget ${threshold}%`,
-          body: `${budget.categories?.name ?? "Kategori"} sudah ${ratio}% dari budget bulan ini.`,
-          url: "/dashboard",
-          tag: `budget-${budget.category_id}-${month}-${threshold}`,
-        }),
-      ).then(() => {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: subscription.endpoint,
+            keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+          },
+          JSON.stringify({
+            title: `${APP_NAME} | Budget ${threshold}%`,
+            body: `${budget.categories?.name ?? "Kategori"} sudah ${ratio}% dari budget bulan ini.`,
+            url: "/dashboard",
+            tag: `budget-${budget.category_id}-${month}-${threshold}`,
+          }),
+        );
         sent += 1;
-      }).catch(() => undefined);
+      } catch (error) {
+        // Silently fail individual notifications to prevent cascade failures
+        console.error(`Failed to send budget notification to ${subscription.endpoint}:`, error);
+      }
     }
   }
 

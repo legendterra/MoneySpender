@@ -87,7 +87,14 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
     }
 
     const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase.from("categories").delete().eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error("Sesi login berakhir.");
+      return;
+    }
+
+    const { error } = await supabase.from("categories").delete().eq("id", id).eq("user_id", user.id);
 
     if (error) {
       toast.error(error.message);

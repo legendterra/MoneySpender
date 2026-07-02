@@ -134,30 +134,33 @@ function computeWalletBalances(
   transactions: TransactionRecord[],
   transfers: WalletTransfer[],
 ): Wallet[] {
-  return rawWallets.map((w) => {
-    const incomeIn = transactions
-      .filter((t) => t.wallet_id === w.id && t.type === "income")
-      .reduce((s, t) => s + t.amount, 0);
-    const expenseOut = transactions
-      .filter((t) => t.wallet_id === w.id && t.type === "expense")
-      .reduce((s, t) => s + t.amount, 0);
-    const transfersIn = transfers
-      .filter((t) => t.to_wallet_id === w.id)
-      .reduce((s, t) => s + t.amount, 0);
-    const transfersOut = transfers
-      .filter((t) => t.from_wallet_id === w.id)
-      .reduce((s, t) => s + t.amount, 0);
+  const balanceMap = new Map<string, number>();
+  rawWallets.forEach((w) => balanceMap.set(w.id, w.opening_balance));
 
-    return {
-      id: w.id,
-      name: w.name,
-      kind: w.kind as Wallet["kind"],
-      opening_balance: w.opening_balance,
-      color: w.color,
-      is_archived: w.is_archived,
-      balance: w.opening_balance + incomeIn - expenseOut + transfersIn - transfersOut,
-    };
-  });
+  for (const t of transactions) {
+    if (!t.wallet_id || !balanceMap.has(t.wallet_id)) continue;
+    const current = balanceMap.get(t.wallet_id)!;
+    balanceMap.set(t.wallet_id, current + (t.type === "income" ? t.amount : -t.amount));
+  }
+
+  for (const t of transfers) {
+    if (balanceMap.has(t.from_wallet_id)) {
+      balanceMap.set(t.from_wallet_id, balanceMap.get(t.from_wallet_id)! - t.amount);
+    }
+    if (balanceMap.has(t.to_wallet_id)) {
+      balanceMap.set(t.to_wallet_id, balanceMap.get(t.to_wallet_id)! + t.amount);
+    }
+  }
+
+  return rawWallets.map((w) => ({
+    id: w.id,
+    name: w.name,
+    kind: w.kind as Wallet["kind"],
+    opening_balance: w.opening_balance,
+    color: w.color,
+    is_archived: w.is_archived,
+    balance: balanceMap.get(w.id) ?? w.opening_balance,
+  }));
 }
 
 // ── Summary helpers ───────────────────────────────────────────────────────────
@@ -442,16 +445,6 @@ function getWeekdayLabel(value: string) {
 
 // ── Cached data fetchers (using React.cache for memoization) ─────────────────
 
-// Cached profile fetcher - reused across multiple page data fetchers
-const getCachedProfile = cache(async (userId: string, fallbackName: string | null) => {
-  const { supabase } = await getAuthedContext();
-  const { data } = await supabase
-    .from("profiles")
-    .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
-    .eq("id", userId)
-    .maybeSingle();
-  return normalizeProfile(data as ProfileData | null, fallbackName);
-});
 
 // ── Public data fetchers ──────────────────────────────────────────────────────
 

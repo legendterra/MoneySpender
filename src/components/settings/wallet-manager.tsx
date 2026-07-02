@@ -60,7 +60,14 @@ export function WalletManager({ wallets, currencyCode }: { wallets: Wallet[]; cu
 
   async function archiveWallet(id: string) {
     const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase.from("wallets").update({ is_archived: true }).eq("id", id);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error("Sesi login berakhir.");
+      return;
+    }
+
+    const { error } = await supabase.from("wallets").update({ is_archived: true }).eq("id", id).eq("user_id", user.id);
 
     if (error) {
       toast.error(error.message);

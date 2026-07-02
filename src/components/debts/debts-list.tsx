@@ -61,7 +61,8 @@ export function DebtsList({
     const { error } = await supabase
       .from("debts")
       .update({ paid_amount: selectedDebt.amount, is_paid: true, paid_at: new Date().toISOString() })
-      .eq("id", selectedDebt.id);
+      .eq("id", selectedDebt.id)
+      .eq("user_id", user?.id);
 
     if (!error && user) {
       await supabase.from("debt_payments").insert({
@@ -94,7 +95,8 @@ export function DebtsList({
     const { error } = await supabase
       .from("debts")
       .update({ paid_amount: nextPaid, is_paid: isPaid, paid_at: isPaid ? new Date().toISOString() : null })
-      .eq("id", selectedDebt.id);
+      .eq("id", selectedDebt.id)
+      .eq("user_id", user?.id);
 
     if (!error && user) {
       await supabase.from("debt_payments").insert({
@@ -121,6 +123,14 @@ export function DebtsList({
 
     setIsSaving(true);
     const supabase = createBrowserSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      setIsSaving(false);
+      toast.error("Sesi login berakhir.");
+      return;
+    }
+
     const { error } = await supabase
       .from("debts")
       .update({
@@ -134,7 +144,8 @@ export function DebtsList({
         is_paid: isPaid,
         paid_at: isPaid ? new Date().toISOString() : null,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .eq("user_id", user.id);
 
     setIsSaving(false);
     if (error) { toast.error(error.message); return; }

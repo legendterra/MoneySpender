@@ -72,6 +72,9 @@ export default function HomePage() {
                 Buat akun baru atau login dengan Google. Setelah masuk, kamu langsung
                 bisa tambah transaksi dan cek ringkasannya.
               </p>
+              <p className="text-sm leading-8 text-muted sm:text-base">
+                Anda juga dapat mengatur target keuangan dan melacak net worth.
+              </p>
               <div className="flex flex-wrap gap-3">
                 <Link
                   href="/auth"

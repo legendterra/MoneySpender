@@ -12,6 +12,15 @@ type PushSubscriptionPayload = {
 
 export async function POST(request: NextRequest) {
   const subscription = (await request.json()) as PushSubscriptionPayload;
+
+  // Validate subscription payload
+  if (!subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys.auth) {
+    return NextResponse.json(
+      { error: "Invalid push subscription data" },
+      { status: 400 }
+    );
+  }
+
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -21,13 +30,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Store subscription with metadata for debugging
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
       user_id: user.id,
       endpoint: subscription.endpoint,
-      p256dh: subscription.keys?.p256dh ?? "",
-      auth: subscription.keys?.auth ?? "",
+      p256dh: subscription.keys.p256dh,
+      auth: subscription.keys.auth,
       user_agent: request.headers.get("user-agent"),
+      created_at: new Date().toISOString(),
     },
     { onConflict: "endpoint" },
   );
@@ -36,5 +47,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, endpoint: subscription.endpoint });
 }
