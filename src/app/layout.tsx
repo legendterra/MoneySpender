@@ -1,5 +1,8 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 
 import "@/app/globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
@@ -21,6 +24,7 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: {
     default: APP_NAME,
     template: `%s | ${APP_NAME}`,
@@ -43,22 +47,27 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+
   return (
     <html
-      lang="id"
+      lang={locale}
       suppressHydrationWarning
       className={`${plusJakartaSans.variable} ${jetBrainsMono.variable}`}
     >
       <body>
         <div className="hub-dots" aria-hidden="true" />
         <div className="relative z-10">
-          <AppProviders>{children}</AppProviders>
+          <NextIntlClientProvider>
+            <AppProviders>{children}</AppProviders>
+          </NextIntlClientProvider>
         </div>
+        <Analytics />
       </body>
     </html>
   );

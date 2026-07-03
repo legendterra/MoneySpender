@@ -1,51 +1,44 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { PublicSiteShell } from "@/components/public/public-site-shell";
 import { buttonVariants } from "@/components/ui/button-styles";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Home",
-  description:
-    "MoneySpender membantu mencatat pemasukan, pengeluaran, hutang, dan target uang pribadi.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("home");
+  return {
+    title: t("metaTitle"),
+    description: t("metaDescription"),
+  };
+}
 
-const highlights = [
-  {
-    title: "Catat cepat, tidak perlu mikir lama",
-    description:
-      "Masukkan pemasukan, pengeluaran, atau hutang begitu transaksi selesai. Nanti rekapnya beres sendiri.",
-  },
-  {
-    title: "Masuk pakai cara yang nyaman",
-    description:
-      "Pakai email, magic link, atau Google. Pilih yang paling simpel buat kamu.",
-  },
-  {
-    title: "Link legalnya sudah siap",
-    description:
-      "Halaman privasi dan syarat layanan tersedia kalau dibutuhkan untuk review atau verifikasi aplikasi.",
-  },
-] as const;
+export default async function HomePage() {
+  const t = await getTranslations("home");
+  const shell = await getTranslations("shell");
 
-export default function HomePage() {
+  const highlights = [
+    { title: t("highlight1Title"), description: t("highlight1Detail") },
+    { title: t("highlight2Title"), description: t("highlight2Detail") },
+    { title: t("highlight3Title"), description: t("highlight3Detail") },
+  ] as const;
+
   return (
     <PublicSiteShell
-      eyebrow="Money report"
-      title="Catat uang masuk, uang keluar, dan hutang tanpa drama."
-      description="MoneySpender dibuat buat kebiasaan kecil yang sering kelupaan: nyatet transaksi. Buka, isi sebentar, lalu lihat gambaran uangmu dengan lebih jelas."
+      eyebrow={t("eyebrow")}
+      title={t("title")}
+      description={t("description")}
     >
       <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
         <Panel className="rounded-lg p-7 sm:p-8">
           <div className="space-y-5">
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">Yang bisa kamu pakai</h2>
+              <h2 className="text-2xl font-bold text-foreground">{t("featuresTitle")}</h2>
               <p className="text-sm leading-8 text-muted sm:text-base">
-                Fokusnya simpel: catatan rapi, dashboard kebaca, dan pengingat supaya
-                kebiasaan nyatet uang tidak cuma niat di awal bulan.
+                {t("featuresSubtitle")}
               </p>
             </div>
             <div className="grid gap-4">
@@ -62,35 +55,30 @@ export default function HomePage() {
           </div>
         </Panel>
 
-          <Panel className="rounded-lg p-7 sm:p-8">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <ShieldCheck className="size-5 text-accent-strong" />
-                <h2 className="text-2xl font-bold text-foreground">Masuk dan lanjut catat</h2>
-              </div>
-              <p className="text-sm leading-8 text-muted sm:text-base">
-                Buat akun baru atau login dengan Google. Setelah masuk, kamu langsung
-                bisa tambah transaksi dan cek ringkasannya.
-              </p>
-              <p className="text-sm leading-8 text-muted sm:text-base">
-                Anda juga dapat mengatur target keuangan dan melacak net worth.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  href="/auth"
-                  className={cn(buttonVariants({ variant: "primary", size: "lg" }))}
-                >
-                  Login atau daftar
-                </Link>
-                <Link
-                  href="/privacy"
-                  className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}
-                >
-                  Baca privasi
-                </Link>
-              </div>
+        <Panel className="rounded-lg p-7 sm:p-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="size-5 text-accent-strong" />
+              <h2 className="text-2xl font-bold text-foreground">{t("signInTitle")}</h2>
             </div>
-          </Panel>
+            <p className="text-sm leading-8 text-muted sm:text-base">{t("signInDetail")}</p>
+            <p className="text-sm leading-8 text-muted sm:text-base">{t("signInExtra")}</p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/auth"
+                className={cn(buttonVariants({ variant: "primary", size: "lg" }))}
+              >
+                {shell("navSignIn")}
+              </Link>
+              <Link
+                href="/pricing"
+                className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}
+              >
+                {shell("navPricing")}
+              </Link>
+            </div>
+          </div>
+        </Panel>
       </div>
     </PublicSiteShell>
   );

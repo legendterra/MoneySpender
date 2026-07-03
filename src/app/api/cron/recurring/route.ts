@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { filterProUserIds } from "@/lib/billing";
 import { APP_TIMEZONE } from "@/lib/constants";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -40,9 +41,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Transaksi berulang adalah fitur Pro — saat billing aktif, hanya proses
+  // rule milik user Pro.
+  const proIds = await filterProUserIds(
+    admin,
+    (rules ?? []).map((rule: { user_id: string }) => rule.user_id),
+  );
+  const eligibleRules = (rules ?? []).filter((rule: { user_id: string }) => proIds.has(rule.user_id));
+
   let generated = 0;
 
-  for (const rule of rules ?? []) {
+  for (const rule of eligibleRules) {
     const { error: insertError } = await admin.from("transactions").insert({
       user_id: rule.user_id,
       type: rule.type,

@@ -41,6 +41,22 @@ const sections = [
       "Jika diwajibkan hukum, akses dapat ditangguhkan atau informasi tertentu dapat diberikan kepada otoritas berwenang.",
     ],
   },
+  {
+    title: "Paket berbayar dan pembayaran",
+    items: [
+      "Fitur inti MoneySpender gratis. Jika nanti tersedia paket berbayar, harga dan isi paketnya ditampilkan jelas sebelum kamu membayar.",
+      "Langganan berbayar diperpanjang otomatis sampai kamu membatalkannya. Pembatalan berlaku di akhir periode yang sudah dibayar.",
+      "Pembayaran diproses oleh penyedia pembayaran pihak ketiga. MoneySpender tidak menyimpan nomor kartu kamu.",
+    ],
+  },
+  {
+    title: "Pembatalan dan pengembalian dana",
+    items: [
+      "Kamu bisa membatalkan langganan kapan saja dari pengaturan akun. Akses berbayar tetap aktif sampai akhir periode berjalan.",
+      "Pengembalian dana mengikuti hukum perlindungan konsumen yang berlaku di wilayahmu.",
+      "Kalau ada tagihan yang menurutmu keliru, hubungi kontak resmi di bawah dalam 30 hari agar bisa dicek.",
+    ],
+  },
 ] as const;
 
 export default function TermsPage() {
@@ -59,7 +75,7 @@ export default function TermsPage() {
               dan batas layanan.
             </p>
             <p className="text-sm leading-8 text-muted sm:text-base">
-              Tanggal pembaruan terakhir: <span className="font-semibold text-foreground">2 April 2026</span>
+              Tanggal pembaruan terakhir: <span className="font-semibold text-foreground">4 Juli 2026</span>
             </p>
           </div>
         </Panel>

@@ -1,4 +1,32 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin();
+
+// 'unsafe-eval' is required by React Fast Refresh in dev only.
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  "https://va.vercel-scripts.com",
+  process.env.NODE_ENV === "development" ? "'unsafe-eval'" : "",
+]
+  .filter(Boolean)
+  .join(" ");
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  `script-src ${scriptSrc}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
 
 const nextConfig: NextConfig = {
   // Compress responses
@@ -24,6 +52,10 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
+          {
+            key: "Content-Security-Policy",
+            value: contentSecurityPolicy,
+          },
           {
             key: "X-DNS-Prefetch-Control",
             value: "on",
@@ -54,4 +86,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

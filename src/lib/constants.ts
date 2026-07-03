@@ -2,6 +2,20 @@ export const APP_NAME = "MoneySpender";
 export const APP_DESCRIPTION =
   "Tempat simpel buat nyatet uang masuk, uang keluar, hutang, dan target bulanan.";
 export const DEFAULT_CURRENCY = "IDR";
+
+/** Mata uang yang didukung + locale format angkanya. */
+export const SUPPORTED_CURRENCIES = [
+  { code: "IDR", label: "IDR — Rupiah Indonesia", locale: "id-ID", maxDigits: 0 },
+  { code: "USD", label: "USD — US Dollar", locale: "en-US", maxDigits: 2 },
+  { code: "EUR", label: "EUR — Euro", locale: "de-DE", maxDigits: 2 },
+  { code: "GBP", label: "GBP — British Pound", locale: "en-GB", maxDigits: 2 },
+  { code: "SGD", label: "SGD — Singapore Dollar", locale: "en-SG", maxDigits: 2 },
+  { code: "MYR", label: "MYR — Ringgit Malaysia", locale: "ms-MY", maxDigits: 2 },
+  { code: "JPY", label: "JPY — Japanese Yen", locale: "ja-JP", maxDigits: 0 },
+  { code: "AUD", label: "AUD — Australian Dollar", locale: "en-AU", maxDigits: 2 },
+] as const;
+
+export type SupportedCurrencyCode = (typeof SUPPORTED_CURRENCIES)[number]["code"];
 export const APP_TIMEZONE = "Asia/Jakarta";
 export const MORNING_SLOT_HOUR = 7;
 export const EVENING_SLOT_HOUR = 19;

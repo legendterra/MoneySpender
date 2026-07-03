@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { format as formatDateFns } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
-import { DEFAULT_CURRENCY } from "@/lib/constants";
+import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "@/lib/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -17,16 +17,28 @@ function parseDateValue(value: string) {
   return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
 }
 
+function currencyConfig(currency: string) {
+  return (
+    SUPPORTED_CURRENCIES.find((item) => item.code === currency) ?? {
+      code: currency,
+      locale: "id-ID",
+      maxDigits: 0,
+    }
+  );
+}
+
 export function formatCurrency(value: number, currency = DEFAULT_CURRENCY) {
-  return new Intl.NumberFormat("id-ID", {
+  const config = currencyConfig(currency);
+  return new Intl.NumberFormat(config.locale, {
     style: "currency",
     currency,
-    maximumFractionDigits: 0,
+    maximumFractionDigits: config.maxDigits,
   }).format(value ?? 0);
 }
 
 export function formatCompactCurrency(value: number, currency = DEFAULT_CURRENCY) {
-  return new Intl.NumberFormat("id-ID", {
+  const config = currencyConfig(currency);
+  return new Intl.NumberFormat(config.locale, {
     style: "currency",
     currency,
     notation: "compact",
@@ -52,14 +64,23 @@ export function toMonthInput(date = new Date()) {
   return `${year}-${month}`;
 }
 
+function toDateString(date: Date) {
+  const year = String(date.getFullYear()).padStart(4, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function getMonthRange(monthValue: string) {
   const [year, month] = monthValue.split("-").map(Number);
   const start = new Date(year, month - 1, 1);
   const end = new Date(year, month, 0);
 
+  // Format from local date parts — toISOString() would shift the day in
+  // timezones ahead of UTC.
   return {
-    start: start.toISOString().slice(0, 10),
-    end: end.toISOString().slice(0, 10),
+    start: toDateString(start),
+    end: toDateString(end),
   };
 }
 

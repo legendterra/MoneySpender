@@ -70,6 +70,21 @@ fun localValue(name: String, fallback: String = ""): String =
     props.getProperty(name) ?: System.getenv(name) ?: fallback
 
 android {
+    // Signing rilis hanya aktif kalau keystore diisi di local.properties /
+    // env CI — build debug tetap jalan tanpa keystore.
+    val keystorePath = localValue("MONEYSPENDER_KEYSTORE_PATH")
+    if (keystorePath.isNotBlank()) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = localValue("MONEYSPENDER_KEYSTORE_PASSWORD")
+                keyAlias = localValue("MONEYSPENDER_KEY_ALIAS")
+                keyPassword = localValue("MONEYSPENDER_KEY_PASSWORD")
+            }
+        }
+        buildTypes.getByName("release").signingConfig = signingConfigs.getByName("release")
+    }
+
     defaultConfig {
         buildConfigField("String", "SUPABASE_URL", "\"${localValue("MONEYSPENDER_SUPABASE_URL")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localValue("MONEYSPENDER_SUPABASE_ANON_KEY")}\"")

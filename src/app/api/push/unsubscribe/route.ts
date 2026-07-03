@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -21,6 +22,9 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const limited = await enforceRateLimit(`push:${user.id}`, { limit: 10, windowSeconds: 60 });
+  if (limited) return limited;
 
   // Delete subscription and log the action
   const { error, count } = await supabase

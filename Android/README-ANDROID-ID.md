@@ -43,6 +43,27 @@ MONEYSPENDER_DEEPLINK_SCHEME=moneyspender
 MONEYSPENDER_DEEPLINK_HOST=auth
 ```
 
+## Signing rilis (Play Store)
+
+Generate keystore sekali (simpan DI LUAR folder git, backup baik-baik):
+
+```powershell
+keytool -genkeypair -v -keystore C:\keys\moneyspender-release.keystore -alias moneyspender -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Lalu tambahkan ke `Android/local.properties`:
+
+```properties
+MONEYSPENDER_KEYSTORE_PATH=C\:\\keys\\moneyspender-release.keystore
+MONEYSPENDER_KEYSTORE_PASSWORD=xxx
+MONEYSPENDER_KEY_ALIAS=moneyspender
+MONEYSPENDER_KEY_PASSWORD=xxx
+```
+
+Build AAB untuk Play Store: `./gradlew bundleRelease` → hasil di
+`app/build/outputs/bundle/release/app-release.aab`. Tanpa properti keystore,
+build release tidak ditandatangani (build debug tetap normal).
+
 ## Setting Supabase Auth untuk Android
 
 Tambahkan redirect URL berikut di Supabase Auth:

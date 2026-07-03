@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import ExcelJS from "exceljs";
+import { requirePro } from "@/lib/billing";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 function matchesWeekday(date: string, weekday: string) {
@@ -11,6 +13,12 @@ export async function GET(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const proCheck = await requirePro(supabase, user.id);
+  if (proCheck) return proCheck;
+
+  const limited = await enforceRateLimit(`export:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (limited) return limited;
 
   const params = request.nextUrl.searchParams;
   const filterQ = (params.get("q") ?? "").trim().toLowerCase();

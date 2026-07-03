@@ -37,8 +37,33 @@ const sections = [
     title: "Hak pengguna",
     items: [
       "Kamu bisa memperbarui data akun dan catatan langsung dari aplikasi selama fiturnya tersedia.",
-      "Kamu bisa meminta penghapusan akun atau penonaktifan akses lewat kontak di halaman ini.",
+      "Kamu bisa meminta penghapusan akun atau penonaktifan akses lewat kontak di halaman ini, atau lewat menu hapus akun di pengaturan.",
       "Kamu bisa berhenti memakai Google Sign-In kapan saja dari pengaturan akun Google.",
+    ],
+  },
+  {
+    title: "Layanan pihak ketiga (subprocessor)",
+    items: [
+      "Vercel — hosting aplikasi dan analitik agregat tanpa cookie.",
+      "Supabase — autentikasi, database, dan penyimpanan data aplikasi.",
+      "Google — hanya jika kamu memilih login dengan Google (OAuth).",
+      "Layanan push milik browser/OS kamu (misalnya Google, Apple, Mozilla) — hanya jika kamu menyalakan reminder.",
+    ],
+  },
+  {
+    title: "Penyimpanan dan penghapusan data",
+    items: [
+      "Data disimpan selama akunmu aktif agar catatan dan dashboard tetap tersedia.",
+      "Saat kamu menghapus akun, data pribadi dan catatanmu ikut dihapus dari database aplikasi.",
+      "Backup teknis dan log keamanan dapat bertahan sebentar setelah penghapusan sebelum terhapus otomatis.",
+    ],
+  },
+  {
+    title: "Hak tambahan (GDPR/CCPA)",
+    items: [
+      "Kamu berhak meminta akses, salinan, koreksi, atau penghapusan data pribadimu.",
+      "Kamu berhak menolak atau membatasi pemrosesan tertentu, dan mengajukan keluhan ke otoritas perlindungan data di wilayahmu.",
+      "Data kamu tidak dijual, jadi tidak ada proses 'jual data' yang perlu kamu tolak. Permintaan hak apa pun bisa dikirim lewat kontak di bawah.",
     ],
   },
 ] as const;
@@ -60,7 +85,7 @@ export default function PrivacyPage() {
               reminder yang kamu aktifkan.
             </p>
             <p className="text-sm leading-8 text-muted sm:text-base">
-              Tanggal pembaruan terakhir: <span className="font-semibold text-foreground">2 April 2026</span>
+              Tanggal pembaruan terakhir: <span className="font-semibold text-foreground">4 Juli 2026</span>
             </p>
           </div>
         </Panel>

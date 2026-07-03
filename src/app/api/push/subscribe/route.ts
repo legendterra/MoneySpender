@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type PushSubscriptionPayload = {
@@ -29,6 +30,9 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const limited = await enforceRateLimit(`push:${user.id}`, { limit: 10, windowSeconds: 60 });
+  if (limited) return limited;
 
   // Store subscription with metadata for debugging
   const { error } = await supabase.from("push_subscriptions").upsert(

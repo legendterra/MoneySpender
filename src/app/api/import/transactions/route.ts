@@ -9,6 +9,8 @@ import {
   type DebtImport,
   type TransactionImport,
 } from "@/lib/import-transactions";
+import { requirePro } from "@/lib/billing";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -73,6 +75,12 @@ export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const proCheck = await requirePro(supabase, user.id);
+  if (proCheck) return proCheck;
+
+  const limited = await enforceRateLimit(`import:${user.id}`, { limit: 20, windowSeconds: 600 });
+  if (limited) return limited;
 
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > MAX_IMPORT_FILE_SIZE + 100_000) {

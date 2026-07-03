@@ -480,3 +480,25 @@ create policy "Users read own receipts" on storage.objects
 -- Tidak memakai trigger handle_new_user. Setup data awal user
 -- (profile, categories, reminder prefs) dilakukan saat first login
 -- lewat ensureUserSetup() di src/lib/auth.ts — lebih reliable.
+
+-- ── 11. Billing (freemium) ───────────────────────────────────
+-- Diisi oleh webhook Stripe lewat service role.
+
+create table if not exists public.subscriptions (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  plan text not null default 'free' check (plan in ('free', 'pro')),
+  status text not null default 'inactive',
+  stripe_customer_id text unique,
+  stripe_subscription_id text,
+  current_period_end timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.subscriptions enable row level security;
+
+drop policy if exists "Subscriptions owner read" on public.subscriptions;
+create policy "Subscriptions owner read" on public.subscriptions
+  for select using (auth.uid() = user_id);
+
+create index if not exists subscriptions_stripe_customer_idx
+  on public.subscriptions (stripe_customer_id);

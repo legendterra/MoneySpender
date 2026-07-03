@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
 
+import { filterProUserIds } from "@/lib/billing";
 import { APP_NAME, APP_TIMEZONE } from "@/lib/constants";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -47,9 +48,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Notifikasi budget adalah fitur Pro — saat billing aktif, hanya kirim
+  // ke user Pro.
+  const proIds = await filterProUserIds(
+    admin,
+    (budgets ?? []).map((budget: { user_id: string }) => budget.user_id),
+  );
+  const eligibleBudgets = (budgets ?? []).filter((budget: { user_id: string }) =>
+    proIds.has(budget.user_id),
+  );
+
   let sent = 0;
 
-  for (const budget of budgets ?? []) {
+  for (const budget of eligibleBudgets) {
     const { data: transactions } = await admin
       .from("transactions")
       .select("amount")

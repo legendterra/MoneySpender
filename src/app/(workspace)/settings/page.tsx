@@ -1,5 +1,7 @@
+import { ProGate } from "@/components/billing/pro-gate";
 import { AccountPanel } from "@/components/settings/account-panel";
 import { AuditLogPanel } from "@/components/settings/audit-log-panel";
+import { BillingPanel } from "@/components/settings/billing-panel";
 import { BudgetSettings } from "@/components/settings/budget-settings";
 import { CategoryManager } from "@/components/settings/category-manager";
 import { ImportExportPanel } from "@/components/settings/import-export-panel";
@@ -37,10 +39,15 @@ export default async function SettingsPage() {
         />
         <CategoryManager categories={data.categories} />
         <ReminderSettings reminder={data.reminder} />
-        <ImportExportPanel />
+        <ProGate feature="Import & export Excel/CSV">
+          <ImportExportPanel />
+        </ProGate>
         <PwaGuidePanel />
+        <BillingPanel />
         {data.auditLogs.length > 0 && (
-          <AuditLogPanel logs={data.auditLogs} />
+          <ProGate feature="Audit log aktivitas">
+            <AuditLogPanel logs={data.auditLogs} />
+          </ProGate>
         )}
         <AccountPanel email={data.user.email} />
       </div>

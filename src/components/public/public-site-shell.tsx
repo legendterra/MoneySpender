@@ -1,22 +1,12 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoMark } from "@/components/logo-mark";
 import { buttonVariants } from "@/components/ui/button-styles";
 import { Panel } from "@/components/ui/panel";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-
-const publicLinks = [
-  { href: "/", label: "Home" },
-  { href: "/privacy", label: "Privasi" },
-  { href: "/terms", label: "Syarat" },
-] as const;
-
-const reportSteps = [
-  { number: "01", title: "Catat", detail: "Masukkan transaksi saat terjadi." },
-  { number: "02", title: "Kelompokkan", detail: "Pisahkan pemasukan, pengeluaran, dan hutang." },
-  { number: "03", title: "Baca laporan", detail: "Lihat kondisi uang tanpa menghitung ulang." },
-] as const;
 
 type PublicSiteShellProps = {
   eyebrow: string;
@@ -25,12 +15,27 @@ type PublicSiteShellProps = {
   children: React.ReactNode;
 };
 
-export function PublicSiteShell({
+export async function PublicSiteShell({
   eyebrow,
   title,
   description,
   children,
 }: PublicSiteShellProps) {
+  const t = await getTranslations("shell");
+
+  const publicLinks = [
+    { href: "/", label: t("navHome") },
+    { href: "/pricing", label: t("navPricing") },
+    { href: "/privacy", label: t("navPrivacy") },
+    { href: "/terms", label: t("navTerms") },
+  ] as const;
+
+  const reportSteps = [
+    { number: "01", title: t("step1Title"), detail: t("step1Detail") },
+    { number: "02", title: t("step2Title"), detail: t("step2Detail") },
+    { number: "03", title: t("step3Title"), detail: t("step3Detail") },
+  ] as const;
+
   return (
     <main className="px-4 py-5 sm:px-6">
       <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] max-w-6xl flex-col gap-6">
@@ -41,7 +46,7 @@ export function PublicSiteShell({
               <a
                 href="https://moneyspender.net"
                 className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
-                aria-label="Kembali ke MoneySpender Hub"
+                aria-label={t("backToHub")}
               >
                 ← Hub
               </a>
@@ -54,11 +59,12 @@ export function PublicSiteShell({
                   {item.label}
                 </Link>
               ))}
+              <LanguageSwitcher />
               <Link
                 href="/auth"
                 className={cn(buttonVariants({ variant: "primary", size: "sm" }))}
               >
-                Masuk
+                {t("navSignIn")}
               </Link>
             </nav>
           </div>
@@ -83,13 +89,13 @@ export function PublicSiteShell({
                   href="/auth"
                   className={cn(buttonVariants({ variant: "primary", size: "lg" }))}
                 >
-                  Mulai catat uang
+                  {t("ctaStart")}
                 </Link>
                 <Link
                   href="/dashboard"
                   className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}
                 >
-                  Cek dashboard
+                  {t("ctaDashboard")}
                 </Link>
               </div>
             </div>
@@ -98,10 +104,8 @@ export function PublicSiteShell({
           <Panel className="min-w-0 rounded-lg p-7 sm:p-9">
             <div className="space-y-5">
               <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-foreground">Laporan yang mudah dibaca</h2>
-                <p className="text-sm leading-7 text-muted">
-                  Alurnya sederhana supaya kamu fokus pada angka yang penting.
-                </p>
+                <h2 className="text-2xl font-bold text-foreground">{t("reportTitle")}</h2>
+                <p className="text-sm leading-7 text-muted">{t("reportSubtitle")}</p>
               </div>
               <div className="space-y-3">
                 {reportSteps.map((item) => (
@@ -129,7 +133,7 @@ export function PublicSiteShell({
           <p className="font-semibold text-foreground">{APP_NAME}</p>
           <p>{APP_DESCRIPTION}</p>
           <p className="mt-2">
-            Kontak:{" "}
+            {t("contact")}{" "}
             <a
               href="mailto:legendterra@gmail.com"
               className="font-medium text-accent-strong underline-offset-4 hover:underline"

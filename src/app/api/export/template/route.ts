@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 
-export async function GET() {
+import { enforceRateLimit, getRequestIp } from "@/lib/rate-limit";
+
+export async function GET(request: Request) {
+  const limited = await enforceRateLimit(`template:${getRequestIp(request)}`, {
+    limit: 10,
+    windowSeconds: 60,
+  });
+  if (limited) return limited;
+
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "MoneySpender";
   workbook.created = new Date();

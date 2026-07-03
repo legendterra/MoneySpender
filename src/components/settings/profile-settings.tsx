@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
+import { Select } from "@/components/ui/select";
+import { SUPPORTED_CURRENCIES } from "@/lib/constants";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { ProfileData } from "@/lib/types";
 
@@ -84,8 +86,14 @@ export function ProfileSettings({ profile }: { profile: ProfileData }) {
         <Field label="Nama" error={form.formState.errors.fullName?.message}>
           <Input {...form.register("fullName")} />
         </Field>
-        <Field label="Kode mata uang" hint="Default IDR">
-          <Input {...form.register("currencyCode")} />
+        <Field label="Mata uang" hint="Dipakai untuk semua tampilan nominal">
+          <Select {...form.register("currencyCode")}>
+            {SUPPORTED_CURRENCIES.map((currency) => (
+              <option key={currency.code} value={currency.code}>
+                {currency.label}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label="Target nabung bulanan">
           <Input
