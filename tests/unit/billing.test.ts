@@ -20,7 +20,7 @@ describe("resolvePlan", () => {
     beforeEach(() => {
       vi.stubEnv("LEMONSQUEEZY_API_KEY", "test-key");
       vi.stubEnv("LEMONSQUEEZY_STORE_ID", "1");
-      vi.stubEnv("LEMONSQUEEZY_VARIANT_ID", "2");
+      vi.stubEnv("LEMONSQUEEZY_VARIANT_MONTHLY", "2");
     });
 
     afterEach(() => {

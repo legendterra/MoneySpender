@@ -7,7 +7,7 @@ import { UpgradeButton } from "@/components/billing/upgrade-button";
 import { PublicSiteShell } from "@/components/public/public-site-shell";
 import { buttonVariants } from "@/components/ui/button-styles";
 import { Panel } from "@/components/ui/panel";
-import { billingEnabled } from "@/lib/lemonsqueezy";
+import { billingEnabled, yearlyBillingEnabled } from "@/lib/lemonsqueezy";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,6 +34,7 @@ function FeatureList({ items }: { items: readonly string[] }) {
 export default async function PricingPage() {
   const t = await getTranslations("pricing");
   const enabled = billingEnabled();
+  const yearlyEnabled = yearlyBillingEnabled();
 
   const freeFeatures = [t("free1"), t("free2"), t("free3"), t("free4"), t("free5")] as const;
   const proFeatures = [
@@ -83,7 +84,14 @@ export default async function PricingPage() {
             </div>
             <FeatureList items={proFeatures} />
             {enabled ? (
-              <UpgradeButton>{t("ctaSubscribe")}</UpgradeButton>
+              <div className="grid gap-3">
+                <UpgradeButton interval="monthly">{t("ctaMonthly")}</UpgradeButton>
+                {yearlyEnabled && (
+                  <UpgradeButton interval="yearly" variant="secondary">
+                    {t("ctaYearly")}
+                  </UpgradeButton>
+                )}
+              </div>
             ) : (
               <p className="rounded-md border border-border p-4 text-sm leading-7 text-muted">
                 {t("billingDisabled")}

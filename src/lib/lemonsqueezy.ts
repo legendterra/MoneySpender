@@ -2,12 +2,25 @@ import crypto from "node:crypto";
 
 const API_BASE = "https://api.lemonsqueezy.com/v1";
 
+export type BillingInterval = "monthly" | "yearly";
+
 export function billingEnabled() {
   return Boolean(
     process.env.LEMONSQUEEZY_API_KEY &&
       process.env.LEMONSQUEEZY_STORE_ID &&
-      process.env.LEMONSQUEEZY_VARIANT_ID,
+      process.env.LEMONSQUEEZY_VARIANT_MONTHLY,
   );
+}
+
+/** Paket tahunan opsional — tombolnya hanya tampil kalau variant-nya diisi. */
+export function yearlyBillingEnabled() {
+  return billingEnabled() && Boolean(process.env.LEMONSQUEEZY_VARIANT_YEARLY);
+}
+
+function variantIdFor(interval: BillingInterval) {
+  return interval === "yearly"
+    ? process.env.LEMONSQUEEZY_VARIANT_YEARLY
+    : process.env.LEMONSQUEEZY_VARIANT_MONTHLY;
 }
 
 async function lemonSqueezyRequest(path: string, init?: RequestInit) {
@@ -29,8 +42,15 @@ async function lemonSqueezyRequest(path: string, init?: RequestInit) {
   return response.json();
 }
 
-/** Buat sesi checkout untuk paket Pro universal. Mengembalikan URL checkout. */
-export async function createCheckoutUrl(userId: string, email?: string | null) {
+/** Buat sesi checkout untuk paket Pro. Mengembalikan URL checkout. */
+export async function createCheckoutUrl(
+  userId: string,
+  email: string | null | undefined,
+  interval: BillingInterval,
+) {
+  const variantId = variantIdFor(interval);
+  if (!variantId) return null;
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const json = await lemonSqueezyRequest("/checkouts", {
     method: "POST",
@@ -48,7 +68,7 @@ export async function createCheckoutUrl(userId: string, email?: string | null) {
         },
         relationships: {
           store: { data: { type: "stores", id: process.env.LEMONSQUEEZY_STORE_ID } },
-          variant: { data: { type: "variants", id: process.env.LEMONSQUEEZY_VARIANT_ID } },
+          variant: { data: { type: "variants", id: variantId } },
         },
       },
     }),

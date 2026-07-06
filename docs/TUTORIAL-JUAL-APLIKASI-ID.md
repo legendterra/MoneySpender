@@ -101,25 +101,28 @@ Yang sudah ada di kode:
 ### Cara mengaktifkan billing
 
 1. Daftar di [lemonsqueezy.com](https://www.lemonsqueezy.com), buat store. Store baru langsung bisa dipakai dalam **test mode**; untuk menerima uang sungguhan, ajukan aktivasi store (isi profil + data payout, review biasanya 1-3 hari).
-2. Buat produk `MoneySpender Pro` dengan **satu variant**: subscription, interval monthly, harga USD (mis. $3-5/bulan — pembeli otomatis melihat estimasi mata uang lokal mereka).
+2. Buat produk `MoneySpender Pro` dengan **dua variant** subscription: `Monthly` (mis. $3-5/bulan) dan `Yearly` (mis. $30-50/tahun, kasih diskon supaya menarik). Harga dalam USD — pembeli otomatis melihat estimasi mata uang lokal mereka.
 3. Jalankan `supabase/migrations/2026-07-04-subscriptions.sql` di Supabase SQL Editor. (Kalau dulu pernah menjalankan versi lama bertabel `stripe_*`, jalankan `drop table if exists public.subscriptions;` dulu.)
-4. Di `Settings → API`, buat API key. Catat juga Store ID (menu `Settings → Stores`) dan Variant ID (buka variant produknya, ID ada di URL/detail).
+4. Di `Settings → API`, buat API key. Catat juga Store ID (menu `Settings → Stores`) dan kedua Variant ID (buka masing-masing variant produknya, ID ada di URL/detail).
 5. Di `Settings → Webhooks`, tambah endpoint `https://money.moneyspender.net/api/billing/webhook`, isi signing secret buatanmu sendiri, dan centang event `subscription_created`, `subscription_updated`, `subscription_cancelled`, `subscription_resumed`, `subscription_expired`, `subscription_paused`, `subscription_unpaused`.
 6. Isi env (lokal di `.env.local`, production di Vercel):
 
 ```env
 LEMONSQUEEZY_API_KEY=xxx
 LEMONSQUEEZY_STORE_ID=xxx
-LEMONSQUEEZY_VARIANT_ID=xxx
+LEMONSQUEEZY_VARIANT_MONTHLY=xxx
+LEMONSQUEEZY_VARIANT_YEARLY=xxx
 LEMONSQUEEZY_WEBHOOK_SECRET=xxx
 ```
+
+Catatan: `LEMONSQUEEZY_VARIANT_YEARLY` opsional — kalau dikosongkan, halaman pricing hanya menampilkan tombol bulanan.
 
 7. Deploy ulang. Halaman `/pricing` otomatis menampilkan tombol langganan, dan fitur Pro mulai digate untuk user Free.
 
 ### Pembagian paket saat ini
 
 - **Free**: transaksi, dashboard, kategori, dompet, target, PWA.
-- **Pro** (satu paket universal, langganan bulanan): import/export Excel/CSV, audit log, transaksi berulang, notifikasi budget.
+- **Pro** (langganan bulanan atau tahunan, fitur sama): import/export Excel/CSV, audit log, transaksi berulang, notifikasi budget.
 - Mau menambah fitur ke Pro? Bungkus komponennya dengan `<ProGate feature="...">` dan tambahkan `requirePro()` di route API-nya — lihat contoh di `src/app/(workspace)/settings/page.tsx` dan `src/app/api/import/transactions/route.ts`.
 
 ### Testing billing
@@ -214,6 +217,57 @@ Yang tersisa (non-kode):
 2. **Screenshot & konten**: tambahkan screenshot dashboard asli ke homepage begitu ada data yang bagus untuk dipamerkan.
 3. **Kanal peluncuran**: Product Hunt, X/Twitter, Reddit r/personalfinance dan komunitas finansial Indonesia, TikTok demo singkat.
 4. **Ukur funnel**: pasang event analytics di titik krusial: daftar → transaksi pertama → buka pricing → checkout. Dari sini kamu tahu di mana user berhenti.
+
+---
+
+## Bonus — Email Profesional Gratis (support@moneyspender.net)
+
+Alternatif gratis untuk Titan Mail / Google Workspace: **Cloudflare Email Routing** untuk menerima + **Gmail "Send as"** untuk membalas. Hasilnya: pelanggan melihat `support@moneyspender.net`, kamu tetap kerja dari inbox Gmail biasa. Biaya: Rp 0.
+
+### A. Terima email (Cloudflare Email Routing)
+
+Syarat: DNS domain `moneyspender.net` dikelola di Cloudflare (kalau belum, tambahkan site di Cloudflare lalu arahkan nameserver domain ke Cloudflare — gratis, ikuti wizard-nya).
+
+1. Buka [dash.cloudflare.com](https://dash.cloudflare.com) → pilih domain `moneyspender.net`.
+2. Menu `Email` → `Email Routing` → klik `Get started` / `Enable`.
+3. Cloudflare akan menawarkan menambahkan record MX + SPF otomatis — setujui.
+4. Di `Destination addresses`, tambahkan `legendterra@gmail.com` → cek inbox → klik link verifikasi.
+5. Di `Custom addresses`, buat `support@moneyspender.net` → tujuan `legendterra@gmail.com`.
+6. (Opsional) Aktifkan `Catch-all` supaya semua alamat @moneyspender.net (mis. `hi@`, `billing@`) ikut masuk.
+7. Tes: kirim email dari akun lain ke `support@moneyspender.net` — harus tiba di Gmail-mu.
+
+### B. Balas sebagai support@ (Gmail Send As)
+
+Tanpa langkah ini, balasanmu terkirim dari `legendterra@gmail.com` — kurang profesional.
+
+1. Di akun Google: [myaccount.google.com/security](https://myaccount.google.com/security) → aktifkan `2-Step Verification` (wajib untuk langkah berikutnya).
+2. Buka [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) → buat App Password baru (nama bebas, mis. `support-mail`) → catat 16 karakternya.
+3. Di Gmail → ⚙️ `Settings` → `See all settings` → tab `Accounts and Import` → bagian `Send mail as` → `Add another email address`.
+4. Isi: Name `MoneySpender Support`, email `support@moneyspender.net`, **hapus centang** `Treat as an alias` → Next.
+5. SMTP server: `smtp.gmail.com`, port `587`, username `legendterra@gmail.com`, password = App Password 16 karakter tadi → `Add Account`.
+6. Gmail mengirim kode verifikasi ke `support@moneyspender.net` — karena routing di langkah A sudah jalan, kode itu masuk ke inbox-mu sendiri. Masukkan kodenya.
+7. (Disarankan) Di `Send mail as`, jadikan `support@moneyspender.net` sebagai `default` dan pilih `Reply from the same address the message was sent to`.
+
+### C. Rapikan reputasi email (opsional tapi bagus)
+
+Di Cloudflare DNS, tambahkan record TXT DMARC agar email-mu tidak dicap spam:
+
+```text
+Type: TXT
+Name: _dmarc
+Content: v=DMARC1; p=none; rua=mailto:support@moneyspender.net
+```
+
+### D. Ganti kontak di aplikasi
+
+Setelah email aktif, ganti `legendterra@gmail.com` menjadi `support@moneyspender.net` di:
+
+- `src/app/privacy/page.tsx` (link kontak)
+- `src/app/terms/page.tsx` (link kontak)
+- `src/components/public/public-site-shell.tsx` (footer)
+- `VAPID_SUBJECT` di env (mailto:support@moneyspender.net)
+
+Catatan batasan: gratisan ini untuk email support manual. Kalau nanti butuh kirim email otomatis dari aplikasi (receipt, notifikasi massal), pakai layanan transactional seperti Resend/Brevo (ada tier gratis) — jangan Gmail SMTP.
 
 ---
 
