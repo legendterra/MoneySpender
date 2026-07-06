@@ -82,6 +82,14 @@ export async function getCustomerPortalUrl(subscriptionId: string) {
   return (json?.data?.attributes?.urls?.customer_portal as string | undefined) ?? null;
 }
 
+/**
+ * Batalkan langganan di Lemon Squeezy. Dipanggil saat user menghapus akun,
+ * supaya kartu mereka tidak terus ditagih setelah datanya sudah hilang.
+ */
+export async function cancelSubscription(subscriptionId: string) {
+  await lemonSqueezyRequest(`/subscriptions/${subscriptionId}`, { method: "DELETE" });
+}
+
 /** Verifikasi header X-Signature webhook (HMAC-SHA256 hex atas raw body). */
 export function verifyWebhookSignature(
   rawBody: string,

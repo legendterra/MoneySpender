@@ -25,12 +25,14 @@ Centang = sudah beres. Kosong = masih harus dikerjakan. Update file ini tiap ada
 - [x] Android: signing config + izin POST_NOTIFICATIONS
 - [x] iOS: Capacitor config siap (`npx cap add ios` tinggal dijalankan di Mac)
 - [x] SEO dasar: sitemap, robots, OpenGraph image
+- [x] Hapus akun otomatis batalkan langganan Lemon Squeezy dulu (cegah user kena tagih setelah akun dihapus)
 - [ ] Ganti kontak `legendterra@gmail.com` → `support@moneyspender.net` (tunggu email aktif)
 - [ ] FCM push notification native Android (opsional, v1.1)
+- [ ] Bersihkan 7 warning lint lama (unused import di `onboarding-wizard.tsx`, `data.ts`, fungsi `MonthTrendItem` yang tidak dipakai di `goals/page.tsx`) — kosmetik, tidak mempengaruhi fungsi
 
 ### Akun & konfigurasi (dikerjakan oleh kamu)
 
-- [x] Push ke GitHub + CI aktif
+- [x] Push ke GitHub + CI aktif (**diperbaiki 2026-07-06**, lihat Temuan Audit di bawah)
 - [x] Sentry: DSN diisi & diverifikasi (lokal) — [ ] tambahkan juga env-nya di Vercel
 - [x] Upstash Redis: kredensial diisi & diverifikasi (lokal) — [ ] tambahkan juga env-nya di Vercel
 - [ ] Jalankan SQL migrasi `subscriptions` di Supabase
@@ -39,7 +41,20 @@ Centang = sudah beres. Kosong = masih harus dikerjakan. Update file ini tiap ada
 - [ ] Aktifkan Cloudflare Email Routing (`support@moneyspender.net`) + Gmail Send-as
 - [ ] Android: generate keystore + daftar Play Console ($25) + upload AAB
 - [ ] iOS: Mac + Apple Developer ($99/tahun) + archive di Xcode
+- [ ] **Sebelum submit ke App Store/Play Store**: sembunyikan/nonaktifkan tombol upgrade Pro di dalam app native (lihat Temuan Audit — kebijakan Apple/Google soal pembelian eksternal)
 - [ ] Launch: konten sosial, Product Hunt, ukur funnel
+
+## Temuan Audit (2026-07-06)
+
+Hasil cek menyeluruh terhadap kode dan konfigurasi. Yang bertanda ✅ **sudah diperbaiki langsung di kode**; yang bertanda ⚠️ perlu keputusan/aksi dari kamu.
+
+- ✅ **Bug CI tidak pernah jalan**: `.github/workflows/ci.yml` men-trigger hanya di branch `main`, padahal branch kerja proyek ini adalah `betav1` (branch `main` tidak ada sama sekali). Artinya sejak CI dipasang, **belum pernah ada run** di GitHub Actions — semua verifikasi selama ini hanya jalan manual di komputer ini. Sudah diperbaiki: trigger sekarang `[betav1, master]`. Cek di GitHub tab **Actions** setelah push ini, harus mulai muncul run hijau.
+- ✅ **Hapus akun tidak membatalkan langganan**: sebelumnya, `DELETE /api/account/delete` langsung menghapus user Supabase tanpa membatalkan langganan Lemon Squeezy — kalau ada user Pro menghapus akunnya, kartu mereka **tetap tertagih tiap bulan** padahal datanya sudah hilang (berpotensi jadi keluhan/chargeback). Sudah diperbaiki: route ini sekarang membatalkan langganan di Lemon Squeezy dulu sebelum menghapus akun, dan menolak proses dengan pesan jelas kalau pembatalan gagal.
+- ✅ **Halaman `/pricing` sekarang masuk daftar halaman publik** di middleware (sebelumnya cuma home/privacy/terms/onboarding) — perbaikan kecil biar konsisten dan sedikit lebih cepat, bukan bug keamanan.
+- ⚠️ **Kebijakan App Store/Play Store soal pembelian**: saat nanti iOS/Android native (Capacitor) sudah dibungkus, tombol "Langganan bulanan/tahunan" di halaman `/pricing` **jangan boleh menyelesaikan checkout di dalam webview app**. Apple dan Google mewajibkan pembelian digital terjadi lewat sistem mereka sendiri (In-App Purchase / Play Billing) atau sepenuhnya di luar app (pola yang kita pakai). Sebelum submit ke store, tambahkan deteksi "apakah berjalan di dalam Capacitor" (`Capacitor.isNativePlatform()`) dan kalau ya, ganti tombol checkout menjadi link yang membuka Safari/Chrome eksternal, bukan navigasi di dalam webview. Ini belum dikerjakan karena iOS/Android native belum dibungkus — cukup diingat sebelum submit.
+- ✅ Cek konsistensi: `supabase/schema.sql` dan `supabase/migrations/2026-07-04-subscriptions.sql` sudah identik (kolom `provider_customer_id`/`provider_subscription_id`, RLS, index) — aman dipakai salah satu untuk instalasi baru.
+- ✅ Cek CSP: sudah mencakup Supabase, Sentry, Vercel Analytics. Panggilan ke Lemon Squeezy/Upstash terjadi di server (bukan browser) jadi tidak perlu masuk CSP — tidak ada celah.
+- ✅ Cek `.env.example` vs pemakaian kode: seluruhnya cocok, tidak ada env var yang dipakai tapi lupa didokumentasikan atau sebaliknya.
 
 ---
 
