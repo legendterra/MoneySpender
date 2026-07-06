@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { billingEnabled, getCustomerPortalUrl } from "@/lib/lemonsqueezy";
 import { enforceRateLimit } from "@/lib/rate-limit";
-import { billingEnabled, getStripe } from "@/lib/stripe";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -22,19 +22,20 @@ export async function POST() {
 
   const { data } = await supabase
     .from("subscriptions")
-    .select("stripe_customer_id")
+    .select("provider_subscription_id")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!data?.stripe_customer_id) {
+  if (!data?.provider_subscription_id) {
     return NextResponse.json({ error: "Belum ada langganan untuk akun ini." }, { status: 404 });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const session = await getStripe().billingPortal.sessions.create({
-    customer: data.stripe_customer_id,
-    return_url: `${appUrl}/settings`,
-  });
-
-  return NextResponse.json({ url: session.url });
+  try {
+    const url = await getCustomerPortalUrl(data.provider_subscription_id);
+    if (!url) throw new Error("Portal URL kosong.");
+    return NextResponse.json({ url });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Gagal membuka portal langganan." }, { status: 502 });
+  }
 }

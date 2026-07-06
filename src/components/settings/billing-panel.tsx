@@ -5,7 +5,7 @@ import { ManageBillingButton } from "@/components/billing/upgrade-button";
 import { buttonVariants } from "@/components/ui/button-styles";
 import { Panel } from "@/components/ui/panel";
 import { getCurrentPlan } from "@/lib/billing";
-import { billingEnabled } from "@/lib/stripe";
+import { billingEnabled } from "@/lib/lemonsqueezy";
 import { cn } from "@/lib/utils";
 
 /** Panel status langganan di halaman Settings. Tidak tampil saat billing nonaktif. */

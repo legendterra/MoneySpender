@@ -482,14 +482,14 @@ create policy "Users read own receipts" on storage.objects
 -- lewat ensureUserSetup() di src/lib/auth.ts — lebih reliable.
 
 -- ── 11. Billing (freemium) ───────────────────────────────────
--- Diisi oleh webhook Stripe lewat service role.
+-- Diisi oleh webhook Lemon Squeezy lewat service role.
 
 create table if not exists public.subscriptions (
   user_id uuid primary key references auth.users(id) on delete cascade,
   plan text not null default 'free' check (plan in ('free', 'pro')),
   status text not null default 'inactive',
-  stripe_customer_id text unique,
-  stripe_subscription_id text,
+  provider_customer_id text,
+  provider_subscription_id text,
   current_period_end timestamptz,
   updated_at timestamptz not null default now()
 );
@@ -500,5 +500,5 @@ drop policy if exists "Subscriptions owner read" on public.subscriptions;
 create policy "Subscriptions owner read" on public.subscriptions
   for select using (auth.uid() = user_id);
 
-create index if not exists subscriptions_stripe_customer_idx
-  on public.subscriptions (stripe_customer_id);
+create index if not exists subscriptions_provider_customer_idx
+  on public.subscriptions (provider_customer_id);

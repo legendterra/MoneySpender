@@ -61,8 +61,7 @@
     "pro4": "Notifikasi budget",
     "pro5": "Audit log aktivitas",
     "pro6": "Dukungan prioritas",
-    "ctaMonthly": "Langganan bulanan",
-    "ctaYearly": "Langganan tahunan (lebih hemat)",
+    "ctaSubscribe": "Mulai langganan Pro",
     "billingDisabled": "Langganan Pro belum tersedia. Selama masa ini, seluruh fitur Pro dapat dipakai tanpa biaya."
   }
 }

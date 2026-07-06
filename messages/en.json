@@ -61,8 +61,7 @@
     "pro4": "Budget notifications",
     "pro5": "Activity audit log",
     "pro6": "Priority support",
-    "ctaMonthly": "Subscribe monthly",
-    "ctaYearly": "Subscribe yearly (best value)",
+    "ctaSubscribe": "Subscribe to Pro",
     "billingDisabled": "Pro subscriptions are not available yet. Until then, every Pro feature is free to use."
   }
 }

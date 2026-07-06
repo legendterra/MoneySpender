@@ -2,14 +2,14 @@
 
 Panduan lengkap mengubah MoneySpender menjadi produk freemium yang bisa dijual di Web, Android, dan iOS.
 
-**Semua fase sudah diimplementasikan di kode.** Yang tersisa hanyalah langkah yang butuh akun eksternal milikmu: Stripe, Upstash, Sentry, Google Play Console, dan Apple Developer. Tutorial ini menjelaskan cara mengaktifkan tiap fase.
+**Semua fase sudah diimplementasikan di kode.** Yang tersisa hanyalah langkah yang butuh akun eksternal milikmu: Lemon Squeezy, Upstash, Sentry, Google Play Console, dan Apple Developer. Tutorial ini menjelaskan cara mengaktifkan tiap fase.
 
 Ringkasan status:
 
 | Fase | Kode | Yang masih perlu kamu lakukan |
 |---|---|---|
 | 0. Hardening | ✅ Selesai | Isi DSN Sentry + kredensial Upstash (opsional) |
-| 1. Billing freemium | ✅ Selesai | Buat akun Stripe, isi 4 env var, jalankan SQL migrasi |
+| 1. Billing freemium | ✅ Selesai | Buat akun Lemon Squeezy, isi 4 env var, jalankan SQL migrasi |
 | 2. i18n + multi-currency | ✅ Infrastruktur + halaman publik EN/ID | Ekstrak teks halaman dalam-app secara bertahap |
 | 3. Android | ✅ Signing + permission siap | Generate keystore, daftar Play Console, upload AAB |
 | 4. iOS | ✅ Capacitor config siap | Butuh Mac: `npx cap add ios` → Xcode → App Store |
@@ -84,51 +84,49 @@ Buka DevTools → Console di production. Kalau ada resource yang diblokir CSP (m
 
 ---
 
-## Fase 1 — Langganan Freemium (Stripe) — SUDAH DI KODE
+## Fase 1 — Langganan Freemium (Lemon Squeezy) — SUDAH DI KODE
+
+Kenapa Lemon Squeezy dan bukan Stripe: akun Stripe Indonesia hanya menerima IDR dan tidak mendukung transaksi lintas negara, sehingga tidak bisa dipakai jualan global. Lemon Squeezy adalah *Merchant of Record* — pendaftaran mudah dari Indonesia, mereka yang mengurus pajak global, pembeli tetap melihat mata uang lokal, dan payout ke kamu via PayPal/transfer.
 
 Yang sudah ada di kode:
 
 - Tabel `subscriptions` + RLS: `supabase/migrations/2026-07-04-subscriptions.sql` (juga di `schema.sql`)
 - Resolusi paket + gating: `src/lib/billing.ts` (`getCurrentPlan`, `requirePro`)
-- Route Stripe: `/api/stripe/checkout`, `/api/stripe/portal`, `/api/stripe/webhook`
-- Halaman `/pricing` (EN/ID), komponen `<ProGate>`, panel langganan di Settings
-- Fitur yang digate: import/export Excel (API + UI) dan audit log
+- Route billing: `/api/billing/checkout`, `/api/billing/portal`, `/api/billing/webhook`
+- Halaman `/pricing` (EN/ID) dengan satu paket Pro universal, komponen `<ProGate>`, panel langganan di Settings
+- Fitur yang digate: import/export Excel (API + UI), audit log, transaksi berulang & notifikasi budget (cron)
 
-**Perilaku penting**: selama `STRIPE_SECRET_KEY` kosong, billing nonaktif dan SEMUA user dianggap Pro — aplikasi berjalan persis seperti sebelumnya. Kamu bisa deploy kapan saja tanpa takut fitur terkunci.
+**Perilaku penting**: selama env Lemon Squeezy kosong, billing nonaktif dan SEMUA user dianggap Pro — aplikasi berjalan persis seperti sebelumnya. Kamu bisa deploy kapan saja tanpa takut fitur terkunci.
 
 ### Cara mengaktifkan billing
 
-1. Daftar di [stripe.com](https://stripe.com), lengkapi data bisnis (bisa perorangan).
-2. Di Stripe Dashboard → `Products`, buat produk `MoneySpender Pro` dengan 2 harga: bulanan dan tahunan (USD, aktifkan `Adaptive Pricing` agar pembeli melihat mata uang lokal).
-3. Jalankan `supabase/migrations/2026-07-04-subscriptions.sql` di Supabase SQL Editor.
-4. Di Stripe → `Developers → Webhooks`, tambah endpoint `https://money.moneyspender.net/api/stripe/webhook` dengan event: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Copy signing secret-nya.
-5. Isi env (lokal di `.env.local`, production di Vercel):
+1. Daftar di [lemonsqueezy.com](https://www.lemonsqueezy.com), buat store. Store baru langsung bisa dipakai dalam **test mode**; untuk menerima uang sungguhan, ajukan aktivasi store (isi profil + data payout, review biasanya 1-3 hari).
+2. Buat produk `MoneySpender Pro` dengan **satu variant**: subscription, interval monthly, harga USD (mis. $3-5/bulan — pembeli otomatis melihat estimasi mata uang lokal mereka).
+3. Jalankan `supabase/migrations/2026-07-04-subscriptions.sql` di Supabase SQL Editor. (Kalau dulu pernah menjalankan versi lama bertabel `stripe_*`, jalankan `drop table if exists public.subscriptions;` dulu.)
+4. Di `Settings → API`, buat API key. Catat juga Store ID (menu `Settings → Stores`) dan Variant ID (buka variant produknya, ID ada di URL/detail).
+5. Di `Settings → Webhooks`, tambah endpoint `https://money.moneyspender.net/api/billing/webhook`, isi signing secret buatanmu sendiri, dan centang event `subscription_created`, `subscription_updated`, `subscription_cancelled`, `subscription_resumed`, `subscription_expired`, `subscription_paused`, `subscription_unpaused`.
+6. Isi env (lokal di `.env.local`, production di Vercel):
 
 ```env
-STRIPE_SECRET_KEY=sk_live_xxx
-STRIPE_WEBHOOK_SECRET=whsec_xxx
-STRIPE_PRICE_MONTHLY=price_xxx
-STRIPE_PRICE_YEARLY=price_xxx
+LEMONSQUEEZY_API_KEY=xxx
+LEMONSQUEEZY_STORE_ID=xxx
+LEMONSQUEEZY_VARIANT_ID=xxx
+LEMONSQUEEZY_WEBHOOK_SECRET=xxx
 ```
 
-6. Deploy ulang. Halaman `/pricing` otomatis menampilkan tombol langganan, dan fitur Pro (import/export, audit log) mulai digate untuk user Free.
+7. Deploy ulang. Halaman `/pricing` otomatis menampilkan tombol langganan, dan fitur Pro mulai digate untuk user Free.
 
 ### Pembagian paket saat ini
 
 - **Free**: transaksi, dashboard, kategori, dompet, target, PWA.
-- **Pro**: import/export Excel/CSV + audit log (yang lain masih terbuka).
+- **Pro** (satu paket universal, langganan bulanan): import/export Excel/CSV, audit log, transaksi berulang, notifikasi budget.
 - Mau menambah fitur ke Pro? Bungkus komponennya dengan `<ProGate feature="...">` dan tambahkan `requirePro()` di route API-nya — lihat contoh di `src/app/(workspace)/settings/page.tsx` dan `src/app/api/import/transactions/route.ts`.
 
-### Testing Stripe
+### Testing billing
 
-Pakai test mode dulu (`sk_test_...`):
+Selama store masih test mode, checkout memakai kartu tes `4242 4242 4242 4242` (exp bebas di masa depan, CVC bebas). Untuk menerima webhook di lokal, expose port dengan `ngrok http 3000` lalu arahkan endpoint webhook ke URL ngrok — atau tes langsung di preview deployment Vercel.
 
-```powershell
-# Terminal terpisah: forward webhook ke lokal
-stripe listen --forward-to localhost:3000/api/stripe/webhook
-```
-
-Kartu tes: `4242 4242 4242 4242`, exp bebas di masa depan, CVC bebas. Alur yang wajib dites: upgrade → fitur terbuka; batalkan di portal → fitur terkunci setelah periode habis.
+Alur yang wajib dites: upgrade → fitur terbuka; batalkan di portal → fitur tetap aktif sampai akhir periode → terkunci setelahnya.
 
 ---
 
@@ -223,7 +221,7 @@ Yang tersisa (non-kode):
 
 1. Push ke GitHub, deploy ke Vercel, cek CI hijau dan CSP tidak memblokir apa pun.
 2. Aktifkan Sentry + Upstash + Vercel Analytics (30 menit).
-3. Jalankan SQL migrasi subscriptions, buat produk di Stripe test mode, isi env, tes checkout end-to-end, lalu ganti ke live mode. **Ini yang membuat aplikasi mulai menghasilkan uang.**
+3. Jalankan SQL migrasi subscriptions, buat produk di Lemon Squeezy (test mode), isi env, tes checkout end-to-end, lalu ajukan aktivasi store. **Ini yang membuat aplikasi mulai menghasilkan uang.**
 4. Generate keystore Android, daftar Play Console, `./gradlew bundleRelease`, mulai internal testing.
 5. Lanjutkan ekstraksi i18n halaman auth/privacy/terms + dalam-app secara bertahap.
 6. iOS via Mac (terakhir — pasar web+Android sudah bisa jalan duluan).

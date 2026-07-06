@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { NextResponse } from "next/server";
 
-import { billingEnabled } from "@/lib/stripe";
+import { billingEnabled } from "@/lib/lemonsqueezy";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type Plan = "free" | "pro";
@@ -9,12 +9,15 @@ export type Plan = "free" | "pro";
 export type SubscriptionRow = {
   plan: string;
   status: string;
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
+  provider_customer_id: string | null;
+  provider_subscription_id: string | null;
   current_period_end: string | null;
 };
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
+
+const SUBSCRIPTION_COLUMNS =
+  "plan,status,provider_customer_id,provider_subscription_id,current_period_end";
 
 /** Fitur yang dikunci untuk paket Free. */
 export const PRO_FEATURES = {
@@ -30,10 +33,10 @@ export function resolvePlan(subscription: SubscriptionRow | null): Plan {
   if (!billingEnabled()) return "pro";
   if (!subscription || subscription.plan !== "pro") return "free";
 
-  if (subscription.status === "active" || subscription.status === "trialing") {
+  if (["active", "on_trial", "trialing"].includes(subscription.status)) {
     return "pro";
   }
-  // Grace period: langganan yang berakhir/nunggak tetap Pro sampai akhir
+  // Grace period: langganan yang dibatalkan/nunggak tetap Pro sampai akhir
   // periode yang sudah dibayar.
   if (
     subscription.current_period_end &&
@@ -51,7 +54,7 @@ export async function getPlanForUser(
   if (!billingEnabled()) return "pro";
   const { data } = await supabase
     .from("subscriptions")
-    .select("plan,status,stripe_customer_id,stripe_subscription_id,current_period_end")
+    .select(SUBSCRIPTION_COLUMNS)
     .eq("user_id", userId)
     .maybeSingle();
   return resolvePlan(data as SubscriptionRow | null);
@@ -79,7 +82,7 @@ export async function filterProUserIds(admin: any, userIds: string[]): Promise<S
 
   const { data } = await admin
     .from("subscriptions")
-    .select("user_id,plan,status,stripe_customer_id,stripe_subscription_id,current_period_end")
+    .select(`user_id,${SUBSCRIPTION_COLUMNS}`)
     .in("user_id", unique);
 
   const pro = new Set<string>();

@@ -7,7 +7,7 @@ import { UpgradeButton } from "@/components/billing/upgrade-button";
 import { PublicSiteShell } from "@/components/public/public-site-shell";
 import { buttonVariants } from "@/components/ui/button-styles";
 import { Panel } from "@/components/ui/panel";
-import { billingEnabled } from "@/lib/stripe";
+import { billingEnabled } from "@/lib/lemonsqueezy";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -83,12 +83,7 @@ export default async function PricingPage() {
             </div>
             <FeatureList items={proFeatures} />
             {enabled ? (
-              <div className="grid gap-3">
-                <UpgradeButton interval="monthly">{t("ctaMonthly")}</UpgradeButton>
-                <UpgradeButton interval="yearly" variant="secondary">
-                  {t("ctaYearly")}
-                </UpgradeButton>
-              </div>
+              <UpgradeButton>{t("ctaSubscribe")}</UpgradeButton>
             ) : (
               <p className="rounded-md border border-border p-4 text-sm leading-7 text-muted">
                 {t("billingDisabled")}
