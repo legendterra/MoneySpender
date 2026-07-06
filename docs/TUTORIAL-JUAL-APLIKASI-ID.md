@@ -35,7 +35,7 @@ Centang = sudah beres. Kosong = masih harus dikerjakan. Update file ini tiap ada
 - [x] Upstash Redis: kredensial diisi & diverifikasi (lokal) — [ ] tambahkan juga env-nya di Vercel
 - [ ] Jalankan SQL migrasi `subscriptions` di Supabase
 - [ ] Lemon Squeezy: akun di-acc → buat produk 2 variant → isi 4 env var → tes checkout
-- [ ] Pindah DNS ke Cloudflare (record disiapkan → ganti nameserver → verifikasi)
+- [x] Pindah DNS ke Cloudflare (nameserver aktif, domain "Active" & terverifikasi jalan normal)
 - [ ] Aktifkan Cloudflare Email Routing (`support@moneyspender.net`) + Gmail Send-as
 - [ ] Android: generate keystore + daftar Play Console ($25) + upload AAB
 - [ ] iOS: Mac + Apple Developer ($99/tahun) + archive di Xcode
