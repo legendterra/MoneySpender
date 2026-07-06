@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -86,4 +87,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSentryConfig(withNextIntl(nextConfig), {
+  // Org/project/token hanya dibutuhkan untuk upload source map saat build
+  // (isi di env Vercel). Tanpa itu, build tetap jalan normal.
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  widenClientFileUpload: true,
+  // Kirim event lewat /monitoring agar tidak diblokir ad-blocker.
+  tunnelRoute: "/monitoring",
+  silent: !process.env.CI,
+});
