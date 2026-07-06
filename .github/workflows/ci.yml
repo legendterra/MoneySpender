@@ -23,7 +23,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 22 required by @capacitor/cli's engines field.
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
