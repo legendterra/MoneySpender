@@ -38,7 +38,8 @@ Centang = sudah beres. Kosong = masih harus dikerjakan. Update file ini tiap ada
 - [ ] Jalankan SQL migrasi `subscriptions` di Supabase
 - [ ] Lemon Squeezy: akun di-acc → buat produk 2 variant → isi 4 env var → tes checkout
 - [x] Pindah DNS ke Cloudflare (nameserver aktif, domain "Active" & terverifikasi jalan normal)
-- [ ] Aktifkan Cloudflare Email Routing (`support@moneyspender.net`) + Gmail Send-as
+- [ ] Cloudflare Email Routing — terima email di `support@moneyspender.net` (sedang tes)
+- [ ] Gmail Send-as — balas sebagai `support@moneyspender.net` (ditunda, boleh dikerjakan kapan saja setelah terima jalan)
 - [ ] Android: generate keystore + daftar Play Console ($25) + upload AAB
 - [ ] iOS: Mac + Apple Developer ($99/tahun) + archive di Xcode
 - [ ] **Sebelum submit ke App Store/Play Store**: sembunyikan/nonaktifkan tombol upgrade Pro di dalam app native (lihat Temuan Audit — kebijakan Apple/Google soal pembelian eksternal)
