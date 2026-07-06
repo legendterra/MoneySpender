@@ -4,16 +4,42 @@ Panduan lengkap mengubah MoneySpender menjadi produk freemium yang bisa dijual d
 
 **Semua fase sudah diimplementasikan di kode.** Yang tersisa hanyalah langkah yang butuh akun eksternal milikmu: Lemon Squeezy, Upstash, Sentry, Google Play Console, dan Apple Developer. Tutorial ini menjelaskan cara mengaktifkan tiap fase.
 
-Ringkasan status:
+## Checklist Progress
 
-| Fase | Kode | Yang masih perlu kamu lakukan |
-|---|---|---|
-| 0. Hardening | ✅ Selesai | Isi DSN Sentry + kredensial Upstash (opsional) |
-| 1. Billing freemium | ✅ Selesai | Buat akun Lemon Squeezy, isi 4 env var, jalankan SQL migrasi |
-| 2. i18n + multi-currency | ✅ Infrastruktur + halaman publik EN/ID | Ekstrak teks halaman dalam-app secara bertahap |
-| 3. Android | ✅ Signing + permission siap | Generate keystore, daftar Play Console, upload AAB |
-| 4. iOS | ✅ Capacitor config siap | Butuh Mac: `npx cap add ios` → Xcode → App Store |
-| 5. Marketing | ✅ Pricing page, OG image, sitemap | Konten sosial + launch |
+Centang = sudah beres. Kosong = masih harus dikerjakan. Update file ini tiap ada progres.
+
+### Kode (dikerjakan di repo)
+
+- [x] Rate limiting API + CSP + security headers
+- [x] Sentry error tracking + Vercel Analytics terpasang di kode
+- [x] Unit test (Vitest) + smoke test (Playwright) + CI GitHub Actions
+- [x] Halaman legal v2 (subprocessor, GDPR/CCPA, klausul billing)
+- [x] Billing Lemon Squeezy: checkout/portal/webhook + gating Pro (bulanan + tahunan)
+- [x] Halaman /pricing dua bahasa + ProGate + panel langganan di Settings
+- [x] i18n infrastruktur (next-intl, cookie locale, tombol EN/ID)
+- [x] i18n halaman publik: home, pricing, shell/nav
+- [x] i18n halaman auth (login/daftar/reset)
+- [x] i18n halaman privacy & terms
+- [ ] i18n halaman dalam-app (dashboard, settings, transaksi, dll.)
+- [x] Multi-currency per user (8 mata uang, format sesuai locale)
+- [x] Android: signing config + izin POST_NOTIFICATIONS
+- [x] iOS: Capacitor config siap (`npx cap add ios` tinggal dijalankan di Mac)
+- [x] SEO dasar: sitemap, robots, OpenGraph image
+- [ ] Ganti kontak `legendterra@gmail.com` → `support@moneyspender.net` (tunggu email aktif)
+- [ ] FCM push notification native Android (opsional, v1.1)
+
+### Akun & konfigurasi (dikerjakan oleh kamu)
+
+- [x] Push ke GitHub + CI aktif
+- [x] Sentry: DSN diisi & diverifikasi (lokal) — [ ] tambahkan juga env-nya di Vercel
+- [x] Upstash Redis: kredensial diisi & diverifikasi (lokal) — [ ] tambahkan juga env-nya di Vercel
+- [ ] Jalankan SQL migrasi `subscriptions` di Supabase
+- [ ] Lemon Squeezy: akun di-acc → buat produk 2 variant → isi 4 env var → tes checkout
+- [ ] Pindah DNS ke Cloudflare (record disiapkan → ganti nameserver → verifikasi)
+- [ ] Aktifkan Cloudflare Email Routing (`support@moneyspender.net`) + Gmail Send-as
+- [ ] Android: generate keystore + daftar Play Console ($25) + upload AAB
+- [ ] iOS: Mac + Apple Developer ($99/tahun) + archive di Xcode
+- [ ] Launch: konten sosial, Product Hunt, ukur funnel
 
 ---
 
@@ -142,10 +168,12 @@ Alur yang wajib dites: upgrade → fitur terbuka; batalkan di portal → fitur t
 - Tombol ganti bahasa (`EN`/`ID`) ada di navigasi halaman publik (`src/components/language-switcher.tsx`).
 - `<html lang>` sudah dinamis mengikuti locale.
 
-Yang tersisa (kerjakan bertahap, tidak memblokir rilis):
+Status ekstraksi teks:
 
-1. Halaman auth, privacy, dan terms masih Bahasa Indonesia — tambahkan key-nya ke `messages/*.json` lalu pakai `getTranslations()` seperti contoh di `src/app/page.tsx`.
-2. Halaman dalam-app (dashboard dll.) masih Indonesia. Calon pembeli global melihat halaman publik dulu, jadi ini prioritas kedua.
+- [x] Halaman publik: home, pricing, shell/nav/footer
+- [x] Halaman auth (login, daftar, reset password) — client component, pakai `useTranslations("auth")`
+- [x] Halaman privacy & terms — server component, pakai `getTranslations()`
+- [ ] Halaman dalam-app (dashboard, settings, transaksi, dll.) — calon pembeli global melihat halaman publik dulu, jadi ini prioritas terakhir. Polanya sama: tambah key di `messages/*.json`, lalu `useTranslations` (client) / `getTranslations` (server).
 
 ### 2.2 Mata uang per user — yang sudah ada
 

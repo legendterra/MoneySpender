@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
@@ -52,6 +53,7 @@ const darkPalette: AuthPalette = {
 };
 
 export function AuthPanel() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const mounted = useSyncExternalStore(
@@ -89,7 +91,7 @@ export function AuthPanel() {
       return;
     }
 
-    toast.success("Berhasil login.");
+    toast.success(t("toastSignedIn"));
     router.replace("/dashboard");
     router.refresh();
   }
@@ -115,7 +117,7 @@ export function AuthPanel() {
       return;
     }
 
-    toast.success("Akun dibuat. Cek email Anda untuk verifikasi.");
+    toast.success(t("toastAccountCreated"));
     setMode("signin");
   }
 
@@ -136,7 +138,7 @@ export function AuthPanel() {
       return;
     }
 
-    toast.success("Link reset password sudah dikirim ke email.");
+    toast.success(t("toastResetSent"));
   }
 
   async function handleGoogleLogin() {
@@ -184,21 +186,21 @@ export function AuthPanel() {
               <form className="space-y-3" onSubmit={handlePasswordLogin}>
                 <div className="space-y-1">
                   <h1 className="text-2xl font-semibold" style={{ color: palette.text }}>
-                    Masuk ke MoneySpender
+                    {t("signInTitle")}
                   </h1>
                   <p className="text-[13px]" style={{ color: palette.muted }}>
-                    Lanjutkan catatan uangmu dari email atau Google.
+                    {t("signInSubtitle")}
                   </p>
                 </div>
 
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium" style={{ color: palette.text }}>
-                    Email
+                    {t("emailLabel")}
                   </span>
                   <Input
                     type="email"
                     autoComplete="email"
-                    placeholder="nama@email.com"
+                    placeholder={t("emailPlaceholder")}
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="min-h-11 rounded-md"
@@ -212,12 +214,12 @@ export function AuthPanel() {
 
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium" style={{ color: palette.text }}>
-                    Password
+                    {t("passwordLabel")}
                   </span>
                   <Input
                     type="password"
                     autoComplete="current-password"
-                    placeholder="Password kamu"
+                    placeholder={t("passwordPlaceholderSignIn")}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     className="min-h-11 rounded-md"
@@ -236,7 +238,7 @@ export function AuthPanel() {
                     className="text-sm underline-offset-4 hover:underline"
                     style={{ color: palette.link }}
                   >
-                    Lupa password?
+                    {t("forgotLink")}
                   </button>
                 </div>
 
@@ -246,24 +248,24 @@ export function AuthPanel() {
                   className="w-full rounded-md border border-transparent px-4 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60"
                   style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
                 >
-                  {isBusy ? "Sebentar..." : "Masuk"}
+                  {isBusy ? t("busy") : t("signInButton")}
                 </button>
 
                 <p className="text-center text-sm" style={{ color: palette.muted }}>
-                  Baru di sini?{" "}
+                  {t("newHere")}{" "}
                   <button
                     type="button"
                     onClick={() => setMode("signup")}
                     className="font-semibold underline-offset-4 hover:underline"
                     style={{ color: palette.link }}
                   >
-                    Daftar dulu
+                    {t("signUpLink")}
                   </button>
                 </p>
 
                 <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em]" style={{ color: palette.muted }}>
                   <span className="h-px flex-1" style={{ backgroundColor: palette.divider }} />
-                  Atau pakai Google
+                  {t("orGoogle")}
                   <span className="h-px flex-1" style={{ backgroundColor: palette.divider }} />
                 </div>
 
@@ -274,14 +276,14 @@ export function AuthPanel() {
                   className="w-full rounded-md border px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-60"
                   style={{ borderColor: palette.border, color: palette.text, backgroundColor: palette.card }}
                 >
-                  Masuk dengan Google
+                  {t("googleButton")}
                 </button>
                 <a
                   href="https://moneyspender.net"
                   className="block rounded-md border px-4 py-3 text-center text-sm font-semibold transition-colors"
                   style={{ borderColor: palette.border, color: palette.link, backgroundColor: palette.inputBg }}
                 >
-                  Ganti aplikasi di MoneySpender
+                  {t("switchApp")}
                 </a>
               </form>
             ) : null}
@@ -290,20 +292,20 @@ export function AuthPanel() {
               <form className="space-y-3" onSubmit={handleSignUp}>
                 <div className="space-y-1">
                   <h1 className="text-2xl font-semibold" style={{ color: palette.text }}>
-                    Bikin akun baru
+                    {t("signUpTitle")}
                   </h1>
                   <p className="text-[13px]" style={{ color: palette.muted }}>
-                    Daftar sekali, lalu catatanmu bisa lanjut di perangkat lain.
+                    {t("signUpSubtitle")}
                   </p>
                 </div>
 
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium" style={{ color: palette.text }}>
-                    Nama lengkap
+                    {t("nameLabel")}
                   </span>
                   <Input
                     autoComplete="name"
-                    placeholder="Nama kamu"
+                    placeholder={t("namePlaceholder")}
                     value={fullName}
                     onChange={(event) => setFullName(event.target.value)}
                     className="min-h-11 rounded-md"
@@ -317,12 +319,12 @@ export function AuthPanel() {
 
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium" style={{ color: palette.text }}>
-                    Email
+                    {t("emailLabel")}
                   </span>
                   <Input
                     type="email"
                     autoComplete="email"
-                    placeholder="nama@email.com"
+                    placeholder={t("emailPlaceholder")}
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="min-h-11 rounded-md"
@@ -336,12 +338,12 @@ export function AuthPanel() {
 
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium" style={{ color: palette.text }}>
-                    Password
+                    {t("passwordLabel")}
                   </span>
                   <Input
                     type="password"
                     autoComplete="new-password"
-                    placeholder="Minimal 8 karakter"
+                    placeholder={t("passwordPlaceholderSignUp")}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     className="min-h-11 rounded-md"
@@ -359,18 +361,18 @@ export function AuthPanel() {
                   className="w-full rounded-md border border-transparent px-4 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60"
                   style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
                 >
-                  {isBusy ? "Sebentar..." : "Daftar"}
+                  {isBusy ? t("busy") : t("signUpButton")}
                 </button>
 
                 <p className="text-center text-sm" style={{ color: palette.muted }}>
-                  Sudah punya akun?{" "}
+                  {t("haveAccount")}{" "}
                   <button
                     type="button"
                     onClick={() => setMode("signin")}
                     className="font-semibold underline-offset-4 hover:underline"
                     style={{ color: palette.link }}
                   >
-                    Masuk
+                    {t("signInLink")}
                   </button>
                 </p>
                 <a
@@ -378,7 +380,7 @@ export function AuthPanel() {
                   className="block rounded-md border px-4 py-3 text-center text-sm font-semibold transition-colors"
                   style={{ borderColor: palette.border, color: palette.link, backgroundColor: palette.inputBg }}
                 >
-                  Kembali ke pilihan aplikasi
+                  {t("backToApps")}
                 </a>
               </form>
             ) : null}
@@ -387,21 +389,21 @@ export function AuthPanel() {
               <form className="space-y-3" onSubmit={handleResetPassword}>
                 <div className="space-y-1">
                   <h1 className="text-2xl font-semibold" style={{ color: palette.text }}>
-                    Reset password
+                    {t("forgotTitle")}
                   </h1>
                   <p className="text-[13px]" style={{ color: palette.muted }}>
-                    Tulis email akunmu. Link reset akan dikirim ke sana.
+                    {t("forgotSubtitle")}
                   </p>
                 </div>
 
                 <label className="grid gap-1.5">
                   <span className="text-sm font-medium" style={{ color: palette.text }}>
-                    Email
+                    {t("emailLabel")}
                   </span>
                   <Input
                     type="email"
                     autoComplete="email"
-                    placeholder="nama@email.com"
+                    placeholder={t("emailPlaceholder")}
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     className="min-h-11 rounded-md"
@@ -419,7 +421,7 @@ export function AuthPanel() {
                   className="w-full rounded-md border border-transparent px-4 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60"
                   style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
                 >
-                  {isBusy ? "Mengirim..." : "Kirim link reset"}
+                  {isBusy ? t("sending") : t("sendResetButton")}
                 </button>
 
                 <div className="flex items-center justify-between text-sm" style={{ color: palette.muted }}>
@@ -429,7 +431,7 @@ export function AuthPanel() {
                     className="underline-offset-4 hover:underline"
                     style={{ color: palette.link }}
                   >
-                    Balik ke login
+                    {t("backToLogin")}
                   </button>
                   <button
                     type="button"
@@ -437,7 +439,7 @@ export function AuthPanel() {
                     className="underline-offset-4 hover:underline"
                     style={{ color: palette.link }}
                   >
-                    Daftar
+                    {t("registerLink")}
                   </button>
                 </div>
                 <a
@@ -445,7 +447,7 @@ export function AuthPanel() {
                   className="block rounded-md border px-4 py-3 text-center text-sm font-semibold transition-colors"
                   style={{ borderColor: palette.border, color: palette.link, backgroundColor: palette.inputBg }}
                 >
-                  Pilih aplikasi lain
+                  {t("chooseOtherApp")}
                 </a>
               </form>
             ) : null}
