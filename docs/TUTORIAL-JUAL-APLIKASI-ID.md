@@ -33,10 +33,11 @@ Centang = sudah beres. Kosong = masih harus dikerjakan. Update file ini tiap ada
 ### Akun & konfigurasi (dikerjakan oleh kamu)
 
 - [x] Push ke GitHub + CI aktif (**diperbaiki 2026-07-06**, lihat Temuan Audit di bawah)
-- [x] Sentry: DSN diisi & diverifikasi (lokal) — [ ] tambahkan juga env-nya di Vercel
-- [x] Upstash Redis: kredensial diisi & diverifikasi (lokal) — [ ] tambahkan juga env-nya di Vercel
-- [ ] Jalankan SQL migrasi `subscriptions` di Supabase
-- [ ] Lemon Squeezy: akun di-acc → buat produk 2 variant → isi 4 env var → tes checkout
+- [x] Sentry: DSN diisi & diverifikasi (lokal + Vercel, 2026-07-07)
+- [x] Upstash Redis: kredensial diisi & diverifikasi (lokal + Vercel, 2026-07-07)
+- [x] Jalankan SQL migrasi `subscriptions` di Supabase (2026-07-07, terverifikasi: tabel + RLS policy aktif)
+- [x] Lemon Squeezy **test mode** (2026-07-07): produk `MoneySpender Pro` published (Monthly Rp 39.000 = variant 1878068, Yearly Rp 390.000 = variant 1878084, store 425351, currency IDR), API key dibuat, webhook test-mode terpasang ke `/api/billing/webhook` (id 116903, 7 event subscription), checkout Monthly + Yearly terverifikasi via API, semua env terisi di `.env.local` + Vercel
+- [ ] Lemon Squeezy **go live**: tunggu aktivasi store di-acc → toggle keluar dari test mode → buat API key live + webhook live → ganti nilai `LEMONSQUEEZY_API_KEY` & `LEMONSQUEEZY_WEBHOOK_SECRET` di Vercel (variant/store ID biasanya tetap)
 - [x] Pindah DNS ke Cloudflare (nameserver aktif, domain "Active" & terverifikasi jalan normal)
 - [ ] Cloudflare Email Routing — terima email di `support@moneyspender.net` (sedang tes)
 - [ ] Gmail Send-as — balas sebagai `support@moneyspender.net` (ditunda, boleh dikerjakan kapan saja setelah terima jalan)
