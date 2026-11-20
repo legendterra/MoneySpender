@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { requirePro } from "@/lib/billing";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { todayWIB } from "@/lib/dates";
 
 function matchesWeekday(date: string, weekday: string) {
   if (!weekday || weekday === "all") return true;
@@ -201,7 +202,7 @@ export async function GET(request: NextRequest) {
   }
 
   const buffer = await workbook.xlsx.writeBuffer();
-  const filename = `MoneySpender_Export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const filename = `MoneySpender_Export_${todayWIB()}.xlsx`;
 
   return new NextResponse(buffer, {
     headers: {

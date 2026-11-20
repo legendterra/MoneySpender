@@ -76,13 +76,13 @@ export default async function DebtsPage({
         <DebtForm
           title="Catat hutang / piutang"
           description="Pilih jenis, dompet yang terpengaruh, nama kontak, asal platform, dan alasannya."
-          categories={data.categories}
           wallets={data.wallets}
         />
         <DebtsList
           title={`Catatan ${data.selectedMonthLabel}`}
           records={data.debts}
           currencyCode={currency}
+          wallets={data.wallets}
         />
       </div>
     </div>

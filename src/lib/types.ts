@@ -1,9 +1,12 @@
-export type TransactionType = "income" | "expense" | "debt";
-export type FinanceTransactionType = Exclude<TransactionType, "debt">;
+import type { AppLocale } from "@/i18n/locales";
+
+export type TransactionType = "income" | "expense";
 
 /** Payable = kamu hutang ke orang lain (liability, kurangi net worth).
  *  Receivable = orang lain hutang ke kamu (asset, tambah net worth). */
 export type DebtDirection = "payable" | "receivable";
+
+export type { AppLocale };
 
 export type Category = {
   id: string;
@@ -12,14 +15,16 @@ export type Category = {
   color: string | null;
 };
 
+export type WalletKind = "cash" | "bank" | "ewallet" | "card" | "other";
+
 export type Wallet = {
   id: string;
   name: string;
-  kind: "cash" | "bank" | "ewallet" | "card" | "other";
+  kind: WalletKind;
   opening_balance: number;
   color: string | null;
   is_archived: boolean;
-  /** Dihitung: opening_balance + income - expense + transfers_in - transfers_out */
+  /** Computed by computeWalletBalances (src/lib/balances.ts), PLAN.md section 4.2. */
   balance: number;
 };
 
@@ -35,12 +40,11 @@ export type WalletTransfer = {
 export type TransactionRecord = {
   id: string;
   amount: number;
-  type: FinanceTransactionType;
+  type: TransactionType;
   category_id: string | null;
   transaction_date: string;
   reason: string | null;
   merchant: string | null;
-  payment_method: string | null;
   category_label: string | null;
   wallet_id: string | null;
   wallet_label: string | null;
@@ -53,6 +57,9 @@ export type DebtPayment = {
   amount: number;
   paid_date: string;
   note: string | null;
+  /** Wallet the payment left (payable) or entered (receivable); null = the debt's wallet. */
+  wallet_id: string | null;
+  wallet_label: string | null;
 };
 
 export type DebtRecord = {
@@ -91,10 +98,12 @@ export type DebtSummary = {
   currentMonthOutstanding: number;
 };
 
+export type HistoryRecordType = TransactionType | "debt";
+
 export type HistoryRecord = {
   id: string;
   source: "transaction" | "debt";
-  type: TransactionType;
+  type: HistoryRecordType;
   amount: number;
   date: string;
   title: string;
@@ -149,12 +158,26 @@ export type ProfileData = {
   currency_code: string | null;
   monthly_savings_goal: number | null;
   yearly_savings_goal: number | null;
+  /** profiles.locale (migration 2026-11-20); "id" until the migration runs. */
+  locale: AppLocale;
+  /** Reserve the remaining monthly savings goal from the daily allowance. */
+  reserve_savings: boolean;
 };
 
+/** 0 = three times a day (active_start, midpoint, active_end). */
+export type DigestInterval = 0 | 2 | 3 | 4;
+
 export type ReminderPreferences = {
+  /** @deprecated replaced by the hourly digest */
   reminder_morning_enabled: boolean;
+  /** @deprecated replaced by the hourly digest */
   reminder_evening_enabled: boolean;
   push_enabled: boolean;
+  digest_enabled: boolean;
+  digest_every_hours: DigestInterval;
+  active_start: number;
+  active_end: number;
+  hide_amounts: boolean;
 };
 
 export type MonthlyBudget = {
@@ -166,16 +189,29 @@ export type MonthlyBudget = {
 
 export type RecurringTransaction = {
   id: string;
-  type: FinanceTransactionType;
+  type: TransactionType;
   category_id: string | null;
   category_label: string | null;
+  wallet_id: string | null;
+  wallet_label: string | null;
   amount: number;
   reason: string;
   merchant: string | null;
-  payment_method: string | null;
   day_of_month: number;
   last_generated_month: string | null;
   is_active: boolean;
+};
+
+export type TransactionTemplate = {
+  id: string;
+  label: string;
+  type: TransactionType;
+  amount: number;
+  category_id: string | null;
+  category_label: string | null;
+  wallet_id: string | null;
+  wallet_label: string | null;
+  sort_order: number;
 };
 
 export type AuditLog = {

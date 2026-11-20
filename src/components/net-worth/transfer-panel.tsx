@@ -10,6 +10,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
+import { todayWIB } from "@/lib/dates";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import type { Wallet } from "@/lib/types";
 
@@ -43,7 +44,7 @@ export function TransferPanel({ wallets }: { wallets: Wallet[] }) {
       from_wallet_id: fromWalletId,
       to_wallet_id: toWalletId,
       amount: Number(formData.get("amount") ?? 0),
-      transfer_date: String(formData.get("transferDate") ?? new Date().toISOString().slice(0, 10)),
+      transfer_date: String(formData.get("transferDate") ?? todayWIB()),
       note: String(formData.get("note") ?? "") || null,
     });
 
@@ -85,7 +86,7 @@ export function TransferPanel({ wallets }: { wallets: Wallet[] }) {
           <Input name="amount" type="number" min="1" step="1" required />
         </Field>
         <Field label="Tanggal">
-          <Input name="transferDate" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
+          <Input name="transferDate" type="date" defaultValue={todayWIB()} required />
         </Field>
         <Field label="Catatan">
           <Input name="note" placeholder="Contoh: top up GoPay" />

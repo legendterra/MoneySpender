@@ -15,8 +15,9 @@ import { Panel } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
+import { todayWIB } from "@/lib/dates";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { Category, FinanceTransactionType, Wallet as WalletType } from "@/lib/types";
+import type { Category, TransactionType, Wallet as WalletType } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 const transactionSchema = z.object({
@@ -41,7 +42,7 @@ export function TransactionForm({
   description: string;
   categories: Category[];
   wallets: WalletType[];
-  type: FinanceTransactionType;
+  type: TransactionType;
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,7 +56,7 @@ export function TransactionForm({
       amount: 0,
       categoryId: defaultCategoryId,
       walletId: defaultWalletId,
-      transactionDate: new Date().toISOString().slice(0, 10),
+      transactionDate: todayWIB(),
       reason: "",
       merchant: "",
     },
@@ -89,7 +90,7 @@ export function TransactionForm({
       enqueueOfflineMutation("transactions", payload);
       setIsSubmitting(false);
       toast.success("Disimpan offline. Nanti otomatis sync saat koneksi balik.");
-      form.reset({ amount: 0, categoryId: defaultCategoryId, walletId: defaultWalletId, transactionDate: new Date().toISOString().slice(0, 10), reason: "", merchant: "" });
+      form.reset({ amount: 0, categoryId: defaultCategoryId, walletId: defaultWalletId, transactionDate: todayWIB(), reason: "", merchant: "" });
       return;
     }
 
@@ -112,7 +113,7 @@ export function TransactionForm({
     }
 
     toast.success(`${type === "income" ? "Pemasukan" : "Pengeluaran"} berhasil disimpan.`);
-    form.reset({ amount: 0, categoryId: defaultCategoryId, walletId: defaultWalletId, transactionDate: new Date().toISOString().slice(0, 10), reason: "", merchant: "" });
+    form.reset({ amount: 0, categoryId: defaultCategoryId, walletId: defaultWalletId, transactionDate: todayWIB(), reason: "", merchant: "" });
     router.refresh();
   }
 

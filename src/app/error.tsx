@@ -28,6 +28,11 @@ export default function RouteError({
         <p className="text-sm leading-7 text-muted">
           Tenang, data Anda tidak hilang. Coba muat ulang area ini sekali lagi.
         </p>
+        {/* In production Next.js replaces server error messages; the digest matches the server log line. */}
+        <p className="break-words text-xs leading-6 text-muted">
+          {error.message}
+          {error.digest ? ` (ref ${error.digest})` : ""}
+        </p>
         <Button onClick={reset} fullWidth>
           Coba lagi
         </Button>

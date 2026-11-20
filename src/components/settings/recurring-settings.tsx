@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { Category, FinanceTransactionType, RecurringTransaction } from "@/lib/types";
+import { monthValueWIB } from "@/lib/dates";
+import type { Category, TransactionType, RecurringTransaction } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 export function RecurringSettings({
@@ -23,7 +24,7 @@ export function RecurringSettings({
   currencyCode: string;
 }) {
   const router = useRouter();
-  const [type, setType] = useState<FinanceTransactionType>("expense");
+  const [type, setType] = useState<TransactionType>("expense");
   const [isSaving, setIsSaving] = useState(false);
   const visibleCategories = categories.filter((category) => category.type === type);
 
@@ -50,7 +51,6 @@ export function RecurringSettings({
       amount: Number(formData.get("amount") ?? 0),
       reason: String(formData.get("reason") ?? ""),
       merchant: String(formData.get("merchant") ?? "") || null,
-      payment_method: String(formData.get("paymentMethod") ?? "") || null,
       day_of_month: Number(formData.get("dayOfMonth") ?? 1),
       is_active: true,
     });
@@ -103,23 +103,33 @@ export function RecurringSettings({
       return;
     }
 
-    const now = new Date();
-    const date = new Date(now.getFullYear(), now.getMonth(), item.day_of_month);
+    const month = monthValueWIB();
     const { error } = await supabase.from("transactions").insert({
       user_id: user.id,
       type: item.type,
       category_id: item.category_id,
       category_label: item.category_label,
+      wallet_id: item.wallet_id,
+      wallet_label: item.wallet_label,
       amount: item.amount,
       reason: item.reason,
       merchant: item.merchant,
-      payment_method: item.payment_method,
-      transaction_date: date.toISOString().slice(0, 10),
+      transaction_date: `${month}-${String(item.day_of_month).padStart(2, "0")}`,
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(`Gagal menyimpan transaksi dari template: ${error.message}`);
       return;
+    }
+
+    // Mark this month as generated so the daily cron does not add it again.
+    const { error: markError } = await supabase
+      .from("recurring_transactions")
+      .update({ last_generated_month: month })
+      .eq("id", item.id)
+      .eq("user_id", user.id);
+    if (markError) {
+      toast.error(`Transaksi tersimpan, tapi recurring_transactions.last_generated_month gagal diperbarui: ${markError.message}`);
     }
 
     toast.success("Template sudah masuk ke transaksi bulan ini.");
@@ -138,7 +148,7 @@ export function RecurringSettings({
 
       <form action={addRecurring} className="grid gap-3">
         <div className="grid gap-3 md:grid-cols-2">
-          <Select value={type} onChange={(event) => setType(event.target.value as FinanceTransactionType)}>
+          <Select value={type} onChange={(event) => setType(event.target.value as TransactionType)}>
             <option value="expense">Pengeluaran</option>
             <option value="income">Pemasukan</option>
           </Select>
@@ -153,8 +163,7 @@ export function RecurringSettings({
           <Input name="amount" type="number" min="1" step="1" placeholder="Nominal" required />
           <Input name="dayOfMonth" type="number" min="1" max="28" defaultValue="1" placeholder="Tanggal tiap bulan" />
           <Input name="reason" placeholder="Catatan, contoh: Spotify / Gaji" required />
-          <Input name="paymentMethod" placeholder="Metode, contoh: QRIS / Transfer" />
-          <Input name="merchant" placeholder="Toko, klien, atau sumber" className="md:col-span-2" />
+          <Input name="merchant" placeholder="Toko, klien, atau sumber" />
         </div>
         <Button type="submit" isLoading={isSaving}>
           Simpan template

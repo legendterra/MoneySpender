@@ -89,4 +89,15 @@ describe("parseImportRows", () => {
   it("throws when the header row is missing", () => {
     expect(() => parseCsv("kolom1,kolom2\nfoo,bar")).toThrow(/Header/);
   });
+
+  it("maps debt rows without categories: the label is always Hutang / Piutang", () => {
+    const parsed = parseCsv(
+      [
+        "Jenis,Tanggal,Nominal,Kategori",
+        "Hutang,2026-07-01,200000,Pinjol",
+        "Piutang,2026-07-02,50000,Lainnya",
+      ].join("\n"),
+    );
+    expect(parsed.debts.map((d) => d.category_label)).toEqual(["Hutang", "Piutang"]);
+  });
 });
