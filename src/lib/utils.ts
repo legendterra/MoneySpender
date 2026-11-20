@@ -3,6 +3,7 @@ import { format as formatDateFns } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from "@/lib/constants";
+import { monthRange, monthValueWIB } from "@/lib/dates";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -58,30 +59,13 @@ export function formatMonthLabel(date: string) {
   }).format(new Date(normalizeDateValue(date)));
 }
 
+/** Current (or given) month in WIB, `yyyy-MM`. */
 export function toMonthInput(date = new Date()) {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  return `${year}-${month}`;
-}
-
-function toDateString(date: Date) {
-  const year = String(date.getFullYear()).padStart(4, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return monthValueWIB(date);
 }
 
 export function getMonthRange(monthValue: string) {
-  const [year, month] = monthValue.split("-").map(Number);
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
-
-  // Format from local date parts — toISOString() would shift the day in
-  // timezones ahead of UTC.
-  return {
-    start: toDateString(start),
-    end: toDateString(end),
-  };
+  return monthRange(monthValue);
 }
 
 export function calculateRate(income: number, expense: number) {
