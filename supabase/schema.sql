@@ -1,41 +1,21 @@
 -- ============================================================
--- MoneySpender — Full Schema (drop & recreate)
--- Jalankan di Supabase SQL Editor
+-- MoneySpender — Full schema for a FRESH install
+-- Equals the live database (full recreate, commit d3ebf29) plus
+-- supabase/migrations/2026-11-20-v2-preferences.sql.
+--
+-- Run in the Supabase SQL Editor on an EMPTY project. It does not drop
+-- anything; to wipe an existing project first run reset-DANGER.sql
+-- (destroys all data). Existing projects only need the migrations.
 -- ============================================================
 
--- ── 1. DROP semua (urutan child → parent) ───────────────────
-drop trigger if exists on_auth_user_created on auth.users;
-drop function if exists public.handle_new_user();
-drop function if exists public.set_updated_at() cascade;
-
-drop table if exists public.budget_notification_logs  cascade;
-drop table if exists public.audit_logs                cascade;
-drop table if exists public.notification_logs         cascade;
-drop table if exists public.push_subscriptions        cascade;
-drop table if exists public.transaction_attachments   cascade;
-drop table if exists public.transaction_splits        cascade;
-drop table if exists public.debt_payments             cascade;
-drop table if exists public.recurring_transactions    cascade;
-drop table if exists public.monthly_budgets           cascade;
-drop table if exists public.wallet_transfers          cascade;
-drop table if exists public.transactions              cascade;
-drop table if exists public.debts                     cascade;
-drop table if exists public.wallets                   cascade;
-drop table if exists public.categories                cascade;
-drop table if exists public.reminder_preferences      cascade;
-drop table if exists public.profiles                  cascade;
-
-drop type if exists public.transaction_type cascade;
-drop type if exists public.debt_direction   cascade;
-
--- ── 2. Extensions ────────────────────────────────────────────
+-- ── 1. Extensions ────────────────────────────────────────────
 create extension if not exists pgcrypto;
 
--- ── 3. Enum types ────────────────────────────────────────────
+-- ── 2. Enum types ────────────────────────────────────────────
 create type public.transaction_type as enum ('income', 'expense');
 create type public.debt_direction   as enum ('payable', 'receivable');
 
--- ── 4. Helper function ───────────────────────────────────────
+-- ── 3. Helper function ───────────────────────────────────────
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
 begin
@@ -44,7 +24,7 @@ begin
 end;
 $$;
 
--- ── 5. Tables ────────────────────────────────────────────────
+-- ── 4. Tables ────────────────────────────────────────────────
 
 -- profiles: data & preferensi per user
 create table public.profiles (
@@ -53,11 +33,15 @@ create table public.profiles (
   currency_code        text        not null default 'IDR',
   monthly_savings_goal numeric(14,2) not null default 4000000,
   yearly_savings_goal  numeric(14,2) not null default 48000000,
+  locale               text        not null default 'id'
+                       constraint profiles_locale_check check (locale in ('id', 'en')),
+  -- sisihkan target tabungan bulanan dari jatah harian
+  reserve_savings      boolean     not null default false,
   created_at           timestamptz not null default timezone('utc', now()),
   updated_at           timestamptz not null default timezone('utc', now())
 );
 
--- categories: kategori income/expense/debt buatan user
+-- categories: kategori income/expense buatan user (hutang tidak punya kategori)
 create table public.categories (
   id         uuid        primary key default gen_random_uuid(),
   user_id    uuid        not null references auth.users(id) on delete cascade,
@@ -214,8 +198,19 @@ create table public.reminder_preferences (
   reminder_morning_enabled boolean not null default true,
   reminder_evening_enabled boolean not null default true,
   push_enabled             boolean not null default false,
+  digest_enabled           boolean not null default true,
+  -- 0 = tiga kali sehari (active_start, tengah, active_end)
+  digest_every_hours       integer not null default 3
+                           constraint reminder_preferences_digest_every_hours_check
+                           check (digest_every_hours in (0, 2, 3, 4)),
+  active_start             integer not null default 9,
+  active_end               integer not null default 21,
+  hide_amounts             boolean not null default false,
   created_at               timestamptz not null default timezone('utc', now()),
-  updated_at               timestamptz not null default timezone('utc', now())
+  updated_at               timestamptz not null default timezone('utc', now()),
+  constraint reminder_preferences_active_hours_check check (
+    active_start between 0 and 23 and active_end between 0 and 23 and active_start < active_end
+  )
 );
 
 -- push_subscriptions: web push credentials
@@ -229,7 +224,7 @@ create table public.push_subscriptions (
   created_at timestamptz not null default timezone('utc', now())
 );
 
--- notification_logs: dedup log reminder harian
+-- notification_logs: dedup log reminder harian (lama, diganti notification_digest_logs)
 create table public.notification_logs (
   id            uuid    primary key default gen_random_uuid(),
   user_id       uuid    not null references auth.users(id) on delete cascade,
@@ -237,6 +232,33 @@ create table public.notification_logs (
   reminder_date date    not null,
   created_at    timestamptz not null default timezone('utc', now()),
   unique (user_id, slot, reminder_date)
+);
+
+-- notification_digest_logs: dedup digest per perangkat per jam (WIB)
+create table public.notification_digest_logs (
+  id         uuid    primary key default gen_random_uuid(),
+  user_id    uuid    not null references auth.users(id) on delete cascade,
+  endpoint   text    not null,
+  local_date date    not null,
+  local_hour integer not null check (local_hour between 0 and 23),
+  kind       text    not null,
+  created_at timestamptz not null default timezone('utc', now()),
+  unique (endpoint, local_date, local_hour)
+);
+
+-- transaction_templates: template catat cepat (sekali tap)
+create table public.transaction_templates (
+  id             uuid    primary key default gen_random_uuid(),
+  user_id        uuid    not null references auth.users(id) on delete cascade,
+  label          text    not null,
+  type           public.transaction_type not null,
+  amount         numeric(14,2) not null check (amount > 0),
+  category_id    uuid    references public.categories(id) on delete set null,
+  category_label text,
+  wallet_id      uuid    references public.wallets(id) on delete set null,
+  wallet_label   text,
+  sort_order     integer not null default 0,
+  created_at     timestamptz not null default timezone('utc', now())
 );
 
 -- monthly_budgets: batas belanja per kategori per bulan
@@ -291,12 +313,12 @@ create table public.audit_logs (
   created_at timestamptz not null default timezone('utc', now())
 );
 
--- ── 6. Storage bucket ────────────────────────────────────────
+-- ── 5. Storage bucket ────────────────────────────────────────
 insert into storage.buckets (id, name, public)
 values ('receipts', 'receipts', false)
 on conflict (id) do nothing;
 
--- ── 7. Indexes ───────────────────────────────────────────────
+-- ── 6. Indexes ───────────────────────────────────────────────
 create index transactions_user_date_idx
   on public.transactions (user_id, transaction_date desc);
 
@@ -348,7 +370,13 @@ create index recurring_transactions_user_idx
 create index budget_notification_logs_user_idx
   on public.budget_notification_logs (user_id, month);
 
--- ── 8. Triggers ──────────────────────────────────────────────
+create index notification_digest_logs_user_idx
+  on public.notification_digest_logs (user_id, local_date desc);
+
+create index transaction_templates_user_idx
+  on public.transaction_templates (user_id, sort_order);
+
+-- ── 7. Triggers ──────────────────────────────────────────────
 create trigger set_profiles_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
@@ -381,7 +409,7 @@ create trigger set_recurring_transactions_updated_at
   before update on public.recurring_transactions
   for each row execute function public.set_updated_at();
 
--- ── 9. Row Level Security ────────────────────────────────────
+-- ── 8. Row Level Security ────────────────────────────────────
 alter table public.profiles               enable row level security;
 alter table public.categories             enable row level security;
 alter table public.wallets                enable row level security;
@@ -398,6 +426,8 @@ alter table public.monthly_budgets        enable row level security;
 alter table public.recurring_transactions enable row level security;
 alter table public.budget_notification_logs enable row level security;
 alter table public.audit_logs             enable row level security;
+alter table public.notification_digest_logs enable row level security;
+alter table public.transaction_templates  enable row level security;
 
 -- profiles
 create policy "Profiles owner only" on public.profiles
@@ -463,25 +493,46 @@ create policy "Audit logs owner read" on public.audit_logs
 create policy "Budget notification logs owner read" on public.budget_notification_logs
   for select using (auth.uid() = user_id);
 
--- storage receipts
-create policy "Users upload own receipts" on storage.objects
-  for insert with check (
-    bucket_id = 'receipts'
-    and auth.uid()::text = (storage.foldername(name))[1]
-  );
+-- digest logs (read only; written by the cron with the service role)
+create policy "Notification digest logs owner read" on public.notification_digest_logs
+  for select using (auth.uid() = user_id);
 
-create policy "Users read own receipts" on storage.objects
-  for select using (
-    bucket_id = 'receipts'
-    and auth.uid()::text = (storage.foldername(name))[1]
-  );
+-- templates
+create policy "Transaction templates owner only" on public.transaction_templates
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- ── 10. Catatan ──────────────────────────────────────────────
+-- storage receipts (storage.objects survives reset-DANGER.sql, hence the guards)
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users upload own receipts'
+  ) then
+    create policy "Users upload own receipts" on storage.objects
+      for insert with check (
+        bucket_id = 'receipts'
+        and auth.uid()::text = (storage.foldername(name))[1]
+      );
+  end if;
+
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage' and tablename = 'objects' and policyname = 'Users read own receipts'
+  ) then
+    create policy "Users read own receipts" on storage.objects
+      for select using (
+        bucket_id = 'receipts'
+        and auth.uid()::text = (storage.foldername(name))[1]
+      );
+  end if;
+end $$;
+
+-- ── 9. Catatan ──────────────────────────────────────────────
 -- Tidak memakai trigger handle_new_user. Setup data awal user
 -- (profile, categories, reminder prefs) dilakukan saat first login
 -- lewat ensureUserSetup() di src/lib/auth.ts — lebih reliable.
 
--- ── 11. Billing (freemium) ───────────────────────────────────
+-- ── 10. Billing (freemium, dormant while BILLING_ENABLED is unset) ───────────────────────────────────
 -- Diisi oleh webhook Lemon Squeezy lewat service role.
 
 create table if not exists public.subscriptions (
@@ -502,3 +553,6 @@ create policy "Subscriptions owner read" on public.subscriptions
 
 create index if not exists subscriptions_provider_customer_idx
   on public.subscriptions (provider_customer_id);
+
+-- ── 11. Reload PostgREST schema cache ────────────────────────
+notify pgrst, 'reload schema';
