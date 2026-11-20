@@ -28,7 +28,7 @@ Tutorial lengkap lokal sampai production ada di:
 - Setting profil, target tabungan, mata uang
 - Day mode dan night mode pastel
 - PWA installable untuk web/mobile
-- Push reminder pagi dan malam via Vercel Cron + Web Push
+- Notifikasi digest per jam (jatah aman hari ini, rekap, budget 80%/100%) via Cloudflare Worker cron + Web Push
 
 ## Stack
 
@@ -114,10 +114,14 @@ Notifikasi akan aktif setelah:
 3. Isi semua Environment Variables
 4. Deploy
 
-Cron yang sudah disiapkan di [`vercel.json`](/C:/Project/TEMPAT%20BELAJAR/MoneySpender/vercel.json):
+Cron:
 
-- reminder pagi sekitar 07.00 WIB
-- reminder malam sekitar 19.00 WIB
+- `vercel.json`: `/api/cron/recurring` sekali sehari (transaksi berulang).
+- `workers/digest-cron`: Cloudflare Worker `0 * * * *` yang memanggil `/api/cron/digest`
+  (Vercel Hobby hanya mengizinkan cron harian). Cara deploy: `workers/digest-cron/README.md`.
+
+Database: jalankan `supabase/migrations/*.sql` di Supabase SQL Editor, lalu cek dengan
+`npm run check:schema` (probe read-only dengan anon key).
 
 ## Struktur penting
 
@@ -126,7 +130,7 @@ Cron yang sudah disiapkan di [`vercel.json`](/C:/Project/TEMPAT%20BELAJAR/MoneyS
 - [`src/app/(workspace)/income/page.tsx`](/C:/Project/TEMPAT%20BELAJAR/MoneySpender/src/app/(workspace)/income/page.tsx)
 - [`src/app/(workspace)/expenses/page.tsx`](/C:/Project/TEMPAT%20BELAJAR/MoneySpender/src/app/(workspace)/expenses/page.tsx)
 - [`src/app/(workspace)/settings/page.tsx`](/C:/Project/TEMPAT%20BELAJAR/MoneySpender/src/app/(workspace)/settings/page.tsx)
-- [`src/app/api/cron/reminder/[slot]/route.ts`](/C:/Project/TEMPAT%20BELAJAR/MoneySpender/src/app/api/cron/reminder/[slot]/route.ts)
+- `src/app/api/cron/digest/route.ts` + `src/lib/digest.ts` (notifikasi per jam)
 - [`src/app/api/push/subscribe/route.ts`](/C:/Project/TEMPAT%20BELAJAR/MoneySpender/src/app/api/push/subscribe/route.ts)
 
 ## Catatan

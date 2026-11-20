@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "verify:features": "node scripts/verify-features.mjs",
+    "check:schema": "node scripts/check-schema.mjs",
     "generate:vapid": "node scripts/generate-vapid.mjs",
     "generate:cron-secret": "node scripts/generate-cron-secret.mjs"
   },

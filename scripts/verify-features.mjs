@@ -5,7 +5,7 @@ const root = process.cwd();
 const requiredFiles = [
   "src/app/(workspace)/net-worth/page.tsx",
   "src/app/api/cron/recurring/route.ts",
-  "src/app/api/cron/budget-alerts/route.ts",
+  "src/app/api/cron/digest/route.ts",
   "src/app/api/import/transactions/route.ts",
   "src/components/net-worth/transfer-panel.tsx",
   "src/components/pwa/offline-snapshot-viewer.tsx",
