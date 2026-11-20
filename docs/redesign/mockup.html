@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<style>
+  .mk { --bg:#0e1012; --s1:#16191d; --s2:#1e2227; --line:#262b31; --tx:#eceff3; --mu:#8a919c;
+        --lime:#c8f169; --in:#3dd68c; --out:#ff7a6b; --debt:#f5b544; --tf:#6ca8ff;
+        display:flex; gap:28px; flex-wrap:wrap; align-items:flex-start; padding:4px 0;
+        font-family:"Plus Jakarta Sans",system-ui,sans-serif; color:var(--tx); }
+  .cap { font-size:12px; color:var(--muted-foreground,#8a919c); margin:0 0 8px 4px; }
+  .ph { width:340px; height:700px; background:var(--bg); border-radius:38px; border:8px solid #050607;
+        position:relative; overflow:hidden; box-shadow:0 0 0 1px #2a2f36; }
+  .sb { display:flex; justify-content:space-between; padding:12px 22px 0; font-size:12px; color:var(--mu); }
+  .pad { padding:10px 18px; }
+  .row { display:flex; align-items:center; justify-content:space-between; }
+  .pill { background:var(--s1); border:1px solid var(--line); border-radius:99px; padding:6px 12px; font-size:12px; }
+  .num { font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+  .hero { background:var(--s1); border:1px solid var(--line); border-radius:22px; padding:16px; margin-top:12px; }
+  .lbl { font-size:11px; color:var(--mu); text-transform:uppercase; letter-spacing:.08em; }
+  .big { font-size:34px; font-weight:700; margin:4px 0 2px; }
+  .bar { height:8px; background:var(--s2); border-radius:99px; overflow:hidden; margin-top:10px; }
+  .bar i { display:block; height:100%; border-radius:99px; }
+  .wl { display:flex; gap:8px; margin-top:12px; overflow:hidden; }
+  .w { flex:0 0 auto; background:var(--s1); border:1px solid var(--line); border-radius:16px; padding:10px 12px; min-width:104px; }
+  .w b { display:block; font-size:14px; margin-top:2px; }
+  .sec { font-size:13px; font-weight:600; margin:16px 0 6px; display:flex; justify-content:space-between; }
+  .sec span { color:var(--mu); font-weight:500; }
+  .tx { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+  .ic { width:34px; height:34px; border-radius:11px; background:var(--s2); display:grid; place-items:center; font-size:13px; font-weight:700; }
+  .tx .t { flex:1; font-size:13px; } .tx .t small { display:block; color:var(--mu); font-size:11px; }
+  .tab { position:absolute; left:0; right:0; bottom:0; height:74px; background:#121417ee; border-top:1px solid var(--line);
+         display:flex; justify-content:space-around; align-items:center; font-size:10px; color:var(--mu); padding-bottom:10px; }
+  .tab .on { color:var(--tx); }
+  .fab { width:54px; height:54px; border-radius:18px; background:var(--lime); color:#0e1012; font-size:30px; font-weight:500;
+         display:grid; place-items:center; margin-top:-26px; box-shadow:0 6px 20px #c8f16940; }
+  .dim { position:absolute; inset:0; background:#000a; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; background:var(--s1); border-radius:26px 26px 0 0; border-top:1px solid var(--line); padding:10px 16px 18px; }
+  .grab { width:38px; height:4px; background:#3a4048; border-radius:9px; margin:0 auto 12px; }
+  .seg { display:flex; background:var(--bg); border-radius:12px; padding:3px; font-size:12px; }
+  .seg div { flex:1; text-align:center; padding:7px 0; border-radius:9px; color:var(--mu); }
+  .seg .on { background:var(--s2); color:var(--out); font-weight:600; }
+  .amt { text-align:center; font-size:40px; font-weight:700; margin:14px 0 4px; }
+  .amt small { font-size:18px; color:var(--mu); font-weight:600; margin-right:4px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .chip { border:1px solid var(--line); border-radius:99px; padding:6px 10px; font-size:12px; color:var(--mu); }
+  .chip.on { border-color:var(--lime); color:var(--lime); background:#c8f16912; }
+  .meta { display:flex; gap:6px; margin-top:10px; }
+  .meta .chip { color:var(--tx); }
+  .kp { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:12px; }
+  .kp div { background:var(--s2); border-radius:12px; text-align:center; padding:11px 0; font-size:18px; font-weight:600; }
+  .save { margin-top:10px; background:var(--lime); color:#0e1012; text-align:center; border-radius:14px; padding:13px 0; font-weight:700; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="mk">
+  <div>
+    <p class="cap">Beranda</p>
+    <div class="ph">
+      <div class="sb"><span>09.41</span><span>5G 82%</span></div>
+      <div class="pad">
+        <div class="row"><div style="font-size:15px;font-weight:700">Halo, Raihan</div><div class="pill">November 2026 ▾</div></div>
+        <div class="hero">
+          <div class="lbl">Jatah aman hari ini</div>
+          <div class="big num">Rp142.000</div>
+          <div style="font-size:12px;color:var(--mu)">Terpakai Rp58.000 dari Rp200.000 · sisa 11 hari</div>
+          <div class="bar"><i style="width:29%;background:var(--lime)"></i></div>
+          <div class="row" style="margin-top:14px;font-size:12px">
+            <span>Masuk <b class="num" style="color:var(--in)">Rp8,5 jt</b></span>
+            <span>Keluar <b class="num" style="color:var(--out)">Rp5,1 jt</b></span>
+          </div>
+        </div>
+        <div class="wl">
+          <div class="w"><span class="lbl">BCA</span><b class="num">Rp3.120.000</b></div>
+          <div class="w"><span class="lbl">GoPay</span><b class="num">Rp412.500</b></div>
+          <div class="w"><span class="lbl">Tunai</span><b class="num">Rp250.000</b></div>
+        </div>
+        <div class="sec">Hari ini <span class="num">−Rp58.000</span></div>
+        <div class="tx"><div class="ic" style="color:var(--out)">M</div><div class="t">Makan siang<small>Makan · GoPay</small></div><b class="num" style="color:var(--out);font-size:13px">−33.000</b></div>
+        <div class="tx"><div class="ic" style="color:var(--out)">K</div><div class="t">Kopi susu<small>Kopi · Tunai</small></div><b class="num" style="color:var(--out);font-size:13px">−25.000</b></div>
+        <div class="tx"><div class="ic" style="color:var(--debt)">H</div><div class="t">Budi bayar cicilan<small>Piutang · BCA</small></div><b class="num" style="color:var(--in);font-size:13px">+200.000</b></div>
+        <div class="sec">Budget <span>2 hampir habis</span></div>
+        <div style="font-size:12px" class="row"><span>Makan</span><span class="num" style="color:var(--debt)">86%</span></div>
+        <div class="bar" style="margin-top:5px"><i style="width:86%;background:var(--debt)"></i></div>
+      </div>
+      <div class="tab"><span class="on">Beranda</span><span>Riwayat</span><div class="fab">+</div><span>Hutang</span><span>Lainnya</span></div>
+    </div>
+  </div>
+  <div>
+    <p class="cap">Catat (tekan +)</p>
+    <div class="ph">
+      <div class="sb"><span>09.42</span><span>5G 82%</span></div>
+      <div class="dim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="seg"><div class="on">Keluar</div><div>Masuk</div><div>Transfer</div><div>Hutang</div></div>
+        <div class="amt num"><small>Rp</small>25.000</div>
+        <div class="chips">
+          <div class="chip on">Kopi</div><div class="chip">Makan</div><div class="chip">Transport</div><div class="chip">Belanja</div><div class="chip">Tagihan</div><div class="chip">+ Lainnya</div>
+        </div>
+        <div class="meta"><div class="chip">Tunai ▾</div><div class="chip">Hari ini ▾</div><div class="chip">Catatan…</div></div>
+        <div class="kp num">
+          <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>000</div><div>0</div><div>⌫</div>
+        </div>
+        <div class="save">Simpan</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
