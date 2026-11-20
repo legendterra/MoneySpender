@@ -8,8 +8,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/ui/panel";
+import { Select } from "@/components/ui/select";
+import { clampDebtPayment, recordDebtPayment } from "@/lib/debt-payments";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { DebtRecord } from "@/lib/types";
+import type { DebtRecord, Wallet } from "@/lib/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type ModalStep = "prompt" | "confirm";
@@ -18,10 +20,12 @@ export function DebtsList({
   title,
   records,
   currencyCode,
+  wallets = [],
 }: {
   title: string;
   records: DebtRecord[];
   currencyCode: string;
+  wallets?: Wallet[];
 }) {
   const router = useRouter();
   const [selectedDebt, setSelectedDebt] = useState<DebtRecord | null>(null);
@@ -29,6 +33,7 @@ export function DebtsList({
   const [countdown, setCountdown] = useState(10);
   const [isSaving, setIsSaving] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentWalletId, setPaymentWalletId] = useState("");
   const [editingDebt, setEditingDebt] = useState<DebtRecord | null>(null);
 
   useEffect(() => {
@@ -44,6 +49,7 @@ export function DebtsList({
     setStep("prompt");
     setCountdown(10);
     setPaymentAmount("");
+    setPaymentWalletId(debt.wallet_id ?? wallets[0]?.id ?? "");
   }
 
   function closeModal() {
@@ -53,66 +59,50 @@ export function DebtsList({
     setPaymentAmount("");
   }
 
-  async function markAsPaid() {
+  async function pay(requested: number, note: string) {
     if (!selectedDebt) return;
+    const amount = clampDebtPayment(selectedDebt, requested);
+    if (amount <= 0) { toast.error("Isi nominal yang valid."); return; }
+
     setIsSaving(true);
     const supabase = createBrowserSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("debts")
-      .update({ paid_amount: selectedDebt.amount, is_paid: true, paid_at: new Date().toISOString() })
-      .eq("id", selectedDebt.id)
-      .eq("user_id", user?.id);
+    if (!user) { setIsSaving(false); toast.error("Sesi login berakhir."); return; }
 
-    if (!error && user) {
-      await supabase.from("debt_payments").insert({
-        user_id: user.id,
-        debt_id: selectedDebt.id,
-        amount: selectedDebt.remaining_amount,
-        paid_date: new Date().toISOString().slice(0, 10),
-        note: "Pelunasan penuh",
+    const wallet = wallets.find((w) => w.id === paymentWalletId);
+    try {
+      const result = await recordDebtPayment(supabase, {
+        userId: user.id,
+        debt: selectedDebt,
+        amount,
+        walletId: wallet?.id ?? selectedDebt.wallet_id,
+        walletLabel: wallet?.name ?? selectedDebt.wallet_label,
+        note,
       });
+      if (amount < requested) {
+        toast.info(`Nominal disesuaikan ke sisa ${formatCurrency(amount, currencyCode)}.`);
+      }
+      toast.success(
+        result.isPaid
+          ? selectedDebt.direction === "payable" ? "Hutang ditandai lunas." : "Piutang ditandai lunas/diterima."
+          : "Pembayaran sebagian tersimpan.",
+      );
+      closeModal();
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Pembayaran gagal disimpan.");
+    } finally {
+      setIsSaving(false);
     }
+  }
 
-    setIsSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(selectedDebt.direction === "payable" ? "Hutang ditandai lunas." : "Piutang ditandai lunas/diterima.");
-    closeModal();
-    router.refresh();
+  async function markAsPaid() {
+    if (!selectedDebt) return;
+    await pay(selectedDebt.remaining_amount, "Pelunasan penuh");
   }
 
   async function savePartialPayment() {
-    if (!selectedDebt) return;
-    const amount = Number(paymentAmount);
-    if (!Number.isFinite(amount) || amount <= 0) { toast.error("Isi nominal yang valid."); return; }
-
-    const nextPaid = Math.min(selectedDebt.amount, selectedDebt.paid_amount + amount);
-    const isPaid = nextPaid >= selectedDebt.amount;
-
-    setIsSaving(true);
-    const supabase = createBrowserSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase
-      .from("debts")
-      .update({ paid_amount: nextPaid, is_paid: isPaid, paid_at: isPaid ? new Date().toISOString() : null })
-      .eq("id", selectedDebt.id)
-      .eq("user_id", user?.id);
-
-    if (!error && user) {
-      await supabase.from("debt_payments").insert({
-        user_id: user.id,
-        debt_id: selectedDebt.id,
-        amount,
-        paid_date: new Date().toISOString().slice(0, 10),
-        note: "Bayar sebagian",
-      });
-    }
-
-    setIsSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(isPaid ? "Lunas." : "Pembayaran sebagian tersimpan.");
-    closeModal();
-    router.refresh();
+    await pay(Number(paymentAmount), "Bayar sebagian");
   }
 
   async function updateDebt(formData: FormData) {
@@ -139,7 +129,6 @@ export function DebtsList({
         debt_date: String(formData.get("debtDate") ?? ""),
         source_name: String(formData.get("sourceName") ?? ""),
         contact_name: String(formData.get("contactName") ?? ""),
-        lender_name: String(formData.get("contactName") ?? ""), // backward compat
         reason: String(formData.get("reason") ?? ""),
         is_paid: isPaid,
         paid_at: isPaid ? new Date().toISOString() : null,
@@ -148,7 +137,7 @@ export function DebtsList({
       .eq("user_id", user.id);
 
     setIsSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(`Gagal mengubah debts: ${error.message}`); return; }
     toast.success("Catatan berhasil diedit.");
     setEditingDebt(null);
     router.refresh();
@@ -301,6 +290,18 @@ export function DebtsList({
                   Sisa {formatCurrency(selectedDebt.remaining_amount, currencyCode)} dari total{" "}
                   {formatCurrency(selectedDebt.amount, currencyCode)} untuk {selectedDebt.contact_name}.
                 </p>
+                {wallets.length > 0 && (
+                  <label className="grid gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
+                      {selectedDebt.direction === "payable" ? "Bayar dari dompet" : "Terima ke dompet"}
+                    </span>
+                    <Select value={paymentWalletId} onChange={(e) => setPaymentWalletId(e.target.value)}>
+                      {wallets.map((w) => (
+                        <option key={w.id} value={w.id}>{w.name}</option>
+                      ))}
+                    </Select>
+                  </label>
+                )}
                 <div className="grid gap-2 rounded-lg border border-border bg-background-strong p-4">
                   <label className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
                     {selectedDebt.direction === "payable" ? "Bayar sebagian" : "Terima sebagian"}
@@ -309,6 +310,7 @@ export function DebtsList({
                     <Input
                       type="number"
                       min="0"
+                      max={selectedDebt.remaining_amount}
                       step="1"
                       placeholder="Contoh: 50000"
                       value={paymentAmount}

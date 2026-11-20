@@ -1,0 +1,87 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { todayWIB } from "@/lib/dates";
+import { SupabaseQueryError } from "@/lib/supabase/query";
+import type { DebtRecord } from "@/lib/types";
+
+type PayableDebt = Pick<DebtRecord, "id" | "amount" | "paid_amount" | "wallet_id" | "wallet_label">;
+
+/** A payment can never exceed what is still owed. */
+export function clampDebtPayment(debt: Pick<DebtRecord, "amount" | "paid_amount">, requested: number) {
+  const remaining = Math.max(0, Number(debt.amount) - Number(debt.paid_amount));
+  if (!Number.isFinite(requested) || requested <= 0) return 0;
+  return Math.min(requested, remaining);
+}
+
+export type RecordDebtPaymentInput = {
+  userId: string;
+  debt: PayableDebt;
+  amount: number;
+  /** Defaults to the debt's own wallet. */
+  walletId?: string | null;
+  walletLabel?: string | null;
+  note?: string | null;
+  paidDate?: string;
+  now?: Date;
+};
+
+export type RecordDebtPaymentResult = {
+  paymentId: string;
+  amount: number;
+  paidAmount: number;
+  isPaid: boolean;
+};
+
+/**
+ * Inserts the payment first, then updates the debt. If the debt update fails
+ * the payment is deleted again, so debts.paid_amount and debt_payments never
+ * disagree. Throws an Error naming the failing table.
+ */
+export async function recordDebtPayment(
+  supabase: SupabaseClient,
+  input: RecordDebtPaymentInput,
+): Promise<RecordDebtPaymentResult> {
+  const { debt, userId } = input;
+  const amount = clampDebtPayment(debt, input.amount);
+  if (amount <= 0) {
+    throw new Error("Nominal pembayaran harus lebih dari 0 dan hutang ini belum lunas.");
+  }
+
+  const now = input.now ?? new Date();
+  const paidAmount = Math.min(Number(debt.amount), Number(debt.paid_amount) + amount);
+  const isPaid = paidAmount >= Number(debt.amount);
+  const walletId = input.walletId === undefined ? debt.wallet_id : input.walletId;
+  const walletLabel = input.walletLabel === undefined ? debt.wallet_label : input.walletLabel;
+
+  const inserted = await supabase
+    .from("debt_payments")
+    .insert({
+      user_id: userId,
+      debt_id: debt.id,
+      amount,
+      wallet_id: walletId ?? null,
+      wallet_label: walletLabel ?? null,
+      paid_date: input.paidDate ?? todayWIB(now),
+      note: input.note ?? null,
+    })
+    .select("id")
+    .single();
+  if (inserted.error) throw new SupabaseQueryError("debt_payments", "insert", inserted.error);
+  const paymentId = String((inserted.data as { id: string }).id);
+
+  const updated = await supabase
+    .from("debts")
+    .update({ paid_amount: paidAmount, is_paid: isPaid, paid_at: isPaid ? now.toISOString() : null })
+    .eq("id", debt.id)
+    .eq("user_id", userId);
+
+  if (updated.error) {
+    const rollback = await supabase.from("debt_payments").delete().eq("id", paymentId).eq("user_id", userId);
+    const rollbackNote = rollback.error
+      ? ` Rollback of debt_payments ${paymentId} also failed: ${rollback.error.message}.`
+      : " The payment was rolled back.";
+    throw new Error(`${new SupabaseQueryError("debts", "update", updated.error).message}${rollbackNote}`);
+  }
+
+  return { paymentId, amount, paidAmount, isPaid };
+}
