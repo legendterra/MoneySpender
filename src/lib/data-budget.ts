@@ -1,6 +1,15 @@
 import { getAuthedContext } from "@/lib/auth";
-import { buildBudgetBoard, planBudgetCopy, spendingByCategory, type BudgetBoard, type BudgetCopyPlan } from "@/lib/budget-plan";
+import {
+  budgetListRows,
+  buildBudgetBoard,
+  planBudgetCopy,
+  spendingByCategory,
+  type BudgetCopyPlan,
+  type BudgetListRow,
+  type BudgetTotals,
+} from "@/lib/budget-plan";
 import { daysLeftInMonth, isMonthValue, monthRange, monthValueWIB, shiftMonth, todayWIB } from "@/lib/dates";
+import { paginate } from "@/lib/paging";
 import { expectRows, selectAllRows } from "@/lib/supabase/query";
 
 // Server fetcher for /budget. Reads go through expectRows/selectAllRows so a
@@ -13,7 +22,13 @@ export type BudgetPageData = {
   isCurrentMonth: boolean;
   /** Days left including today (current month only). */
   daysLeft: number | null;
-  board: BudgetBoard;
+  totals: BudgetTotals;
+  hasBudgets: boolean;
+  /** One page (10) of the ordered category list. */
+  rows: BudgetListRow[];
+  page: number;
+  totalPages: number;
+  totalItems: number;
   /** Last month's limit and spending per category id, for edit suggestions. */
   previous: Record<string, { limit: number; spent: number }>;
   copyPlan: BudgetCopyPlan;
@@ -24,7 +39,9 @@ type CategoryRow = { id: string; name: string; color: string | null };
 type BudgetRow = { category_id: string; month: string; amount: number | string };
 type SpendRow = { type: string; amount: number | string; category_id: string | null; transaction_date: string };
 
-export async function getBudgetPageData(requestedMonth?: string): Promise<BudgetPageData> {
+export const BUDGET_PAGE_SIZE = 10;
+
+export async function getBudgetPageData(requestedMonth?: string, requestedPage = 1): Promise<BudgetPageData> {
   const currentMonth = monthValueWIB();
   const month = isMonthValue(requestedMonth) && requestedMonth <= currentMonth ? requestedMonth : currentMonth;
   const previousMonth = shiftMonth(month, -1);
@@ -72,18 +89,27 @@ export async function getBudgetPageData(requestedMonth?: string): Promise<Budget
     if (limit > 0 || spent > 0) previous[category.id] = { limit, spent };
   }
 
+  const daysLeft = isCurrentMonth ? daysLeftInMonth(todayWIB()) : null;
+  const board = buildBudgetBoard(
+    categories,
+    current,
+    spending.filter((t) => t.transaction_date >= monthStart),
+    daysLeft,
+  );
+  const paged = paginate(budgetListRows(board), requestedPage, BUDGET_PAGE_SIZE);
+
   return {
     userId: user.id,
     month,
     previousMonth,
     isCurrentMonth,
-    daysLeft: isCurrentMonth ? daysLeftInMonth(todayWIB()) : null,
-    board: buildBudgetBoard(
-      categories,
-      current,
-      spending.filter((t) => t.transaction_date >= monthStart),
-      isCurrentMonth ? daysLeftInMonth(todayWIB()) : null,
-    ),
+    daysLeft,
+    totals: board.totals,
+    hasBudgets: board.budgeted.length > 0,
+    rows: paged.items,
+    page: paged.page,
+    totalPages: paged.totalPages,
+    totalItems: paged.totalItems,
     previous,
     copyPlan: planBudgetCopy(previousBudgets, current, categories.map((c) => c.id), month),
     hasCategories: categories.length > 0,

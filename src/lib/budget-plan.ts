@@ -202,3 +202,74 @@ export function budgetSuggestions(input: {
   }
   return out;
 }
+
+export type BudgetGroup = "budgeted" | "unbudgeted" | "idle";
+export type BudgetListRow = BudgetRow & { id: string; group: BudgetGroup };
+
+/** One ordered list for the paged screen: budgeted (most urgent first), then spending without a budget, then idle. */
+export function budgetListRows(board: BudgetBoard): BudgetListRow[] {
+  const tag = (rows: BudgetRow[], group: BudgetGroup) => rows.map((row) => ({ ...row, id: row.categoryId, group }));
+  return [
+    ...tag(board.budgeted, "budgeted"),
+    ...tag(board.unbudgetedWithSpending, "unbudgeted"),
+    ...tag(board.idle, "idle"),
+  ];
+}
+
+/** The same row with a new limit (0 removes the budget), for optimistic updates. */
+export function withLimit<T extends BudgetRow>(row: T, limit: number, daysLeft: number | null): T {
+  const safe = limit > 0 ? Math.round(limit) : 0;
+  const ratio = budgetRatio(row.spent, safe);
+  const remaining = safe - row.spent;
+  return {
+    ...row,
+    limit: safe,
+    remaining,
+    ratio,
+    status: statusForRatio(safe, ratio),
+    perDay: safe > 0 ? perDayAllowance(remaining, daysLeft) : null,
+  };
+}
+
+/**
+ * Month totals after local (optimistic) edits: `before` are the server rows of
+ * the visible page, `after` the same rows as shown now. Rows not on the page are
+ * already inside `totals` and stay as they are.
+ */
+export function adjustTotals(
+  totals: BudgetTotals,
+  before: BudgetRow[],
+  after: BudgetRow[],
+  daysLeft: number | null,
+): BudgetTotals {
+  const share = (rows: BudgetRow[]) => {
+    const budgeted = rows.filter((row) => row.limit > 0);
+    return {
+      limit: budgeted.reduce((sum, row) => sum + row.limit, 0),
+      spent: budgeted.reduce((sum, row) => sum + row.spent, 0),
+      over: budgeted.filter((row) => row.status === "over").length,
+      near: budgeted.filter((row) => row.status === "warning").length,
+      unbudgeted: rows.filter((row) => row.limit === 0).reduce((sum, row) => sum + row.spent, 0),
+    };
+  };
+  const a = share(before);
+  const b = share(after);
+  if (a.limit === b.limit && a.spent === b.spent && a.unbudgeted === b.unbudgeted && a.over === b.over && a.near === b.near) {
+    return totals;
+  }
+  const limit = totals.limit - a.limit + b.limit;
+  const spent = totals.spent - a.spent + b.spent;
+  const ratio = budgetRatio(spent, limit);
+  const remaining = limit - spent;
+  return {
+    limit,
+    spent,
+    remaining,
+    ratio,
+    status: statusForRatio(limit, ratio),
+    perDay: limit > 0 ? perDayAllowance(remaining, daysLeft) : null,
+    overCount: totals.overCount - a.over + b.over,
+    nearCount: totals.nearCount - a.near + b.near,
+    unbudgetedSpent: totals.unbudgetedSpent - a.unbudgeted + b.unbudgeted,
+  };
+}

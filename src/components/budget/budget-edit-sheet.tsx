@@ -1,9 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { toast } from "sonner";
 
 import { AmountDisplay } from "@/components/ui/amount-display";
 import { AmountKeypad } from "@/components/ui/amount-keypad";
@@ -12,8 +10,6 @@ import { Chip, ChipGroup } from "@/components/ui/chip";
 import { formatMoney, toUiLocale } from "@/components/ui/format";
 import { Sheet } from "@/components/ui/sheet";
 import { budgetSuggestions } from "@/lib/budget-plan";
-import { haptic } from "@/lib/haptics";
-import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export type BudgetEditTarget = {
   categoryId: string;
@@ -24,29 +20,25 @@ export type BudgetEditTarget = {
   previousSpent: number;
 };
 
-/** Set, change or remove one category's limit for `month` (monthly_budgets). */
+/** Set, change or remove one category's limit. The parent performs the write (optimistically). */
 export function BudgetEditSheet({
   target,
   open,
   onOpenChange,
-  month,
   monthLabel,
-  userId,
-  demo = false,
+  onSave,
+  onRemove,
 }: {
   target: BudgetEditTarget | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  month: string;
   monthLabel: string;
-  userId: string;
-  demo?: boolean;
+  onSave: (amount: number) => void;
+  onRemove: () => void;
 }) {
   const t = useTranslations("budget");
   const locale = toUiLocale(useLocale());
-  const router = useRouter();
   const [amount, setAmount] = React.useState(target?.limit ?? 0);
-  const [busy, setBusy] = React.useState<"save" | "remove" | null>(null);
 
   const suggestions = target
     ? budgetSuggestions({
@@ -56,49 +48,13 @@ export function BudgetEditSheet({
       })
     : [];
 
-  async function save() {
-    if (!target || amount <= 0) return;
-    setBusy("save");
-    if (!demo) {
-      const { error } = await createBrowserSupabaseClient()
-        .from("monthly_budgets")
-        .upsert(
-          { user_id: userId, category_id: target.categoryId, month, amount },
-          { onConflict: "user_id,category_id,month" },
-        );
-      if (error) {
-        setBusy(null);
-        toast.error(t("saveFailed"), { description: `Supabase upsert on "monthly_budgets" failed: ${error.message}` });
-        return;
-      }
-    }
-    haptic("success");
-    toast.success(t("saved", { name: target.categoryName, amount: formatMoney(amount, { locale }) }));
-    setBusy(null);
-    onOpenChange(false);
-    router.refresh();
+  function save() {
+    if (!target || amount <= 0 || amount === target.limit) return;
+    onSave(amount);
   }
 
-  async function remove() {
-    if (!target) return;
-    setBusy("remove");
-    if (!demo) {
-      const { error } = await createBrowserSupabaseClient()
-        .from("monthly_budgets")
-        .delete()
-        .eq("user_id", userId)
-        .eq("category_id", target.categoryId)
-        .eq("month", month);
-      if (error) {
-        setBusy(null);
-        toast.error(t("removeFailed"), { description: `Supabase delete on "monthly_budgets" failed: ${error.message}` });
-        return;
-      }
-    }
-    toast.success(t("removed", { name: target.categoryName }));
-    setBusy(null);
-    onOpenChange(false);
-    router.refresh();
+  function remove() {
+    if (target) onRemove();
   }
 
   return (
@@ -111,15 +67,14 @@ export function BudgetEditSheet({
       footer={
         <div className="flex gap-2">
           {target && target.limit > 0 ? (
-            <Button variant="danger" onClick={() => void remove()} isLoading={busy === "remove"} disabled={busy !== null}>
+            <Button variant="danger" onClick={remove}>
               {t("remove")}
             </Button>
           ) : null}
           <Button
             className="flex-1"
-            onClick={() => void save()}
-            isLoading={busy === "save"}
-            disabled={busy !== null || amount <= 0 || amount === target?.limit}
+            onClick={save}
+            disabled={amount <= 0 || amount === target?.limit}
           >
             {t("save")}
           </Button>
@@ -145,7 +100,7 @@ export function BudgetEditSheet({
               ))}
             </ChipGroup>
           ) : null}
-          <AmountKeypad value={amount} onChange={setAmount} onSubmit={() => void save()} captureKeyboard={open} />
+          <AmountKeypad value={amount} onChange={setAmount} onSubmit={save} captureKeyboard={open} />
         </div>
       ) : null}
     </Sheet>

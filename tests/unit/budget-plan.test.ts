@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  adjustTotals,
+  budgetListRows,
   budgetSuggestions,
   buildBudgetBoard,
   perDayAllowance,
   planBudgetCopy,
   spendingByCategory,
   statusForRatio,
+  withLimit,
 } from "@/lib/budget-plan";
 
 const categories = [
@@ -112,5 +115,40 @@ describe("budget-plan", () => {
     expect(budgetSuggestions({ previousLimit: 500_000, previousSpent: 431_500, currentLimit: 0 })).toEqual([500_000, 440_000]);
     expect(budgetSuggestions({ previousLimit: 500_000, previousSpent: 495_000, currentLimit: 500_000 })).toEqual([]);
     expect(budgetSuggestions({ previousLimit: 0, previousSpent: 0, currentLimit: 0 })).toEqual([]);
+  });
+
+  it("flattens the board into one ordered, tagged list for paging", () => {
+    const rows = budgetListRows(buildBudgetBoard(categories, budgets, tx));
+    expect(rows.map((row) => [row.id, row.group])).toEqual([
+      ["fun", "budgeted"],
+      ["food", "budgeted"],
+      ["bills", "budgeted"],
+      ["car", "unbudgeted"],
+      ["gift", "idle"],
+    ]);
+  });
+
+  it("recomputes a row for a new limit, and 0 removes the budget", () => {
+    const [, food] = buildBudgetBoard(categories, budgets, tx, 10).budgeted;
+    expect(withLimit(food, 2_000_000, 10)).toMatchObject({ limit: 2_000_000, ratio: 43, status: "safe", remaining: 1_150_000, perDay: 115_000 });
+    expect(withLimit(food, 800_000, 10)).toMatchObject({ status: "over", remaining: -50_000, perDay: 0 });
+    expect(withLimit(food, 0, 10)).toMatchObject({ limit: 0, ratio: 0, status: "none", perDay: null });
+  });
+
+  it("adjusts month totals for optimistic edits on the visible page", () => {
+    const board = buildBudgetBoard(categories, budgets, tx, 10);
+    const rows = budgetListRows(board);
+    expect(adjustTotals(board.totals, rows, rows, 10)).toBe(board.totals);
+
+    const car = rows.find((row) => row.id === "car")!;
+    const after = rows.map((row) => (row.id === "car" ? withLimit(row, car.spent * 2, 10) : row));
+    const next = adjustTotals(board.totals, rows, after, 10);
+    expect(next.limit).toBe(board.totals.limit + car.spent * 2);
+    expect(next.spent).toBe(board.totals.spent + car.spent);
+    expect(next.unbudgetedSpent).toBe(board.totals.unbudgetedSpent - car.spent);
+    expect(next.remaining).toBe(next.limit - next.spent);
+
+    const removed = rows.map((row) => (row.group === "budgeted" ? withLimit(row, 0, 10) : row));
+    expect(adjustTotals(board.totals, rows, removed, 10)).toMatchObject({ limit: 0, spent: 0, overCount: 0, nearCount: 0, perDay: null });
   });
 });
