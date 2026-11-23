@@ -1,184 +1,88 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-import { LogoMark } from "@/components/logo-mark";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
-type AuthPalette = {
-  page: string;
-  card: string;
-  border: string;
-  text: string;
-  muted: string;
-  accent: string;
-  accentHover: string;
-  inputBg: string;
-};
-
-const lightPalette: AuthPalette = {
-  page: "#f6f7f9",
-  card: "#ffffff",
-  border: "#d9dde3",
-  text: "#111318",
-  muted: "#626975",
-  accent: "#2563eb",
-  accentHover: "#1d4ed8",
-  inputBg: "#f6f7f9",
-};
-
-const darkPalette: AuthPalette = {
-  page: "#0f1115",
-  card: "#171a20",
-  border: "#303640",
-  text: "#f4f6f8",
-  muted: "#9da4af",
-  accent: "#6f9cff",
-  accentHover: "#8bb0ff",
-  inputBg: "#20242c",
-};
-
-export function ResetPasswordPanel() {
+/** New password after the reset link (the callback already signed the user in). */
+export function ResetPasswordPanel({ email }: { email: string }) {
+  const t = useTranslations("auth");
   const router = useRouter();
-  const { resolvedTheme } = useTheme();
-  const mounted = useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false,
-  );
+  const [password, setPassword] = React.useState("");
+  const [confirm, setConfirm] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
 
-  const isDark = mounted && resolvedTheme === "dark";
-  const palette = isDark ? darkPalette : lightPalette;
-
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isBusy, setIsBusy] = useState(false);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (password.length < 8) {
-      toast.error("Password minimal 8 karakter.");
+      setError(t("passwordTooShort"));
       return;
     }
-
-    if (password !== confirmPassword) {
-      toast.error("Konfirmasi password belum sama.");
+    if (password !== confirm) {
+      setError(t("passwordMismatch"));
       return;
     }
-
-    setIsBusy(true);
-    const supabase = createBrowserSupabaseClient();
-    const { error } = await supabase.auth.updateUser({ password });
-    setIsBusy(false);
-
-    if (error) {
-      toast.error(error.message);
+    setBusy(true);
+    const { error: updateError } = await createBrowserSupabaseClient().auth.updateUser({ password });
+    setBusy(false);
+    if (updateError) {
+      setError(t("updatePasswordFailed", { message: updateError.message }));
       return;
     }
-
-    toast.success("Password berhasil diubah.");
+    toast.success(t("passwordUpdated"));
     router.replace("/dashboard");
     router.refresh();
   }
 
   return (
-    <div
-      className="min-h-[100dvh] overflow-hidden"
-      style={{
-        backgroundColor: palette.page,
-      }}
-    >
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-4 py-5 sm:px-5">
-        <header className="flex items-center justify-between pb-1">
-          <LogoMark />
-          <ThemeToggle
-            className="h-9 w-9 rounded-lg"
-            style={{
-              borderColor: palette.border,
-              backgroundColor: palette.card,
-              color: palette.text,
+    <section aria-labelledby="reset-title" className="grid gap-6">
+      <div className="grid gap-2">
+        <h1 id="reset-title" className="text-[28px] leading-tight font-bold tracking-tight text-text">
+          {t("resetTitle")}
+        </h1>
+        <p className="text-[15px] leading-6 text-muted">
+          {t.rich("resetSubtitle", { email, b: (chunks) => <strong className="font-semibold text-text">{chunks}</strong> })}
+        </p>
+      </div>
+      <form className="grid gap-4" onSubmit={submit} noValidate>
+        <Field label={t("newPasswordLabel")} hint={t("passwordHint")}>
+          <Input
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setError(null);
             }}
           />
-        </header>
-
-        <main className="flex flex-1 items-center justify-center">
-          <section
-            className="w-full rounded-lg border p-5 sm:p-6"
-            style={{ borderColor: palette.border, background: palette.card }}
-          >
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold" style={{ color: palette.text }}>
-                Password baru
-              </h1>
-              <p className="text-[13px]" style={{ color: palette.muted }}>
-                Bikin password yang gampang kamu ingat, tapi susah ditebak orang lain.
-              </p>
-            </div>
-
-            <form className="mt-3 space-y-3" onSubmit={handleSubmit}>
-              <label className="grid gap-1.5">
-                <span className="text-sm font-medium" style={{ color: palette.text }}>
-                  Password baru
-                </span>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Minimal 8 karakter"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="min-h-11 rounded-md"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.text,
-                  }}
-                />
-              </label>
-
-              <label className="grid gap-1.5">
-                <span className="text-sm font-medium" style={{ color: palette.text }}>
-                  Ulangi password baru
-                </span>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Tulis ulang password"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  className="min-h-11 rounded-md"
-                  style={{
-                    borderColor: palette.border,
-                    backgroundColor: palette.inputBg,
-                    color: palette.text,
-                  }}
-                />
-              </label>
-
-              <button
-                type="submit"
-                disabled={isBusy}
-                className="w-full rounded-md border border-transparent px-4 py-3 text-sm font-semibold text-white transition-colors disabled:opacity-60"
-                style={{ backgroundColor: isBusy ? palette.accentHover : palette.accent }}
-              >
-                {isBusy ? "Menyimpan..." : "Simpan password"}
-              </button>
-              <a
-                href="https://moneyspender.net"
-                className="block rounded-md border px-4 py-3 text-center text-sm font-semibold transition-colors"
-                style={{ borderColor: palette.border, color: palette.accent, backgroundColor: palette.inputBg }}
-              >
-                Kembali ke pilihan aplikasi
-              </a>
-            </form>
-          </section>
-        </main>
-      </div>
-    </div>
+        </Field>
+        <Field label={t("confirmPasswordLabel")}>
+          <Input
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(event) => {
+              setConfirm(event.target.value);
+              setError(null);
+            }}
+          />
+        </Field>
+        {error ? (
+          <p role="alert" className="text-[13px] leading-5 font-medium text-expense">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" size="lg" fullWidth isLoading={busy}>
+          {t("savePasswordButton")}
+        </Button>
+      </form>
+    </section>
   );
 }
