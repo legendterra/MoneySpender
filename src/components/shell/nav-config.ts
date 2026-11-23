@@ -40,7 +40,7 @@ export const SHELL_ROUTES: ShellRoute[] = [
   { href: "/debts", key: "debts", icon: HandCoins, sidebar: true, mobileRoot: true, month: false, parent: "/dashboard" },
   { href: "/wallets", key: "wallets", icon: Wallet, sidebar: true, mobileRoot: false, month: false, parent: "/settings" },
   { href: "/budget", key: "budget", icon: PiggyBank, sidebar: true, mobileRoot: false, month: true, parent: "/settings" },
-  { href: "/reports", key: "reports", icon: ChartColumn, sidebar: true, mobileRoot: false, month: true, parent: "/settings" },
+  { href: "/reports", key: "reports", icon: ChartColumn, sidebar: true, mobileRoot: false, month: false, parent: "/settings" },
   { href: "/settings", key: "settings", icon: Settings, sidebar: true, mobileRoot: true, month: false, parent: "/dashboard" },
 ];
 

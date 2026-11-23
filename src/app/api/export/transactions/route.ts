@@ -26,6 +26,8 @@ export async function GET(request: NextRequest) {
   const filterDate = params.get("date") ?? "";
   const filterWeekday = params.get("weekday") ?? "all";
   const filterYear = params.get("year") ?? "";
+  // yyyy-MM, used by Laporan "Ekspor <bulan>"; anything else is ignored.
+  const filterMonth = /^\d{4}-\d{2}$/.test(params.get("month") ?? "") ? (params.get("month") as string) : "";
 
   const [txResult, debtResult, profileResult] = await Promise.all([
     supabase.from("transactions").select("id,amount,type,transaction_date,reason,merchant,category_label,wallet_label,created_at").eq("user_id", user.id).order("transaction_date", { ascending: false }),
@@ -61,6 +63,7 @@ export async function GET(request: NextRequest) {
     if (filterDate && d !== filterDate) continue;
     if (!matchesWeekday(d, filterWeekday)) continue;
     if (filterYear && d.slice(0, 4) !== filterYear) continue;
+    if (filterMonth && d.slice(0, 7) !== filterMonth) continue;
     const haystack = [t.type, t.category_label, t.reason, t.merchant, t.wallet_label, d].filter(Boolean).join(" ").toLowerCase();
     if (filterQ && !haystack.includes(filterQ)) continue;
     rows.push({ no: no++, jenis: t.type === "income" ? "Pemasukan" : "Pengeluaran", tanggal: d, kategori: (t.category_label as string) ?? "", keterangan: (t.reason as string) ?? "", dompet: (t.wallet_label as string) ?? "", nominal: Number(t.amount ?? 0), sudah_dibayar: 0, sisa: 0, status: "Selesai", kontak: (t.merchant as string) ?? "", platform: "", id: String(t.id) });
@@ -71,6 +74,7 @@ export async function GET(request: NextRequest) {
     if (filterDate && dt !== filterDate) continue;
     if (!matchesWeekday(dt, filterWeekday)) continue;
     if (filterYear && dt.slice(0, 4) !== filterYear) continue;
+    if (filterMonth && dt.slice(0, 7) !== filterMonth) continue;
     const haystack = [d.direction, d.contact_name, d.reason, d.source_name, d.category_label, dt].filter(Boolean).join(" ").toLowerCase();
     if (filterQ && !haystack.includes(filterQ)) continue;
     const amt = Number(d.amount ?? 0);
