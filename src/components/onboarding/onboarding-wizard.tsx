@@ -3,12 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Wallet, Plus, Trash2, ArrowRight, CheckCircle2, Building2, Smartphone, Coins, CreditCard, Package } from "lucide-react";
+import { Plus, Trash2, ArrowRight, CheckCircle2, Building2, Smartphone, Coins, CreditCard, Package } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { LogoMark } from "@/components/logo-mark";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -163,7 +160,6 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="flex flex-wrap gap-2">
                 {walletPresets.map((preset) => {
                   const already = wallets.some((w) => w.name.toLowerCase() === preset.name.toLowerCase());
-                  const cfg = kindConfig[preset.kind];
                   return (
                     <button
                       key={preset.name}

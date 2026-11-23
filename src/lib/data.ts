@@ -1,177 +1,74 @@
-import { endOfMonth, endOfYear, format, startOfMonth, startOfYear, subMonths } from "date-fns";
+import { format } from "date-fns";
 import { id as indonesiaLocale } from "date-fns/locale";
-import { cache } from "react";
 
-import {
-  DEFAULT_CURRENCY,
-  MONTHS_TO_SHOW,
-  WEEKDAY_OPTIONS,
-} from "@/lib/constants";
+import { computeAllowance } from "@/lib/allowance";
 import { getAuthedContext } from "@/lib/auth";
+import { computeBudgetAlerts } from "@/lib/budget";
+import { MONTHS_TO_SHOW, WEEKDAY_OPTIONS } from "@/lib/constants";
+import { isMonthValue, monthRange, monthValueWIB, shiftMonth, todayWIB } from "@/lib/dates";
+import {
+  DEBT_COLUMNS,
+  TRANSACTION_COLUMNS,
+  balancesFromSnapshot,
+  fetchFinanceSnapshot,
+  fetchProfile,
+  fetchRecurring,
+  fetchReminderPreferences,
+  fetchTemplates,
+  mapDebt,
+  mapTransaction,
+} from "@/lib/finance-data";
+import { expectCount, expectData, expectRows } from "@/lib/supabase/query";
 import type {
-  Category,
   AuditLog,
   BudgetAlert,
+  Category,
   CategorySlice,
   DashboardInsight,
-  DebtDirection,
   DebtPayment,
   DebtRecord,
   DebtSummary,
-  FinanceTransactionType,
   GoalProgress,
   HistoryRecord,
-  MonthlyPoint,
   MonthlyBudget,
+  MonthlyPoint,
   ProfileData,
-  RecurringTransaction,
-  ReminderPreferences,
   SummaryStats,
   TransactionRecord,
+  TransactionType,
   Wallet,
-  WalletTransfer,
 } from "@/lib/types";
-import { calculateRate, formatCompactCurrency, toMonthInput } from "@/lib/utils";
+import { calculateRate, formatCompactCurrency } from "@/lib/utils";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function resolveMonthValue(month?: string) {
-  if (!month || !/^\d{4}-\d{2}$/.test(month)) return toMonthInput();
-  return month;
+  return isMonthValue(month) ? month : monthValueWIB();
 }
 
-function buildMonthDate(monthValue: string) {
+/** Local Date for the 1st of a month, only used to format labels. */
+function monthLabelDate(monthValue: string) {
   return new Date(`${monthValue}-01T00:00:00`);
 }
 
-function normalizeProfile(
-  profile: ProfileData | null,
-  fallbackName: string | null,
-): ProfileData {
-  return {
-    full_name: profile?.full_name ?? fallbackName,
-    currency_code: profile?.currency_code ?? DEFAULT_CURRENCY,
-    monthly_savings_goal: Number(profile?.monthly_savings_goal ?? 4_000_000),
-    yearly_savings_goal: Number(profile?.yearly_savings_goal ?? 48_000_000),
-  };
+function monthLabel(monthValue: string) {
+  return format(monthLabelDate(monthValue), "MMMM yyyy", { locale: indonesiaLocale });
 }
 
-function normalizeReminder(reminder: ReminderPreferences | null): ReminderPreferences {
-  return {
-    reminder_morning_enabled: reminder?.reminder_morning_enabled ?? true,
-    reminder_evening_enabled: reminder?.reminder_evening_enabled ?? true,
-    push_enabled: reminder?.push_enabled ?? false,
-  };
+function inRange(date: string, start: string, end: string) {
+  return date >= start && date <= end;
 }
 
-function mapTransaction(record: Record<string, unknown>): TransactionRecord {
-  return {
-    id: String(record.id),
-    amount: Number(record.amount ?? 0),
-    type: record.type as FinanceTransactionType,
-    category_id: record.category_id ? String(record.category_id) : null,
-    transaction_date: String(record.transaction_date),
-    reason: record.reason ? String(record.reason) : null,
-    merchant: record.merchant ? String(record.merchant) : null,
-    payment_method: record.payment_method ? String(record.payment_method) : null,
-    category_label: record.category_label ? String(record.category_label) : null,
-    wallet_id: record.wallet_id ? String(record.wallet_id) : null,
-    wallet_label: record.wallet_label ? String(record.wallet_label) : null,
-  };
-}
-
-function mapDebtPayment(record: Record<string, unknown>): DebtPayment {
-  return {
-    id: String(record.id),
-    debt_id: String(record.debt_id),
-    amount: Number(record.amount ?? 0),
-    paid_date: String(record.paid_date),
-    note: record.note ? String(record.note) : null,
-  };
-}
-
-function mapDebt(record: Record<string, unknown>): DebtRecord {
-  const amount = Number(record.amount ?? 0);
-  const paidAmount = Math.min(amount, Number(record.paid_amount ?? 0));
-  const direction = (record.direction as DebtDirection | undefined) ?? "payable";
-  const contactName =
-    record.contact_name
-      ? String(record.contact_name)
-      : record.lender_name
-        ? String(record.lender_name)
-        : "";
-
-  return {
-    id: String(record.id),
-    amount,
-    paid_amount: paidAmount,
-    remaining_amount: Math.max(0, amount - paidAmount),
-    debt_date: String(record.debt_date),
-    contact_name: contactName,
-    source_name: String(record.source_name ?? ""),
-    reason: String(record.reason ?? ""),
-    direction,
-    wallet_id: record.wallet_id ? String(record.wallet_id) : null,
-    wallet_label: record.wallet_label ? String(record.wallet_label) : null,
-    category_label: record.category_label ? String(record.category_label) : null,
-    is_paid: Boolean(record.is_paid),
-    paid_at: record.paid_at ? String(record.paid_at) : null,
-  };
-}
-
-// ── Wallet balance computation ──────────────────────────────────────────────
-// balance = opening_balance + income_in - expense_out + transfers_in - transfers_out
-
-function computeWalletBalances(
-  rawWallets: Array<{
-    id: string;
-    name: string;
-    kind: string;
-    opening_balance: number;
-    color: string | null;
-    is_archived: boolean;
-  }>,
-  transactions: TransactionRecord[],
-  transfers: WalletTransfer[],
-): Wallet[] {
-  const balanceMap = new Map<string, number>();
-  rawWallets.forEach((w) => balanceMap.set(w.id, w.opening_balance));
-
-  for (const t of transactions) {
-    if (!t.wallet_id || !balanceMap.has(t.wallet_id)) continue;
-    const current = balanceMap.get(t.wallet_id)!;
-    balanceMap.set(t.wallet_id, current + (t.type === "income" ? t.amount : -t.amount));
-  }
-
-  for (const t of transfers) {
-    if (balanceMap.has(t.from_wallet_id)) {
-      balanceMap.set(t.from_wallet_id, balanceMap.get(t.from_wallet_id)! - t.amount);
-    }
-    if (balanceMap.has(t.to_wallet_id)) {
-      balanceMap.set(t.to_wallet_id, balanceMap.get(t.to_wallet_id)! + t.amount);
-    }
-  }
-
-  return rawWallets.map((w) => ({
-    id: w.id,
-    name: w.name,
-    kind: w.kind as Wallet["kind"],
-    opening_balance: w.opening_balance,
-    color: w.color,
-    is_archived: w.is_archived,
-    balance: balanceMap.get(w.id) ?? w.opening_balance,
-  }));
+function fallbackName(user: { user_metadata?: Record<string, unknown> | null }) {
+  const name = user.user_metadata?.full_name;
+  return typeof name === "string" ? name : null;
 }
 
 // ── Summary helpers ───────────────────────────────────────────────────────────
 
 function summarizeTransactions(transactions: TransactionRecord[]): SummaryStats {
-  const income = transactions
-    .filter((e) => e.type === "income")
-    .reduce((s, e) => s + e.amount, 0);
-  const expense = transactions
-    .filter((e) => e.type === "expense")
-    .reduce((s, e) => s + e.amount, 0);
+  const income = transactions.filter((e) => e.type === "income").reduce((s, e) => s + e.amount, 0);
+  const expense = transactions.filter((e) => e.type === "expense").reduce((s, e) => s + e.amount, 0);
   return { income, expense, balance: income - expense, savingsRate: calculateRate(income, expense) };
 }
 
@@ -189,8 +86,7 @@ function buildCategoryBreakdown(transactions: TransactionRecord[]): CategorySlic
     .slice(0, 6);
 }
 
-function summarizeDebts(debts: DebtRecord[], selectedMonthDate: Date): DebtSummary {
-  const monthKey = format(selectedMonthDate, "yyyy-MM");
+function summarizeDebts(debts: DebtRecord[], monthKey: string): DebtSummary {
   const unpaid = debts.filter((d) => !d.is_paid);
   const totalPayable = unpaid
     .filter((d) => d.direction === "payable")
@@ -213,36 +109,6 @@ function summarizeDebts(debts: DebtRecord[], selectedMonthDate: Date): DebtSumma
   };
 }
 
-function computeBudgetAlerts(
-  transactions: TransactionRecord[],
-  budgets: MonthlyBudget[],
-  categories: Category[],
-): BudgetAlert[] {
-  if (!budgets.length) return [];
-  const spentMap = new Map<string, number>();
-  transactions
-    .filter((t) => t.type === "expense" && t.category_id)
-    .forEach((t) => {
-      spentMap.set(t.category_id!, (spentMap.get(t.category_id!) ?? 0) + t.amount);
-    });
-
-  return budgets    .filter((b) => b.amount > 0)
-    .map((b) => {
-      const cat = categories.find((c) => c.id === b.category_id);
-      const spent = spentMap.get(b.category_id) ?? 0;
-      const ratio = Math.round((spent / b.amount) * 100);
-      return {
-        categoryId: b.category_id,
-        categoryName: cat?.name ?? "Kategori",
-        spent,
-        budget: b.amount,
-        ratio,
-        status: ratio >= 100 ? "over" : ratio >= 80 ? "warning" : "safe",
-      } satisfies BudgetAlert;
-    })
-    .sort((a, b) => b.ratio - a.ratio);
-}
-
 function buildDashboardInsights(
   monthTransactions: TransactionRecord[],
   previousMonthTransactions: TransactionRecord[],
@@ -257,7 +123,6 @@ function buildDashboardInsights(
   const hasWallets = wallets.filter((w) => !w.is_archived).length > 0;
   const hasTransactions = monthTransactions.length > 0;
 
-  // New user guidance - no wallets yet
   if (!hasWallets) {
     insights.push({
       title: "Mulai dengan dompet",
@@ -266,7 +131,6 @@ function buildDashboardInsights(
     });
   }
 
-  // New user guidance - no transactions yet
   if (hasWallets && !hasTransactions) {
     insights.push({
       title: "Catat transaksi pertamamu",
@@ -275,7 +139,6 @@ function buildDashboardInsights(
     });
   }
 
-  // Cashflow comparison
   if (cur.expense > prev.expense && prev.expense > 0) {
     const diff = Math.round(((cur.expense - prev.expense) / prev.expense) * 100);
     insights.push({
@@ -285,7 +148,6 @@ function buildDashboardInsights(
     });
   }
 
-  // Positive cashflow
   if (cur.balance > 0 && prev.balance > 0 && cur.balance > prev.balance) {
     const improvement = Math.round(((cur.balance - prev.balance) / prev.balance) * 100);
     insights.push({
@@ -303,7 +165,6 @@ function buildDashboardInsights(
     });
   }
 
-  // Budget alerts
   const overBudget = budgetAlerts.find((a) => a.status === "over");
   if (overBudget) {
     insights.push({
@@ -313,17 +174,15 @@ function buildDashboardInsights(
     });
   }
 
-  // Budget warning (80%+)
   const warningBudget = budgetAlerts.find((a) => a.status === "warning");
   if (warningBudget && !overBudget) {
     insights.push({
       title: "Budget hampir penuh",
-      body: `${warningBudget.categoryName} sudah ${warningBudget.ratio}% dari budget. Hati-hati剩下的 hari.`,
+      body: `${warningBudget.categoryName} sudah ${warningBudget.ratio}% dari budget. Hati-hati untuk sisa bulan ini.`,
       tone: "warning",
     });
   }
 
-  // Debt warning
   if (debtSummary.totalPayable > 0) {
     insights.push({
       title: "Hutang aktif",
@@ -332,7 +191,6 @@ function buildDashboardInsights(
     });
   }
 
-  // Receivable positive
   if (debtSummary.totalReceivable > 0) {
     insights.push({
       title: "Piutang masuk",
@@ -341,7 +199,6 @@ function buildDashboardInsights(
     });
   }
 
-  // Wallet health
   const lowWallet = wallets.find((w) => !w.is_archived && w.balance < 50_000);
   if (lowWallet) {
     insights.push({
@@ -351,7 +208,6 @@ function buildDashboardInsights(
     });
   }
 
-  // All good
   if (!insights.length) {
     insights.push({
       title: "Bulan ini rapi",
@@ -363,12 +219,12 @@ function buildDashboardInsights(
   return insights.slice(0, 4);
 }
 
-function buildHistory(transactions: TransactionRecord[], selectedMonthDate: Date): MonthlyPoint[] {
+function buildHistory(transactions: TransactionRecord[], monthValue: string): MonthlyPoint[] {
   const seeds = Array.from({ length: MONTHS_TO_SHOW }, (_, i) => {
-    const date = subMonths(startOfMonth(selectedMonthDate), MONTHS_TO_SHOW - i - 1);
+    const key = shiftMonth(monthValue, i - (MONTHS_TO_SHOW - 1));
     return {
-      key: format(date, "yyyy-MM"),
-      label: format(date, "MMM yy", { locale: indonesiaLocale }),
+      key,
+      label: format(monthLabelDate(key), "MMM yy", { locale: indonesiaLocale }),
       income: 0,
       expense: 0,
       balance: 0,
@@ -376,8 +232,7 @@ function buildHistory(transactions: TransactionRecord[], selectedMonthDate: Date
   });
   const mapped = new Map(seeds.map((s) => [s.key, s]));
   transactions.forEach((e) => {
-    const key = String(e.transaction_date).slice(0, 7);
-    const cur = mapped.get(key);
+    const cur = mapped.get(e.transaction_date.slice(0, 7));
     if (!cur) return;
     if (e.type === "income") cur.income += e.amount;
     else cur.expense += e.amount;
@@ -415,7 +270,7 @@ function buildHistoryRecordFromTransaction(t: TransactionRecord): HistoryRecord 
     date: t.transaction_date,
     title: t.category_label || label,
     subtitle: t.reason || "Tanpa catatan",
-    detail: [t.merchant, t.payment_method, t.wallet_label].filter(Boolean).join(" · ") || null,
+    detail: [t.merchant, t.wallet_label].filter(Boolean).join(" · ") || null,
     statusLabel: label,
   };
 }
@@ -443,139 +298,71 @@ function getWeekdayLabel(value: string) {
   return WEEKDAY_OPTIONS.find((o) => o.value === value)?.label ?? "Semua Hari";
 }
 
-// ── Cached data fetchers (using React.cache for memoization) ─────────────────
+function groupPaymentsByDebt(payments: DebtPayment[]) {
+  const byDebt = new Map<string, DebtPayment[]>();
+  [...payments]
+    .sort((a, b) => b.paid_date.localeCompare(a.paid_date))
+    .forEach((p) => byDebt.set(p.debt_id, [...(byDebt.get(p.debt_id) ?? []), p]));
+  return byDebt;
+}
 
+const byDebtDateDesc = (a: DebtRecord, b: DebtRecord) => b.debt_date.localeCompare(a.debt_date);
 
 // ── Public data fetchers ──────────────────────────────────────────────────────
 
 export async function getDashboardData(month?: string) {
   const monthValue = resolveMonthValue(month);
-  const selectedMonthDate = buildMonthDate(monthValue);
-  const monthStart = format(startOfMonth(selectedMonthDate), "yyyy-MM-dd");
-  const monthEnd = format(endOfMonth(selectedMonthDate), "yyyy-MM-dd");
-  const prevDate = subMonths(selectedMonthDate, 1);
-  const prevStart = format(startOfMonth(prevDate), "yyyy-MM-dd");
-  const prevEnd = format(endOfMonth(prevDate), "yyyy-MM-dd");
-  const yearStart = format(startOfYear(selectedMonthDate), "yyyy-MM-dd");
-  const yearEnd = format(endOfYear(selectedMonthDate), "yyyy-MM-dd");
-  const historyStart = format(
-    startOfMonth(subMonths(selectedMonthDate, MONTHS_TO_SHOW - 1)),
-    "yyyy-MM-dd",
-  );
+  const today = todayWIB();
+  const { start: monthStart, end: monthEnd } = monthRange(monthValue);
+  const prev = monthRange(shiftMonth(monthValue, -1));
+  const year = monthValue.slice(0, 4);
+  const historyStart = monthRange(shiftMonth(monthValue, -(MONTHS_TO_SHOW - 1))).start;
 
   const { supabase, user } = await getAuthedContext();
 
-  const [
-    profileResult,
-    periodTxResult,
-    yearTxResult,
-    allDebtsResult,
-    prevTxResult,
-    walletsResult,
-    transfersResult,
-    categoriesResult,
-    budgetsResult,
-    allTimeTxResult,
-  ] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
-      .eq("id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("transactions")
-      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label,wallet_id,wallet_label")
-      .eq("user_id", user.id)
-      .gte("transaction_date", historyStart)
-      .lte("transaction_date", monthEnd)
-      .order("transaction_date", { ascending: true }),
-    supabase
-      .from("transactions")
-      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label,wallet_id,wallet_label")
-      .eq("user_id", user.id)
-      .gte("transaction_date", yearStart)
-      .lte("transaction_date", yearEnd)
-      .order("transaction_date", { ascending: true }),
-    supabase
-      .from("debts")
-      .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction")
-      .eq("user_id", user.id)
-      .order("debt_date", { ascending: false }),
-    supabase
-      .from("transactions")
-      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label,wallet_id,wallet_label")
-      .eq("user_id", user.id)
-      .gte("transaction_date", prevStart)
-      .lte("transaction_date", prevEnd),
-    supabase
-      .from("wallets")
-      .select("id,name,kind,opening_balance,color,is_archived")
-      .eq("user_id", user.id)
-      .eq("is_archived", false)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("wallet_transfers")
-      .select("id,from_wallet_id,to_wallet_id,amount,transfer_date,note")
-      .eq("user_id", user.id),
-    supabase
-      .from("categories")
-      .select("id,name,type,color")
-      .eq("user_id", user.id)
-      .eq("type", "expense"),
+  const [profile, snapshot, categoriesResult, budgetsResult, recurring, templates] = await Promise.all([
+    fetchProfile(supabase, user.id, fallbackName(user)),
+    fetchFinanceSnapshot(supabase, user.id),
+    supabase.from("categories").select("id,name,type,color").eq("user_id", user.id).eq("type", "expense"),
     supabase
       .from("monthly_budgets")
       .select("id,category_id,month,amount")
       .eq("user_id", user.id)
       .eq("month", monthValue),
-    supabase
-      .from("transactions")
-      .select("amount,type,wallet_id")
-      .eq("user_id", user.id),
+    fetchRecurring(supabase, user.id, { activeOnly: true }),
+    fetchTemplates(supabase, user.id),
   ]);
 
-  const profile = normalizeProfile(
-    profileResult.data as ProfileData | null,
-    user.user_metadata?.full_name ?? null,
-  );
-  const allPeriodTx = (periodTxResult.data ?? []).map(mapTransaction);
-  const yearTx = (yearTxResult.data ?? []).map(mapTransaction);
-  const allDebts = (allDebtsResult.data ?? []).map(mapDebt);
-  const prevTx = (prevTxResult.data ?? []).map(mapTransaction);
-  const rawWallets = (walletsResult.data ?? []) as Array<{
-    id: string; name: string; kind: string; opening_balance: number;
-    color: string | null; is_archived: boolean;
-  }>;
-  const allTimeTx = ((allTimeTxResult.data ?? []) as unknown as TransactionRecord[]);
-  const allTransfersRaw = (transfersResult.data ?? []) as Array<{
-    id: string; from_wallet_id: string; to_wallet_id: string;
-    amount: number; transfer_date: string; note: string | null;
-  }>;
-  const allTransfers: WalletTransfer[] = allTransfersRaw.map((t) => ({
-    id: t.id,
-    from_wallet_id: t.from_wallet_id,
-    to_wallet_id: t.to_wallet_id,
-    amount: t.amount,
-    transfer_date: t.transfer_date,
-    note: t.note,
-  }));
+  const categories = expectRows<Category>("categories", categoriesResult);
+  const budgets = expectRows<MonthlyBudget>("monthly_budgets", budgetsResult);
+  const allTx = snapshot.transactions;
+  const periodTx = allTx.filter((t) => inRange(t.transaction_date, historyStart, monthEnd));
+  const yearTx = allTx.filter((t) => t.transaction_date.slice(0, 4) === year);
+  const prevTx = allTx.filter((t) => inRange(t.transaction_date, prev.start, prev.end));
+  const monthTx = allTx.filter((t) => inRange(t.transaction_date, monthStart, monthEnd));
 
-  const wallets = computeWalletBalances(rawWallets, allTimeTx, allTransfers);
+  const allWallets = balancesFromSnapshot(snapshot);
+  const wallets = allWallets.filter((w) => !w.is_archived);
+  const allowance = computeAllowance({
+    today,
+    walletsAtStartOfToday: balancesFromSnapshot(snapshot, { before: today }),
+    transactions: allTx,
+    recurring,
+    reserveSavings: profile.reserve_savings,
+    monthlySavingsGoal: Number(profile.monthly_savings_goal ?? 0),
+  });
 
-  const monthTx = allPeriodTx.filter(
-    (t) => t.transaction_date >= monthStart && t.transaction_date <= monthEnd,
-  );
+  const allDebts = [...snapshot.debts].sort(byDebtDateDesc);
   const summary = summarizeTransactions(monthTx);
-  const debtSummary = summarizeDebts(allDebts, selectedMonthDate);
-  const categories = (categoriesResult.data ?? []) as Category[];
-  const budgets = (budgetsResult.data ?? []) as MonthlyBudget[];
+  const debtSummary = summarizeDebts(allDebts, monthValue);
   const budgetAlerts = computeBudgetAlerts(monthTx, budgets, categories);
   const unpaidMonthDebts = allDebts.filter(
-    (d) => !d.is_paid && d.direction === "payable" && d.debt_date >= monthStart && d.debt_date <= monthEnd,
+    (d) => !d.is_paid && d.direction === "payable" && inRange(d.debt_date, monthStart, monthEnd),
   );
 
   return {
     monthValue,
-    selectedMonthLabel: format(selectedMonthDate, "MMMM yyyy", { locale: indonesiaLocale }),
+    selectedMonthLabel: monthLabel(monthValue),
     profile,
     summary,
     goalProgress: buildGoalProgress(profile, summary, yearTx),
@@ -587,29 +374,31 @@ export async function getDashboardData(month?: string) {
       .filter((t) => t.type === "expense")
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10),
-    trendData: buildHistory(allPeriodTx, selectedMonthDate),
+    trendData: buildHistory(periodTx, monthValue),
     expenseBreakdown: buildCategoryBreakdown(monthTx),
     budgetAlerts,
     insights: buildDashboardInsights(monthTx, prevTx, budgetAlerts, debtSummary, wallets),
     wallets,
     debtSummary,
     recentDebts: unpaidMonthDebts.slice(0, 5),
+    // v2 additions (PLAN.md section 4 "Beranda")
+    today,
+    isCurrentMonth: monthValue === today.slice(0, 7),
+    allowance,
+    todayTransactions: allTx.filter((t) => t.transaction_date === today).reverse(),
+    categories,
+    recurring,
+    templates,
   };
 }
 
-export async function getTransactionsPageData(type: FinanceTransactionType, month?: string) {
+export async function getTransactionsPageData(type: TransactionType, month?: string) {
   const monthValue = resolveMonthValue(month);
-  const selectedMonthDate = buildMonthDate(monthValue);
-  const monthStart = format(startOfMonth(selectedMonthDate), "yyyy-MM-dd");
-  const monthEnd = format(endOfMonth(selectedMonthDate), "yyyy-MM-dd");
+  const { start: monthStart, end: monthEnd } = monthRange(monthValue);
   const { supabase, user } = await getAuthedContext();
 
-  const [profileResult, categoriesResult, transactionsResult, walletsResult] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
-      .eq("id", user.id)
-      .maybeSingle(),
+  const [profile, categoriesResult, transactionsResult, snapshot] = await Promise.all([
+    fetchProfile(supabase, user.id, fallbackName(user)),
     supabase
       .from("categories")
       .select("id,name,type,color")
@@ -618,127 +407,57 @@ export async function getTransactionsPageData(type: FinanceTransactionType, mont
       .order("name"),
     supabase
       .from("transactions")
-      .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label,wallet_id,wallet_label")
+      .select(TRANSACTION_COLUMNS)
       .eq("user_id", user.id)
       .eq("type", type)
       .gte("transaction_date", monthStart)
       .lte("transaction_date", monthEnd)
       .order("transaction_date", { ascending: false })
       .order("created_at", { ascending: false }),
-    supabase
-      .from("wallets")
-      .select("id,name,kind,opening_balance,color,is_archived")
-      .eq("user_id", user.id)
-      .eq("is_archived", false)
-      .order("name"),
+    fetchFinanceSnapshot(supabase, user.id),
   ]);
 
-  const profile = normalizeProfile(
-    profileResult.data as ProfileData | null,
-    user.user_metadata?.full_name ?? null,
-  );
-  const transactions = (transactionsResult.data ?? []).map(mapTransaction);
-  const total = transactions.reduce((s, t) => s + t.amount, 0);
-  const rawWallets = (walletsResult.data ?? []) as Array<{
-    id: string; name: string; kind: string; opening_balance: number;
-    color: string | null; is_archived: boolean;
-  }>;
-  const wallets: Wallet[] = rawWallets.map((w) => ({
-    ...w,
-    kind: w.kind as Wallet["kind"],
-    balance: w.opening_balance, // simplified for form
-  }));
+  const transactions = expectRows<Record<string, unknown>>("transactions", transactionsResult).map(mapTransaction);
 
   return {
     monthValue,
-    selectedMonthLabel: format(selectedMonthDate, "MMMM yyyy", { locale: indonesiaLocale }),
+    selectedMonthLabel: monthLabel(monthValue),
     profile,
-    categories: (categoriesResult.data ?? []) as Category[],
-    wallets,
+    categories: expectRows<Category>("categories", categoriesResult),
+    wallets: balancesFromSnapshot(snapshot)
+      .filter((w) => !w.is_archived)
+      .sort((a, b) => a.name.localeCompare(b.name)),
     transactions,
-    total,
+    total: transactions.reduce((s, t) => s + t.amount, 0),
     type,
   };
 }
 
 export async function getDebtsPageData(month?: string) {
   const monthValue = resolveMonthValue(month);
-  const selectedMonthDate = buildMonthDate(monthValue);
-  const monthStart = format(startOfMonth(selectedMonthDate), "yyyy-MM-dd");
-  const monthEnd = format(endOfMonth(selectedMonthDate), "yyyy-MM-dd");
+  const { start: monthStart, end: monthEnd } = monthRange(monthValue);
   const { supabase, user } = await getAuthedContext();
 
-  const [profileResult, categoriesResult, debtsResult, allDebtsResult, debtPaymentsResult, walletsResult] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
-        .eq("id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("categories")
-        .select("id,name,type,color")
-        .eq("user_id", user.id)
-        .eq("type", "debt")
-        .order("name"),
-      supabase
-        .from("debts")
-        .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction,wallet_id,wallet_label")
-        .eq("user_id", user.id)
-        .gte("debt_date", monthStart)
-        .lte("debt_date", monthEnd)
-        .order("debt_date", { ascending: false })
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("debts")
-        .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction,wallet_id,wallet_label")
-        .eq("user_id", user.id)
-        .order("debt_date", { ascending: false }),
-      supabase
-        .from("debt_payments")
-        .select("id,debt_id,amount,paid_date,note")
-        .eq("user_id", user.id)
-        .order("paid_date", { ascending: false }),
-      supabase
-        .from("wallets")
-        .select("id,name,kind,opening_balance,color,is_archived")
-        .eq("user_id", user.id)
-        .eq("is_archived", false)
-        .order("name"),
-    ]);
+  const [profile, snapshot] = await Promise.all([
+    fetchProfile(supabase, user.id, fallbackName(user)),
+    fetchFinanceSnapshot(supabase, user.id),
+  ]);
 
-  const profile = normalizeProfile(
-    profileResult.data as ProfileData | null,
-    user.user_metadata?.full_name ?? null,
-  );
-  const payments = (debtPaymentsResult.data ?? []).map(mapDebtPayment);
-  const paymentsByDebt = new Map<string, DebtPayment[]>();
-  payments.forEach((p) => {
-    paymentsByDebt.set(p.debt_id, [...(paymentsByDebt.get(p.debt_id) ?? []), p]);
-  });
-  const debts = (debtsResult.data ?? []).map(mapDebt).map((d) => ({
-    ...d,
-    payments: paymentsByDebt.get(d.id) ?? [],
-  }));
-  const allDebts = (allDebtsResult.data ?? []).map(mapDebt);
-  const rawWalletsDebt = (walletsResult.data ?? []) as Array<{
-    id: string; name: string; kind: string; opening_balance: number;
-    color: string | null; is_archived: boolean;
-  }>;
-  const wallets: Wallet[] = rawWalletsDebt.map((w) => ({
-    ...w,
-    kind: w.kind as Wallet["kind"],
-    balance: w.opening_balance,
-  }));
+  const paymentsByDebt = groupPaymentsByDebt(snapshot.payments);
+  const allDebts = [...snapshot.debts].sort(byDebtDateDesc);
+  const debts = allDebts
+    .filter((d) => inRange(d.debt_date, monthStart, monthEnd))
+    .map((d) => ({ ...d, payments: paymentsByDebt.get(d.id) ?? [] }));
 
   return {
     monthValue,
-    selectedMonthLabel: format(selectedMonthDate, "MMMM yyyy", { locale: indonesiaLocale }),
+    selectedMonthLabel: monthLabel(monthValue),
     profile,
-    categories: (categoriesResult.data ?? []) as Category[],
-    wallets,
+    wallets: balancesFromSnapshot(snapshot)
+      .filter((w) => !w.is_archived)
+      .sort((a, b) => a.name.localeCompare(b.name)),
     debts,
-    summary: summarizeDebts(allDebts, selectedMonthDate),
+    summary: summarizeDebts(allDebts, monthValue),
   };
 }
 
@@ -762,14 +481,14 @@ export async function getAllTransactionsData(filters?: {
 
   let txQuery = supabase
     .from("transactions")
-    .select("id,amount,type,category_id,transaction_date,reason,merchant,payment_method,category_label,wallet_id,wallet_label")
+    .select(TRANSACTION_COLUMNS)
     .eq("user_id", user.id)
     .order("transaction_date", { ascending: false })
     .order("created_at", { ascending: false });
 
   let debtQuery = supabase
     .from("debts")
-    .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction")
+    .select(DEBT_COLUMNS)
     .eq("user_id", user.id)
     .order("debt_date", { ascending: false })
     .order("created_at", { ascending: false });
@@ -783,7 +502,7 @@ export async function getAllTransactionsData(filters?: {
     txCountQuery = txCountQuery.eq("transaction_date", exactDate);
     debtCountQuery = debtCountQuery.eq("debt_date", exactDate);
   }
-  
+
   if (year) {
     const yearStart = `${year}-01-01`;
     const yearEnd = `${year}-12-31`;
@@ -798,27 +517,22 @@ export async function getAllTransactionsData(filters?: {
     debtQuery = debtQuery.limit(kLimit);
   }
 
-  const [profileResult, transactionsResult, debtsResult, txCountResult, debtCountResult] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
-      .eq("id", user.id)
-      .maybeSingle(),
+  const [profile, transactionsResult, debtsResult, txCountResult, debtCountResult] = await Promise.all([
+    fetchProfile(supabase, user.id, fallbackName(user)),
     txQuery,
     debtQuery,
     txCountQuery,
     debtCountQuery,
   ]);
 
-  const profile = normalizeProfile(
-    profileResult.data as ProfileData | null,
-    user.user_metadata?.full_name ?? null,
-  );
-
   let history = [
-    ...(transactionsResult.data ?? []).map(mapTransaction).map(buildHistoryRecordFromTransaction),
-    ...(debtsResult.data ?? []).map(mapDebt).map(buildHistoryRecordFromDebt),
+    ...expectRows<Record<string, unknown>>("transactions", transactionsResult)
+      .map(mapTransaction)
+      .map(buildHistoryRecordFromTransaction),
+    ...expectRows<Record<string, unknown>>("debts", debtsResult).map(mapDebt).map(buildHistoryRecordFromDebt),
   ];
+  const txCount = expectCount("transactions", txCountResult);
+  const debtCount = expectCount("debts", debtCountResult);
 
   if (isComplexFilter) {
     history = history.filter((entry) => {
@@ -840,14 +554,11 @@ export async function getAllTransactionsData(filters?: {
   }
 
   history.sort((a, b) => {
-    const diff = parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime();
+    const diff = b.date.localeCompare(a.date);
     return diff !== 0 ? diff : b.amount - a.amount;
   });
 
-  const totalItems = isComplexFilter 
-    ? history.length 
-    : (txCountResult.count ?? 0) + (debtCountResult.count ?? 0);
-
+  const totalItems = isComplexFilter ? history.length : txCount + debtCount;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * pageSize;
@@ -871,71 +582,39 @@ export async function getAllTransactionsData(filters?: {
 
 export async function getSettingsData() {
   const { supabase, user } = await getAuthedContext();
-  const monthValue = toMonthInput();
+  const monthValue = monthValueWIB();
 
-  const [profileResult, categoriesResult, reminderResult, budgetsResult, walletsResult, transfersResult, auditResult, allTxResult] =
+  const [profile, categoriesResult, reminder, budgetsResult, snapshot, auditResult, recurringTransactions, templates] =
     await Promise.all([
-      supabase
-        .from("profiles")
-        .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
-        .eq("id", user.id)
-        .maybeSingle(),
+      fetchProfile(supabase, user.id, fallbackName(user)),
       supabase.from("categories").select("id,name,type,color").eq("user_id", user.id).order("name"),
-      supabase
-        .from("reminder_preferences")
-        .select("reminder_morning_enabled,reminder_evening_enabled,push_enabled")
-        .eq("user_id", user.id)
-        .maybeSingle(),
+      fetchReminderPreferences(supabase, user.id),
       supabase
         .from("monthly_budgets")
         .select("id,category_id,month,amount")
         .eq("user_id", user.id)
         .eq("month", monthValue),
-      supabase
-        .from("wallets")
-        .select("id,name,kind,opening_balance,color,is_archived")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("wallet_transfers")
-        .select("id,from_wallet_id,to_wallet_id,amount,transfer_date,note")
-        .eq("user_id", user.id),
+      fetchFinanceSnapshot(supabase, user.id, { includeArchivedWallets: true }),
       supabase
         .from("audit_logs")
         .select("id,action,metadata,created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(20),
-      supabase
-        .from("transactions")
-        .select("amount,type,wallet_id")
-        .eq("user_id", user.id),
+      fetchRecurring(supabase, user.id),
+      fetchTemplates(supabase, user.id),
     ]);
-
-  const profile = normalizeProfile(
-    profileResult.data as ProfileData | null,
-    user.user_metadata?.full_name ?? null,
-  );
-  const rawWallets = (walletsResult.data ?? []) as Array<{
-    id: string; name: string; kind: string; opening_balance: number;
-    color: string | null; is_archived: boolean;
-  }>;
-  const allTimeTx = (allTxResult.data ?? []) as unknown as TransactionRecord[];
-  const allTransfers: WalletTransfer[] = ((transfersResult.data ?? []) as Array<{
-    id: string; from_wallet_id: string; to_wallet_id: string;
-    amount: number; transfer_date: string; note: string | null;
-  }>).map((t) => ({ ...t }));
-  const wallets = computeWalletBalances(rawWallets, allTimeTx, allTransfers);
 
   return {
     profile,
-    categories: (categoriesResult.data ?? []) as Category[],
-    reminder: normalizeReminder(reminderResult.data as ReminderPreferences | null),
+    categories: expectRows<Category>("categories", categoriesResult),
+    reminder,
     budgetMonth: monthValue,
-    budgets: (budgetsResult.data ?? []) as MonthlyBudget[],
-    recurringTransactions: [] as RecurringTransaction[],
-    wallets,
-    auditLogs: (auditResult.data ?? []) as AuditLog[],
+    budgets: expectRows<MonthlyBudget>("monthly_budgets", budgetsResult),
+    recurringTransactions,
+    templates,
+    wallets: balancesFromSnapshot(snapshot),
+    auditLogs: expectRows<AuditLog>("audit_logs", auditResult),
     user: { id: user.id, email: user.email ?? "" },
   };
 }
@@ -943,53 +622,15 @@ export async function getSettingsData() {
 export async function getNetWorthData() {
   const { supabase, user } = await getAuthedContext();
 
-  const [profileResult, debtsResult, walletsResult, transfersResult, allTxResult] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("full_name,currency_code,monthly_savings_goal,yearly_savings_goal")
-      .eq("id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("debts")
-      .select("id,amount,paid_amount,debt_date,source_name,contact_name,lender_name,reason,category_label,is_paid,paid_at,direction")
-      .eq("user_id", user.id),
-    supabase
-      .from("wallets")
-      .select("id,name,kind,opening_balance,color,is_archived")
-      .eq("user_id", user.id)
-      .eq("is_archived", false)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("wallet_transfers")
-      .select("id,from_wallet_id,to_wallet_id,amount,transfer_date,note")
-      .eq("user_id", user.id),
-    supabase
-      .from("transactions")
-      .select("amount,type,wallet_id")
-      .eq("user_id", user.id),
+  const [profile, snapshot] = await Promise.all([
+    fetchProfile(supabase, user.id, fallbackName(user)),
+    fetchFinanceSnapshot(supabase, user.id),
   ]);
 
-  const profile = normalizeProfile(
-    profileResult.data as ProfileData | null,
-    user.user_metadata?.full_name ?? null,
-  );
-  const debts = (debtsResult.data ?? []).map(mapDebt);
-  const rawWallets = (walletsResult.data ?? []) as Array<{
-    id: string; name: string; kind: string; opening_balance: number;
-    color: string | null; is_archived: boolean;
-  }>;
-  const allTimeTx = (allTxResult.data ?? []) as unknown as TransactionRecord[];
-  const allTransfers: WalletTransfer[] = ((transfersResult.data ?? []) as Array<{
-    id: string; from_wallet_id: string; to_wallet_id: string;
-    amount: number; transfer_date: string; note: string | null;
-  }>).map((t) => ({ ...t }));
+  const wallets = balancesFromSnapshot(snapshot).filter((w) => !w.is_archived);
+  const debtSummary = summarizeDebts(snapshot.debts, monthValueWIB());
 
-  const wallets = computeWalletBalances(rawWallets, allTimeTx, allTransfers);
-  const debtSummary = summarizeDebts(debts, new Date());
-
-  // Net worth berbasis aset nyata:
-  // ASSETS = total saldo dompet + piutang
-  // LIABILITIES = hutang (payable)
+  // ASSETS = total saldo dompet + piutang; LIABILITIES = hutang (payable)
   const totalWalletBalance = wallets.reduce((s, w) => s + w.balance, 0);
   const totalAssets = totalWalletBalance + debtSummary.totalReceivable;
   const totalDebt = debtSummary.totalPayable;
@@ -997,7 +638,7 @@ export async function getNetWorthData() {
   return {
     profile,
     wallets,
-    transfers: allTransfers,
+    transfers: snapshot.transfers,
     debtSummary,
     totalWalletBalance,
     totalAssets,
@@ -1006,13 +647,17 @@ export async function getNetWorthData() {
   };
 }
 
+/** profiles.locale for the signed-in user (cheap; used to sync the locale cookie). */
+export async function getAccountLocale() {
+  const { supabase, user } = await getAuthedContext();
+  return (await fetchProfile(supabase, user.id)).locale;
+}
+
 export async function checkUserHasWallet(): Promise<boolean> {
   const { supabase, user } = await getAuthedContext();
-  const { data } = await supabase
-    .from("wallets")
-    .select("id")
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
+  const data = expectData(
+    "wallets",
+    await supabase.from("wallets").select("id").eq("user_id", user.id).limit(1).maybeSingle(),
+  );
   return !!data;
 }

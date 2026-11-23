@@ -60,9 +60,6 @@ function buildWarnings(
     if (debt.wallet_label && !wallets.has(lookupKey(debt.wallet_label))) {
       unmatchedWallets.add(debt.wallet_label);
     }
-    if (debt.category_label && !categories.has(`debt:${lookupKey(debt.category_label)}`)) {
-      unmatchedCategories.add(debt.category_label);
-    }
   }
 
   return {
@@ -133,7 +130,8 @@ export async function POST(request: Request) {
     supabase.from("categories").select("id,name,type").eq("user_id", user.id),
   ]);
   if (walletResult.error || categoryResult.error) {
-    return NextResponse.json({ error: "Referensi dompet dan kategori gagal dimuat." }, { status: 500 });
+    const failed = walletResult.error ? `wallets: ${walletResult.error.message}` : `categories: ${categoryResult.error?.message}`;
+    return NextResponse.json({ error: `Referensi gagal dimuat (${failed}).` }, { status: 500 });
   }
 
   const wallets = new Map(
@@ -159,7 +157,7 @@ export async function POST(request: Request) {
     ...debt,
     user_id: user.id,
     wallet_id: debt.wallet_label ? wallets.get(lookupKey(debt.wallet_label))?.id ?? null : null,
-    category_id: debt.category_label ? categories.get(`debt:${lookupKey(debt.category_label)}`)?.id ?? null : null,
+    category_id: null,
   }));
 
   const isPreview = new URL(request.url).searchParams.get("preview") === "1";

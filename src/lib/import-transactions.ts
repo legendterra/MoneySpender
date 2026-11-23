@@ -305,7 +305,8 @@ export function parseImportRows(rows: ImportRow[]): ParsedImport {
       contact_name: contact || "Import",
       source_name: platform || wallet || "Import data",
       reason: note || "Import data",
-      category_label: category || (direction === "receivable" ? "Piutang" : "Hutang"),
+      // Debts have no categories: the label is always the direction.
+      category_label: direction === "receivable" ? "Piutang" : "Hutang",
       wallet_label: wallet || null,
       is_paid: isPaid,
       paid_at: isPaid ? new Date().toISOString() : null,

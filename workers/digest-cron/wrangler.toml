@@ -1,0 +1,12 @@
+name = "moneyspender-digest-cron"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+# Hourly, on the hour (UTC). The app converts to WIB itself.
+[triggers]
+crons = ["0 * * * *"]
+
+[vars]
+APP_URL = "https://money.moneyspender.net"
+
+# Secret (never commit it): npx wrangler secret put CRON_SECRET

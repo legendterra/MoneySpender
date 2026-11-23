@@ -1,17 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { readJsonBody } from "@/lib/http";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
-  const { endpoint } = (await request.json()) as { endpoint?: string };
+  const body = await readJsonBody<{ endpoint?: unknown }>(request);
+  if (!body.ok) {
+    return NextResponse.json({ error: body.error }, { status: 400 });
+  }
+  const { endpoint } = body.data;
 
-  // Validate endpoint
-  if (!endpoint) {
-    return NextResponse.json(
-      { error: "Missing push subscription endpoint" },
-      { status: 400 }
-    );
+  if (typeof endpoint !== "string" || !endpoint) {
+    return NextResponse.json({ error: "Missing push subscription endpoint" }, { status: 400 });
   }
 
   const supabase = await createServerSupabaseClient();
@@ -26,20 +27,15 @@ export async function POST(request: NextRequest) {
   const limited = await enforceRateLimit(`push:${user.id}`, { limit: 10, windowSeconds: 60 });
   if (limited) return limited;
 
-  // Delete subscription and log the action
   const { error, count } = await supabase
     .from("push_subscriptions")
-    .delete()
+    .delete({ count: "exact" })
     .eq("user_id", user.id)
     .eq("endpoint", endpoint);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: `Supabase delete on "push_subscriptions" failed: ${error.message}` }, { status: 400 });
   }
 
-  return NextResponse.json({ 
-    success: true, 
-    deleted: count,
-    message: `Unsubscribed from ${endpoint}`
-  });
+  return NextResponse.json({ success: true, deleted: count ?? 0 });
 }

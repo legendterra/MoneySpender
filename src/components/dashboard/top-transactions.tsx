@@ -51,7 +51,7 @@ function TransactionBlock({
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                 <span>{formatDate(record.transaction_date)}</span>
                 {record.merchant ? <span>• {record.merchant}</span> : null}
-                {record.payment_method ? <span>• {record.payment_method}</span> : null}
+                {record.wallet_label ? <span>• {record.wallet_label}</span> : null}
               </div>
             </div>
           ))

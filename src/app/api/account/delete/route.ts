@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { billingEnabled, cancelSubscription } from "@/lib/lemonsqueezy";
+import { deleteUserReceipts } from "@/lib/receipts";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -46,16 +47,21 @@ export async function DELETE() {
       }
     }
 
+    // Storage objects are not removed by the auth.users cascade.
+    await deleteUserReceipts(admin, user.id);
+
     const { error } = await admin.auth.admin.deleteUser(user.id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: `Supabase auth.admin.deleteUser failed: ${error.message}` }, { status: 500 });
     }
 
-    const response = NextResponse.json({ ok: true });
-    response.cookies.delete("sb-access-token");
-    response.cookies.delete("sb-refresh-token");
-    return response;
+    // Clears the real @supabase/ssr session cookies (sb-<project>-auth-token*).
+    // A 404 from the already-deleted user is ignored by supabase-js.
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) console.error("signOut after account delete failed:", signOutError.message);
+
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Akun belum bisa dihapus." },

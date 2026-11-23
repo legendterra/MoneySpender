@@ -78,16 +78,36 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+function readPushPayload(event) {
+  if (!event.data) return {};
+  try {
+    return event.data.json();
+  } catch {
+    return { body: event.data.text() };
+  }
+}
+
+// Only same-origin paths may be opened from a notification; default /dashboard.
+function notificationDestination(url) {
+  try {
+    const target = new URL(url || "/dashboard", self.location.origin);
+    return target.origin === self.location.origin ? target.href : new URL("/dashboard", self.location.origin).href;
+  } catch {
+    return new URL("/dashboard", self.location.origin).href;
+  }
+}
+
 self.addEventListener("push", (event) => {
-  const payload = event.data ? event.data.json() : {};
+  const payload = readPushPayload(event);
   const title = payload.title || "MoneySpender";
   const options = {
     body: payload.body || "Saatnya catat keuangan hari ini.",
     icon: "/icon-512-maskable.png",
     badge: "/icon-192.png",
-    data: payload.url || "/dashboard",
+    data: { url: payload.url || "/dashboard" },
     vibrate: [120, 40, 120],
     tag: payload.tag || "moneyspender-reminder",
+    renotify: Boolean(payload.tag),
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -95,14 +115,14 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const destination = event.notification.data || "/dashboard";
+  const data = event.notification.data;
+  const destination = notificationDestination(typeof data === "string" ? data : data && data.url);
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       for (const client of clients) {
-        if ("focus" in client) {
-          client.navigate(destination);
-          return client.focus();
+        if (new URL(client.url).origin === self.location.origin && "focus" in client) {
+          return client.focus().then((focused) => (focused && "navigate" in focused ? focused.navigate(destination) : focused));
         }
       }
 

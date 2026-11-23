@@ -26,12 +26,6 @@ const typeOptions: { value: TransactionType; label: string; color: string; descr
     color: "#4D84FF",
     description: "Makan, transport, belanja, dan kebutuhan lain.",
   },
-  {
-    value: "debt",
-    label: "Hutang",
-    color: "#FF8A8A",
-    description: "Pinjaman, cicilan, atau hutang yang masih aktif.",
-  },
 ];
 
 export function CategoryManager({ categories }: { categories: Category[] }) {

@@ -23,8 +23,9 @@ import { Panel } from "@/components/ui/panel";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
+import { todayWIB } from "@/lib/dates";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import type { Category, Wallet as WalletType } from "@/lib/types";
+import type { Wallet as WalletType } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 // Platform / asal preset — user bisa pilih atau ketik manual lewat "Lainnya"
@@ -50,26 +51,21 @@ type DebtFormValues = z.infer<typeof debtSchema>;
 export function DebtForm({
   title,
   description,
-  categories,
   wallets,
 }: {
   title: string;
   description: string;
-  categories: Category[];
   wallets: WalletType[];
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const defaultCategory =
-    categories.find((c) => c.name.toLowerCase() === "utang") ?? categories[0];
 
   const form = useForm<DebtFormValues>({
     resolver: zodResolver(debtSchema),
     defaultValues: {
       direction:    "payable",
       amount:       0,
-      debtDate:     new Date().toISOString().slice(0, 10),
+      debtDate:     todayWIB(),
       walletId:     wallets[0]?.id ?? "",
       contactName:  "",
       sourcePreset: wallets[0]?.name ?? "Lainnya",
@@ -92,7 +88,7 @@ export function DebtForm({
     form.reset({
       direction:    "payable",
       amount:       0,
-      debtDate:     new Date().toISOString().slice(0, 10),
+      debtDate:     todayWIB(),
       walletId:     wallets[0]?.id ?? "",
       contactName:  "",
       sourcePreset: wallets[0]?.name ?? "Lainnya",
@@ -119,10 +115,8 @@ export function DebtForm({
       contact_name:   values.contactName,
       source_name:    sourceName,
       reason:         values.reason,
-      category_id:    defaultCategory?.id ?? null,
-      category_label: defaultCategory?.name ?? "Utang",
-      // backward compat
-      lender_name:    values.direction === "payable" ? values.contactName : "-",
+      category_id:    null,
+      category_label: values.direction === "receivable" ? "Piutang" : "Hutang",
     };
 
     if (typeof navigator !== "undefined" && !navigator.onLine) {

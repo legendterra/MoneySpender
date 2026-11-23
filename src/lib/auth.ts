@@ -1,11 +1,8 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 
-import {
-  DEFAULT_DEBT_CATEGORIES,
-  DEFAULT_EXPENSE_CATEGORIES,
-  DEFAULT_INCOME_CATEGORIES,
-} from "@/lib/constants";
+import { DEFAULT_EXPENSE_CATEGORIES, DEFAULT_INCOME_CATEGORIES } from "@/lib/constants";
+import { SupabaseQueryError } from "@/lib/supabase/query";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type ServerSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
@@ -38,12 +35,6 @@ export async function ensureUserSetup(
       type: "expense" as const,
       color: cat.color,
     })),
-    ...DEFAULT_DEBT_CATEGORIES.map((cat) => ({
-      user_id: user.id,
-      name: cat.name,
-      type: "debt" as const,
-      color: cat.color,
-    })),
   ];
 
   const [profileCheck, reminderCheck, categoriesCheck] = await Promise.all([
@@ -56,56 +47,41 @@ export async function ensureUserSetup(
     supabase.from("categories").select("id").eq("user_id", user.id).limit(1),
   ]);
 
-  if (profileCheck.error || reminderCheck.error || categoriesCheck.error) {
-    throw new Error(
-      "Gagal menyiapkan data awal user di Supabase. Jalankan schema terbaru dan cek RLS/policies.",
-    );
-  }
+  if (profileCheck.error) throw new SupabaseQueryError("profiles", "select", profileCheck.error);
+  if (reminderCheck.error) throw new SupabaseQueryError("reminder_preferences", "select", reminderCheck.error);
+  if (categoriesCheck.error) throw new SupabaseQueryError("categories", "select", categoriesCheck.error);
 
-  const writes = [];
+  const writes: Array<{ table: string; run: PromiseLike<{ error: { message: string; code?: string } | null }> }> = [];
 
   if (!profileCheck.data) {
-    writes.push(
-      supabase.from("profiles").upsert(
-        {
-          id: user.id,
-          full_name: fullName,
-        },
-        { onConflict: "id" },
-      ),
-    );
+    writes.push({
+      table: "profiles",
+      run: supabase.from("profiles").upsert({ id: user.id, full_name: fullName }, { onConflict: "id" }),
+    });
   }
 
   if (!reminderCheck.data) {
-    writes.push(
-      supabase.from("reminder_preferences").upsert(
-        {
-          user_id: user.id,
-        },
-        { onConflict: "user_id" },
-      ),
-    );
+    writes.push({
+      table: "reminder_preferences",
+      run: supabase.from("reminder_preferences").upsert({ user_id: user.id }, { onConflict: "user_id" }),
+    });
   }
 
   if (!(categoriesCheck.data?.length ?? 0)) {
-    writes.push(
-      supabase.from("categories").upsert(defaultCategories, {
-        onConflict: "user_id,name,type",
-      }),
-    );
+    writes.push({
+      table: "categories",
+      run: supabase.from("categories").upsert(defaultCategories, { onConflict: "user_id,name,type" }),
+    });
   }
 
   if (!writes.length) {
     return;
   }
 
-  const results = await Promise.all(writes);
-
-  if (results.some((result) => result.error)) {
-    throw new Error(
-      "Gagal menyiapkan data awal user di Supabase. Jalankan schema terbaru dan cek RLS/policies.",
-    );
-  }
+  const results = await Promise.all(writes.map((write) => write.run));
+  results.forEach((result, index) => {
+    if (result.error) throw new SupabaseQueryError(writes[index].table, "upsert", result.error);
+  });
 }
 
 export const getAuthedContext = cache(async () => {

@@ -1,16 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE } from "@/i18n/locales";
 import { ensureUserSetup } from "@/lib/auth";
+import { fetchProfile } from "@/lib/finance-data";
+import { safeRedirectPath } from "@/lib/redirect";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const requestedNext = requestUrl.searchParams.get("next") ?? "/dashboard";
-  const next =
-    requestedNext.startsWith("/") && !requestedNext.startsWith("//")
-      ? requestedNext
-      : "/dashboard";
+  const next = safeRedirectPath(requestUrl.searchParams.get("next"), requestUrl.origin);
+
+  let destination = next;
+  let locale: string | null = null;
 
   if (code) {
     const supabase = await createServerSupabaseClient();
@@ -22,24 +24,37 @@ export async function GET(request: NextRequest) {
       } = await supabase.auth.getUser();
 
       if (user) {
-        await ensureUserSetup(supabase, user).catch(() => {
+        await ensureUserSetup(supabase, user).catch((setupError) => {
           // Setup can recover on a later request; OAuth redirect must still complete.
+          console.error("ensureUserSetup failed in /auth/callback:", setupError);
         });
 
-        // Check if user has set up wallets — if not, redirect to onboarding
-        const { data: existingWallet } = await supabase
+        // The account's language wins over whatever the pre-login cookie said.
+        locale = await fetchProfile(supabase, user.id)
+          .then((profile) => profile.locale)
+          .catch(() => null);
+
+        const { data: existingWallet, error: walletError } = await supabase
           .from("wallets")
           .select("id")
           .eq("user_id", user.id)
           .limit(1)
           .maybeSingle();
 
-        if (!existingWallet) {
-          return NextResponse.redirect(new URL("/onboarding", requestUrl.origin));
+        if (!walletError && !existingWallet) {
+          destination = "/onboarding";
         }
       }
     }
   }
 
-  return NextResponse.redirect(new URL(next, requestUrl.origin));
+  const response = NextResponse.redirect(new URL(destination, requestUrl.origin));
+  if (locale) {
+    response.cookies.set(LOCALE_COOKIE, locale, {
+      path: "/",
+      maxAge: LOCALE_COOKIE_MAX_AGE,
+      sameSite: "lax",
+    });
+  }
+  return response;
 }

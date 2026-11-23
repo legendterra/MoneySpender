@@ -1,24 +1,31 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { readJsonBody } from "@/lib/http";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type PushSubscriptionPayload = {
-  endpoint: string;
+  endpoint?: unknown;
   keys?: {
-    p256dh?: string;
-    auth?: string;
+    p256dh?: unknown;
+    auth?: unknown;
   };
 };
 
 export async function POST(request: NextRequest) {
-  const subscription = (await request.json()) as PushSubscriptionPayload;
+  const body = await readJsonBody<PushSubscriptionPayload>(request);
+  if (!body.ok) {
+    return NextResponse.json({ error: body.error }, { status: 400 });
+  }
+  const subscription = body.data;
+  const endpoint = subscription.endpoint;
+  const p256dh = subscription.keys?.p256dh;
+  const auth = subscription.keys?.auth;
 
-  // Validate subscription payload
-  if (!subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys.auth) {
+  if (typeof endpoint !== "string" || !endpoint.startsWith("https://") || typeof p256dh !== "string" || !p256dh || typeof auth !== "string" || !auth) {
     return NextResponse.json(
-      { error: "Invalid push subscription data" },
-      { status: 400 }
+      { error: "Invalid push subscription: endpoint (https URL), keys.p256dh and keys.auth are required." },
+      { status: 400 },
     );
   }
 
@@ -34,13 +41,12 @@ export async function POST(request: NextRequest) {
   const limited = await enforceRateLimit(`push:${user.id}`, { limit: 10, windowSeconds: 60 });
   if (limited) return limited;
 
-  // Store subscription with metadata for debugging
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
       user_id: user.id,
-      endpoint: subscription.endpoint,
-      p256dh: subscription.keys.p256dh,
-      auth: subscription.keys.auth,
+      endpoint,
+      p256dh,
+      auth,
       user_agent: request.headers.get("user-agent"),
       created_at: new Date().toISOString(),
     },
@@ -48,8 +54,8 @@ export async function POST(request: NextRequest) {
   );
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: `Supabase upsert on "push_subscriptions" failed: ${error.message}` }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true, endpoint: subscription.endpoint });
+  return NextResponse.json({ success: true });
 }

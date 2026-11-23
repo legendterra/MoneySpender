@@ -5,7 +5,7 @@ import { PageHeading } from "@/components/page-heading";
 import { Panel } from "@/components/ui/panel";
 import { buttonVariants } from "@/components/ui/button-styles";
 import { cn } from "@/lib/utils";
-import { Target, TrendingUp, TrendingDown, Minus, ArrowRight } from "lucide-react";
+import { Target, ArrowRight } from "lucide-react";
 
 function ProgressRing({
   value,
@@ -115,63 +115,6 @@ function GoalCard({
             style={{ width: `${Math.min(ratio * 100, 100)}%`, background: color }}
           />
         </div>
-      </div>
-    </div>
-  );
-}
-
-function MonthTrendItem({
-  label,
-  amount,
-  goal,
-  currency,
-}: {
-  label: string;
-  amount: number;
-  goal: number;
-  currency: string;
-}) {
-  const diff = amount - goal;
-  const ratio = goal > 0 ? amount / goal : 0;
-
-  let Icon = Minus;
-  let iconColor = "text-muted";
-  let label_ = "On track";
-  let barColor = "bg-success";
-
-  if (diff > 0 && ratio > 1.1) {
-    Icon = TrendingUp;
-    iconColor = "text-danger";
-    label_ = `Plus ${formatCurrency(diff, currency)}`;
-    barColor = "bg-danger";
-  } else if (diff > 0) {
-    Icon = TrendingUp;
-    iconColor = "text-warning";
-    label_ = `Above target`;
-    barColor = "bg-warning";
-  } else if (diff < 0) {
-    Icon = TrendingDown;
-    iconColor = "text-success";
-    label_ = `Below target`;
-    barColor = "bg-success";
-  }
-
-  const barRatio = Math.min(ratio, 1.2);
-
-  return (
-    <div className="flex items-center gap-4 py-3">
-      <span className="w-16 text-xs text-muted">{label}</span>
-      <div className="flex flex-1 items-center gap-3">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-border">
-          <div
-            className={cn("h-full rounded-full transition-all", barColor)}
-            style={{ width: `${(barRatio / 1.2) * 100}%` }}
-          />
-        </div>
-        <span className={cn("flex items-center gap-1 text-xs font-semibold", iconColor)}>
-          <Icon className="size-3" />
-          {label_}
-        </span>
       </div>
     </div>
   );

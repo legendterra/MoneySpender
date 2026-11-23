@@ -4,11 +4,18 @@ const API_BASE = "https://api.lemonsqueezy.com/v1";
 
 export type BillingInterval = "monthly" | "yearly";
 
+/**
+ * Billing is off unless BILLING_ENABLED is exactly "true" (PLAN.md section 2):
+ * every feature is open and the Lemon Squeezy code stays dormant.
+ */
 export function billingEnabled() {
-  return Boolean(
-    process.env.LEMONSQUEEZY_API_KEY &&
-      process.env.LEMONSQUEEZY_STORE_ID &&
-      process.env.LEMONSQUEEZY_VARIANT_MONTHLY,
+  return (
+    process.env.BILLING_ENABLED === "true" &&
+    Boolean(
+      process.env.LEMONSQUEEZY_API_KEY &&
+        process.env.LEMONSQUEEZY_STORE_ID &&
+        process.env.LEMONSQUEEZY_VARIANT_MONTHLY,
+    )
   );
 }
 

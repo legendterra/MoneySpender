@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { resolvePlan, type SubscriptionRow } from "@/lib/billing";
-import { verifyWebhookSignature } from "@/lib/lemonsqueezy";
+import { billingEnabled, verifyWebhookSignature } from "@/lib/lemonsqueezy";
 
 function subscription(overrides: Partial<SubscriptionRow>): SubscriptionRow {
   return {
@@ -15,16 +15,45 @@ function subscription(overrides: Partial<SubscriptionRow>): SubscriptionRow {
   };
 }
 
+function stubLemonSqueezyKeys() {
+  vi.stubEnv("LEMONSQUEEZY_API_KEY", "test-key");
+  vi.stubEnv("LEMONSQUEEZY_STORE_ID", "1");
+  vi.stubEnv("LEMONSQUEEZY_VARIANT_MONTHLY", "2");
+}
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe("billingEnabled", () => {
+  it("is off by default, even with every Lemon Squeezy key configured", () => {
+    stubLemonSqueezyKeys();
+    vi.stubEnv("BILLING_ENABLED", "");
+    expect(billingEnabled()).toBe(false);
+  });
+
+  it("only accepts the exact string \"true\"", () => {
+    stubLemonSqueezyKeys();
+    for (const value of ["1", "TRUE", "yes", "True"]) {
+      vi.stubEnv("BILLING_ENABLED", value);
+      expect(billingEnabled()).toBe(false);
+    }
+    vi.stubEnv("BILLING_ENABLED", "true");
+    expect(billingEnabled()).toBe(true);
+  });
+
+  it("stays off when BILLING_ENABLED=true but Lemon Squeezy is not configured", () => {
+    vi.stubEnv("BILLING_ENABLED", "true");
+    vi.stubEnv("LEMONSQUEEZY_API_KEY", "");
+    expect(billingEnabled()).toBe(false);
+  });
+});
+
 describe("resolvePlan", () => {
   describe("when billing is enabled", () => {
     beforeEach(() => {
-      vi.stubEnv("LEMONSQUEEZY_API_KEY", "test-key");
-      vi.stubEnv("LEMONSQUEEZY_STORE_ID", "1");
-      vi.stubEnv("LEMONSQUEEZY_VARIANT_MONTHLY", "2");
-    });
-
-    afterEach(() => {
-      vi.unstubAllEnvs();
+      vi.stubEnv("BILLING_ENABLED", "true");
+      stubLemonSqueezyKeys();
     });
 
     it("returns free when there is no subscription row", () => {
@@ -54,6 +83,7 @@ describe("resolvePlan", () => {
   });
 
   it("treats everyone as pro while billing is disabled", () => {
+    stubLemonSqueezyKeys();
     expect(resolvePlan(null)).toBe("pro");
   });
 });

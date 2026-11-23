@@ -17,8 +17,6 @@ export const SUPPORTED_CURRENCIES = [
 
 export type SupportedCurrencyCode = (typeof SUPPORTED_CURRENCIES)[number]["code"];
 export const APP_TIMEZONE = "Asia/Jakarta";
-export const MORNING_SLOT_HOUR = 7;
-export const EVENING_SLOT_HOUR = 19;
 export const MONTHS_TO_SHOW = 6;
 
 export const NAV_ITEMS = [
@@ -82,15 +80,6 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
   { name: "Donasi & Sedekah", color: "#166534" },
   { name: "Asuransi", color: "#4d7c0f" },
   // Lainnya
-  { name: "Lainnya", color: "#6b7280" },
-] as const;
-
-export const DEFAULT_DEBT_CATEGORIES = [
-  { name: "Hutang Pribadi", color: "#ef4444" },
-  { name: "Cicilan Bank / KTA", color: "#dc2626" },
-  { name: "Pinjol", color: "#b91c1c" },
-  { name: "Kartu Kredit", color: "#f59e0b" },
-  { name: "Piutang", color: "#3b82f6" },
   { name: "Lainnya", color: "#6b7280" },
 ] as const;
 

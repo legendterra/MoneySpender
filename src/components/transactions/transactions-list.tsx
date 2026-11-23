@@ -74,7 +74,6 @@ export function TransactionsList({
         transaction_date: String(formData.get("transactionDate") ?? ""),
         reason: String(formData.get("reason") ?? ""),
         merchant: String(formData.get("merchant") ?? "") || null,
-        payment_method: String(formData.get("paymentMethod") ?? "") || null,
       })
       .eq("id", id);
 
@@ -126,10 +125,6 @@ export function TransactionsList({
                       <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Tanggal</span>
                       <Input name="transactionDate" type="date" defaultValue={record.transaction_date} />
                     </label>
-                    <label className="grid gap-1">
-                      <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">Metode</span>
-                      <Input name="paymentMethod" defaultValue={record.payment_method ?? ""} />
-                    </label>
                   </div>
                   <div className="grid gap-3">
                     <label className="grid gap-1">
@@ -177,7 +172,7 @@ export function TransactionsList({
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                     <span>{formatDate(record.transaction_date)}</span>
                     {record.merchant ? <span>| {record.merchant}</span> : null}
-                    {record.payment_method ? <span>| {record.payment_method}</span> : null}
+                    {record.wallet_label ? <span>| {record.wallet_label}</span> : null}
                   </div>
                 </>
               )}
