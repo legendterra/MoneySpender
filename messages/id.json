@@ -422,7 +422,14 @@
     "changeUp": "{pct}% di atas {period}",
     "changeDown": "{pct}% di bawah {period}",
     "otherCategories": "Lainnya",
-    "uncategorized": "Tanpa kategori"
+    "uncategorized": "Tanpa kategori",
+    "prevMonth": "Bulan sebelumnya",
+    "nextMonth": "Bulan berikutnya",
+    "seeAll": "Lihat semua ({count})",
+    "backToReport": "Laporan {period}",
+    "allCategoriesTitle": "Semua kategori pengeluaran",
+    "allMerchantsTitle": "Semua tempat belanja",
+    "listTotal": "{count, plural, other {# baris}}"
   },
   "pengaturan": {
     "importTitle": "Impor catatan",

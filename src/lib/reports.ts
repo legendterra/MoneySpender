@@ -259,3 +259,20 @@ export function buildTopMerchants(
 export function exportQuery(period: ReportPeriod) {
   return period.mode === "year" ? `year=${period.key}` : `month=${period.key}`;
 }
+
+export type ReportListKind = "kategori" | "tempat";
+export const REPORT_TOP_ROWS = 5;
+export const REPORT_LIST_PAGE_SIZE = 10;
+
+/** `?list=` for the full ("Lihat semua") category or place list; anything else = overview. */
+export function parseReportList(value: unknown): ReportListKind | null {
+  return value === "kategori" || value === "tempat" ? value : null;
+}
+
+/** Query for a report URL that keeps the period (and optionally opens a full list). */
+export function reportQuery(period: ReportPeriod, list?: ReportListKind | null): Record<string, string | undefined> {
+  return {
+    ...(period.mode === "year" ? { mode: "year", year: period.key } : { month: period.key }),
+    list: list ?? undefined,
+  };
+}

@@ -422,7 +422,14 @@
     "changeUp": "{pct}% above {period}",
     "changeDown": "{pct}% below {period}",
     "otherCategories": "Other",
-    "uncategorized": "Uncategorized"
+    "uncategorized": "Uncategorized",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "seeAll": "See all ({count})",
+    "backToReport": "{period} report",
+    "allCategoriesTitle": "All expense categories",
+    "allMerchantsTitle": "All places",
+    "listTotal": "{count, plural, one {# row} other {# rows}}"
   },
   "pengaturan": {
     "importTitle": "Import records",

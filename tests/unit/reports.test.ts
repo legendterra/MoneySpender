@@ -12,6 +12,8 @@ import {
   summarizePeriod,
   trendStart,
   type ReportTransaction,
+  parseReportList,
+  reportQuery,
 } from "@/lib/reports";
 
 function t(
@@ -137,5 +139,21 @@ describe("report aggregation", () => {
       { name: "Bioskop", total: 200_000, count: 1, topCategory: "Hiburan" },
     ]);
     expect(buildTopMerchants(data, NOV, 1)).toHaveLength(1);
+  });
+});
+
+describe("report list view params", () => {
+  it("accepts only the two full-list kinds", () => {
+    expect(parseReportList("kategori")).toBe("kategori");
+    expect(parseReportList("tempat")).toBe("tempat");
+    expect(parseReportList("anything")).toBeNull();
+    expect(parseReportList(undefined)).toBeNull();
+  });
+
+  it("keeps the period in report links", () => {
+    const month = resolveReportPeriod({ month: "2026-10" }, "2026-11");
+    const year = resolveReportPeriod({ mode: "year", year: "2025" }, "2026-11");
+    expect(reportQuery(month)).toEqual({ month: "2026-10", list: undefined });
+    expect(reportQuery(year, "tempat")).toEqual({ mode: "year", year: "2025", list: "tempat" });
   });
 });
