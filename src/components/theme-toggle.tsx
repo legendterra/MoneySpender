@@ -1,46 +1,33 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
 import type { CSSProperties } from "react";
 import { MoonStar, SunMedium } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 
+import { IconButton } from "@/components/ui/icon-button";
+import { useIsClient } from "@/components/ui/use-media-query";
 import { cn } from "@/lib/utils";
 
 export function ThemeToggle({ className, style }: { className?: string; style?: CSSProperties }) {
   const { resolvedTheme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false,
-  );
+  const t = useTranslations("ui");
+  const mounted = useIsClient();
 
   if (!mounted) {
-    return (
-      <div
-        className={cn(
-          "h-10 w-10 rounded-md border border-border bg-background-elevated",
-          className,
-        )}
-        style={style}
-      />
-    );
+    return <div aria-hidden="true" className={cn("size-11 rounded-control", className)} style={style} />;
   }
 
-  const isDark = resolvedTheme === "dark";
+  const isDark = resolvedTheme !== "light";
 
   return (
-    <button
-      type="button"
-      className={cn(
-        "inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background-elevated text-foreground transition-colors hover:bg-background-strong",
-        className,
-      )}
+    <IconButton
+      label={isDark ? t("themeToLight") : t("themeToDark")}
+      className={className}
       style={style}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      aria-label={isDark ? "Aktifkan day mode" : "Aktifkan night mode"}
     >
-      {isDark ? <SunMedium className="size-4" /> : <MoonStar className="size-4" />}
-    </button>
+      {isDark ? <SunMedium aria-hidden="true" /> : <MoonStar aria-hidden="true" />}
+    </IconButton>
   );
 }

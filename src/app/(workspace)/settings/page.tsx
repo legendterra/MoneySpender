@@ -1,7 +1,5 @@
-import { ProGate } from "@/components/billing/pro-gate";
 import { AccountPanel } from "@/components/settings/account-panel";
 import { AuditLogPanel } from "@/components/settings/audit-log-panel";
-import { BillingPanel } from "@/components/settings/billing-panel";
 import { BudgetSettings } from "@/components/settings/budget-settings";
 import { CategoryManager } from "@/components/settings/category-manager";
 import { ImportExportPanel } from "@/components/settings/import-export-panel";
@@ -10,6 +8,7 @@ import { PwaGuidePanel } from "@/components/settings/pwa-guide-panel";
 import { ReminderSettings } from "@/components/settings/reminder-settings";
 import { WalletManager } from "@/components/settings/wallet-manager";
 import { PageHeading } from "@/components/page-heading";
+import { MoreMenu } from "@/components/shell/more-menu";
 import { OfflineSnapshotCache } from "@/components/pwa/offline-snapshot-cache";
 import { getSettingsData } from "@/lib/data";
 
@@ -23,6 +22,7 @@ export default async function SettingsPage() {
         name="settings"
         payload={{ categories: data.categories }}
       />
+      <MoreMenu />
       <PageHeading
         eyebrow="Atur"
         title="Bereskan preferensi biar aplikasi ikut gaya kamu."
@@ -39,16 +39,9 @@ export default async function SettingsPage() {
         />
         <CategoryManager categories={data.categories} />
         <ReminderSettings reminder={data.reminder} />
-        <ProGate feature="Import & export Excel/CSV">
-          <ImportExportPanel />
-        </ProGate>
+        <ImportExportPanel />
         <PwaGuidePanel />
-        <BillingPanel />
-        {data.auditLogs.length > 0 && (
-          <ProGate feature="Audit log aktivitas">
-            <AuditLogPanel logs={data.auditLogs} />
-          </ProGate>
-        )}
+        {data.auditLogs.length > 0 && <AuditLogPanel logs={data.auditLogs} />}
         <AccountPanel email={data.user.email} />
       </div>
     </div>

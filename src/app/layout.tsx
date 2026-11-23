@@ -43,8 +43,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f7f9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1115" },
+    { media: "(prefers-color-scheme: light)", color: "#f5f6f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e1012" },
   ],
 };
 
@@ -62,12 +62,9 @@ export default async function RootLayout({
       className={`${plusJakartaSans.variable} ${jetBrainsMono.variable}`}
     >
       <body>
-        <div className="hub-dots" aria-hidden="true" />
-        <div className="relative z-10">
-          <NextIntlClientProvider>
-            <AppProviders>{children}</AppProviders>
-          </NextIntlClientProvider>
-        </div>
+        <NextIntlClientProvider>
+          <AppProviders>{children}</AppProviders>
+        </NextIntlClientProvider>
         <Analytics />
         <SpeedInsights />
       </body>

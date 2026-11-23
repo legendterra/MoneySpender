@@ -25,7 +25,6 @@ export async function PublicSiteShell({
 
   const publicLinks = [
     { href: "/", label: t("navHome") },
-    { href: "/pricing", label: t("navPricing") },
     { href: "/privacy", label: t("navPrivacy") },
     { href: "/terms", label: t("navTerms") },
   ] as const;
