@@ -1,20 +1,53 @@
-const CACHE_VERSION = "moneyspender-v3";
+const CACHE_VERSION = "moneyspender-v4";
+const OFFLINE_URL = "/offline";
 const APP_SHELL = [
-  "/",
-  "/offline",
+  OFFLINE_URL,
   "/manifest.webmanifest",
   "/apple-touch-icon.png",
   "/icon-192.png",
   "/icon-512.png",
   "/icon-512-maskable.png",
 ];
+const QUEUE_SYNC_TAG = "moneyspender-offline-queue";
 
-function shouldSkipCache(requestUrl) {
+// Private, per-account pages are never cached (shared devices); offline they fall back to /offline.
+const PRIVATE_PREFIXES = [
+  "/dashboard",
+  "/history",
+  "/wallets",
+  "/debts",
+  "/budget",
+  "/reports",
+  "/settings",
+  "/onboarding",
+  "/reset-password",
+  "/income",
+  "/expenses",
+  "/all-transactions",
+  "/net-worth",
+];
+
+function isPrivatePath(pathname) {
+  return PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+function shouldSkipCache(request, requestUrl) {
   return (
+    requestUrl.origin !== self.location.origin ||
     requestUrl.pathname.startsWith("/api/") ||
     requestUrl.pathname.startsWith("/auth") ||
-    ["/dashboard", "/income", "/expenses", "/debts", "/all-transactions", "/settings", "/net-worth"].includes(requestUrl.pathname) ||
-    requestUrl.hostname.includes("supabase")
+    // React Server Component payloads change with every write: always network.
+    requestUrl.searchParams.has("_rsc") ||
+    request.headers.get("RSC") === "1" ||
+    isPrivatePath(requestUrl.pathname)
+  );
+}
+
+function isStaticAsset(requestUrl) {
+  return (
+    requestUrl.pathname.startsWith("/_next/static/") ||
+    /\.(?:png|svg|ico|webp|woff2?)$/.test(requestUrl.pathname) ||
+    requestUrl.pathname === "/manifest.webmanifest"
   );
 }
 
@@ -40,26 +73,30 @@ self.addEventListener("fetch", (event) => {
 
   const requestUrl = new URL(event.request.url);
 
-  if (shouldSkipCache(requestUrl)) {
-    return;
-  }
-
   if (event.request.mode === "navigate") {
+    const cacheable = !shouldSkipCache(event.request, requestUrl);
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+          if (cacheable && response.ok && !response.redirected) {
+            const copy = response.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
+          }
           return response;
         })
         .catch(async () => {
-          const cachedPage = await caches.match(event.request);
-          return cachedPage || caches.match("/offline");
+          const cachedPage = cacheable ? await caches.match(event.request) : undefined;
+          return cachedPage || (await caches.match(OFFLINE_URL)) || Response.error();
         }),
     );
     return;
   }
 
+  if (shouldSkipCache(event.request, requestUrl) || !isStaticAsset(requestUrl)) {
+    return;
+  }
+
+  // Hashed build assets and icons: cache first.
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) {
@@ -67,13 +104,24 @@ self.addEventListener("fetch", (event) => {
       }
 
       return fetch(event.request).then((response) => {
-        if (response.ok && requestUrl.origin === self.location.origin) {
+        if (response.ok) {
           const copy = response.clone();
           caches.open(CACHE_VERSION).then((cache) => cache.put(event.request, copy));
         }
 
         return response;
       });
+    }),
+  );
+});
+
+// Offline entries live in the page's localStorage, so the worker only wakes the
+// open app and asks it to send the queue (Background Sync where supported).
+self.addEventListener("sync", (event) => {
+  if (event.tag !== QUEUE_SYNC_TAG) return;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) client.postMessage({ type: "flush-offline-queue" });
     }),
   );
 });

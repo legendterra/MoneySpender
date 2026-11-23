@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { APP_URL } from "@/components/install/constants";
 import { isStandaloneDisplay, promptInstall, useInstallState } from "@/components/pwa/install-store";
 import { Button } from "@/components/ui/button";
-import { SegmentedControl } from "@/components/ui/segmented-control";
+import { TextChoice } from "@/components/flat/controls";
 import { cn } from "@/lib/utils";
 
 type Platform = "android" | "iphone";
@@ -68,13 +68,10 @@ export function InstallAction({ className }: { className?: string }) {
 function Steps({ keys }: { keys: string[] }) {
   const t = useTranslations("install");
   return (
-    <ol className="grid gap-3">
+    <ol className="divide-y divide-line border-y border-line">
       {keys.map((key, index) => (
-        <li key={key} className="flex gap-3">
-          <span
-            aria-hidden="true"
-            className="grid size-7 shrink-0 place-items-center rounded-full bg-surface-2 text-[13px] font-bold text-text tabular-nums"
-          >
+        <li key={key} className="flex gap-3 py-3">
+          <span aria-hidden="true" className="w-5 shrink-0 pt-0.5 text-[15px] font-bold text-text tabular-nums">
             {index + 1}
           </span>
           <p className="min-w-0 pt-0.5 text-[14px] leading-6 text-muted">
@@ -86,8 +83,6 @@ function Steps({ keys }: { keys: string[] }) {
   );
 }
 
-const card = "rounded-sheet border border-line bg-surface p-5 md:p-6";
-
 /** Install + daily-use guide (docs/PANDUAN-ANDROID-IPHONE.md), shared by /install. */
 export function InstallGuide() {
   const t = useTranslations("install");
@@ -96,67 +91,62 @@ export function InstallGuide() {
   const platform = choice ?? detected;
 
   return (
-    <div className="grid gap-5">
-      <section aria-labelledby="install-steps-title" className={cn(card, "grid gap-4")}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="install-steps-title" className="flex items-center gap-2 text-[16px] font-semibold tracking-tight text-text">
-            <Smartphone className="size-[18px] text-muted" aria-hidden="true" />
-            {platform === "android" ? t("androidTitle") : t("iphoneTitle")}
-          </h2>
-          <SegmentedControl
-            label={t("platformLabel")}
-            value={platform}
-            onChange={setChoice}
-            options={[
-              { value: "android", label: t("android") },
-              { value: "iphone", label: t("iphone") },
-            ]}
-            size="sm"
-            className="w-auto min-w-[11rem]"
-          />
-        </div>
+    <div className="grid gap-10">
+      <section aria-labelledby="install-steps-title" className="grid gap-4">
+        <TextChoice
+          label={t("platformLabel")}
+          value={platform}
+          onChange={setChoice}
+          options={[
+            { value: "android", label: t("android") },
+            { value: "iphone", label: t("iphone") },
+          ]}
+        />
+        <h2 id="install-steps-title" className="flex items-center gap-2 text-[17px] font-semibold tracking-tight text-text">
+          <Smartphone className="size-[18px] text-muted" aria-hidden="true" />
+          {platform === "android" ? t("androidTitle") : t("iphoneTitle")}
+        </h2>
         {platform === "android" ? (
           <Steps keys={["androidStep1", "androidStep2", "androidStep3", "androidStep4"]} />
         ) : (
           <Steps keys={["iphoneStep1", "iphoneStep2", "iphoneStep3", "iphoneStep4", "iphoneStep5"]} />
         )}
         {platform === "iphone" ? (
-          <p className="rounded-control border border-line bg-surface-2/60 px-3.5 py-3 text-[13px] leading-5 text-muted">
+          <p className="border-l-2 border-debt pl-3 text-[13px] leading-5 text-muted">
             {t.rich("iphoneNote", { b: bold })}
           </p>
         ) : null}
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-        <section aria-labelledby="install-daily-title" className={cn(card, "grid gap-3")}>
-          <h2 id="install-daily-title" className="text-[16px] font-semibold tracking-tight text-text">
+      <div className="grid gap-10 lg:grid-cols-2 lg:items-start lg:gap-14">
+        <section aria-labelledby="install-daily-title" className="grid gap-3 border-t border-line pt-6">
+          <h2 id="install-daily-title" className="text-[17px] font-semibold tracking-tight text-text">
             {t("dailyTitle")}
           </h2>
-          <ul className="grid gap-2.5">
+          <ul className="divide-y divide-line">
             {["dailyCatat", "dailyBeranda", "dailyRiwayat", "dailyHutang", "dailyLainnya", "dailyOffline"].map((key) => (
-              <li key={key} className="flex gap-2.5 text-[14px] leading-6 text-muted">
-                <span aria-hidden="true" className="mt-[11px] size-1.5 shrink-0 rounded-full bg-line-strong" />
+              <li key={key} className="flex gap-2.5 py-2.5 text-[14px] leading-6 text-muted">
                 <span className="min-w-0">{t.rich(key, { b: bold })}</span>
               </li>
             ))}
           </ul>
         </section>
 
-        <section aria-labelledby="install-notif-title" className={cn(card, "grid gap-3")}>
-          <h2 id="install-notif-title" className="flex items-center gap-2 text-[16px] font-semibold tracking-tight text-text">
+        <section aria-labelledby="install-notif-title" className="grid gap-3 border-t border-line pt-6">
+          <h2 id="install-notif-title" className="flex items-center gap-2 text-[17px] font-semibold tracking-tight text-text">
             <BellRing className="size-[18px] text-muted" aria-hidden="true" />
             {t("notifTitle")}
           </h2>
           <p className="text-[14px] leading-6 text-muted">{t("notifDefault")}</p>
-          <dl className="grid gap-2 text-[14px] leading-6">
+          <dl className="divide-y divide-line border-y border-line text-[14px] leading-6">
             {(["notif09", "notifMid", "notif21", "notifAny"] as const).map((key) => (
-              <div key={key} className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3">
+              <div key={key} className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3 py-2.5">
                 <dt className="font-semibold text-text tabular-nums">{t(`${key}When`)}</dt>
                 <dd className="text-muted">{t(key)}</dd>
               </div>
             ))}
           </dl>
-          <p className="border-t border-line pt-3 text-[13px] leading-5 text-muted">{t.rich("notifSettings", { b: bold })}</p>
+          <p className="text-[13px] leading-5 text-muted">{t.rich("notifSettings", { b: bold })}</p>
         </section>
       </div>
     </div>

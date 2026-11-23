@@ -11,6 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",
+    display_override: ["standalone", "minimal-ui"],
+    prefer_related_applications: false,
     background_color: "#0e1012",
     theme_color: "#0e1012",
     lang: "id-ID",

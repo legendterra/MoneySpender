@@ -1,35 +1,38 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { WifiOff } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
+import { PlainFrame } from "@/components/public/plain-frame";
 import { OfflineSnapshotViewer } from "@/components/pwa/offline-snapshot-viewer";
-import { buttonVariants } from "@/components/ui/button-styles";
-import { cn } from "@/lib/utils";
+import { RetryButton } from "@/components/pwa/retry-button";
 
-export default function OfflinePage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("offline");
+  return { title: t("metaTitle") };
+}
+
+/** Served by the service worker when a page cannot load without a connection. */
+export default async function OfflinePage() {
+  const t = await getTranslations("offline");
   return (
-    <main className="min-h-screen bg-background px-5 py-10 text-foreground">
-      <div className="mx-auto flex min-h-[70vh] max-w-2xl flex-col justify-center gap-6">
-        <div className="inline-flex w-fit rounded-md bg-accent px-4 py-2 text-sm font-bold text-white">
-          Offline mode
-        </div>
-        <div className="space-y-3">
-          <h1 className="text-4xl font-black tracking-normal md:text-6xl">
-            Lagi offline, tapi catatanmu tidak harus berhenti.
+    <PlainFrame width="sm" center logoHref={null}>
+      <section aria-labelledby="offline-title" className="grid gap-6">
+        <WifiOff className="size-7 text-muted" aria-hidden="true" />
+        <div className="grid gap-2">
+          <h1 id="offline-title" className="text-[28px] leading-tight font-bold tracking-tight text-text">
+            {t("title")}
           </h1>
-          <p className="text-base leading-8 text-muted">
-            Halaman yang sudah pernah dibuka akan tetap bisa muncul. Kalau kamu menambah transaksi atau hutang saat offline,
-            datanya masuk antrian dulu dan akan dikirim saat koneksi balik.
-          </p>
+          <p className="text-[15px] leading-6 text-muted">{t("body")}</p>
         </div>
         <OfflineSnapshotViewer />
-        <div className="flex flex-wrap gap-3">
-          <Link href="/dashboard" className={cn(buttonVariants({ variant: "primary", size: "lg" }))}>
-            Coba buka dashboard
-          </Link>
-          <Link href="/" className={cn(buttonVariants({ variant: "secondary", size: "lg" }))}>
-            Ke halaman awal
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <RetryButton />
+          <Link href="/dashboard" className="text-[14px] font-semibold text-text underline decoration-line-strong underline-offset-4 hover:decoration-text">
+            {t("openHome")}
           </Link>
         </div>
-      </div>
-    </main>
+      </section>
+    </PlainFrame>
   );
 }
