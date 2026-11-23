@@ -193,7 +193,11 @@
     "optional": "opsional",
     "themeToDark": "Ganti ke mode gelap",
     "themeToLight": "Ganti ke mode terang",
-    "themeLabel": "Tema"
+    "themeLabel": "Tema",
+    "pagination": "Navigasi halaman",
+    "pagePrev": "Halaman sebelumnya",
+    "pageNext": "Halaman berikutnya",
+    "pageOf": "Halaman {page} dari {total}"
   },
   "nav": {
     "home": "Beranda",

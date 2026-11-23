@@ -193,7 +193,11 @@
     "optional": "optional",
     "themeToDark": "Switch to dark mode",
     "themeToLight": "Switch to light mode",
-    "themeLabel": "Theme"
+    "themeLabel": "Theme",
+    "pagination": "Pagination",
+    "pagePrev": "Previous page",
+    "pageNext": "Next page",
+    "pageOf": "Page {page} of {total}"
   },
   "nav": {
     "home": "Home",
