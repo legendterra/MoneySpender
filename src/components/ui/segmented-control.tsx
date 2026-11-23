@@ -23,7 +23,8 @@ const activeText: Record<SegmentTone, string> = {
 
 /**
  * Single-choice segmented control (radiogroup). Arrow keys move the selection,
- * as in the WAI-ARIA radio group pattern.
+ * as in the WAI-ARIA radio group pattern. Only used inside the Catat sheet (type
+ * switch); sections elsewhere switch with the flat underline `Tabs` (ui/tabs.tsx).
  */
 export function SegmentedControl<T extends string>({
   options,

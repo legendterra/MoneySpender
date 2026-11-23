@@ -270,7 +270,7 @@ export function UiGallery() {
               />
               <ChipGroup label="Kategori">
                 {["Makan & Minum", "Kopi & Nongkrong", "Ojek & Taksi Online", "Belanja Dapur", "Bensin"].map((name) => (
-                  <Chip key={name} selected={selectedChip === name} onClick={() => setSelectedChip(name)}>
+                  <Chip variant="choice" key={name} selected={selectedChip === name} onClick={() => setSelectedChip(name)}>
                     {name}
                   </Chip>
                 ))}

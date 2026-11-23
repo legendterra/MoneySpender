@@ -508,7 +508,7 @@ function CategoryChips({ form }: { form: CatatFormState }) {
             form.pick && (category.id ? form.pick.id === category.id : form.pick.label === category.label),
           );
           return (
-            <Chip
+            <Chip variant="choice"
               key={category.id ?? `label-${category.label}`}
               data-keep={selected ? "" : undefined}
               selected={selected}
@@ -729,7 +729,7 @@ function PickerPanel({ form }: { form: CatatFormState }) {
         <div className="grid gap-3">
           <ChipGroup label={t("pickDate")}>
             {quick.map((key, index) => (
-              <Chip
+              <Chip variant="choice"
                 key={key}
                 selected={form.dateKey === key}
                 onClick={() => {
@@ -817,7 +817,7 @@ function PickerPanel({ form }: { form: CatatFormState }) {
               <p className="text-[12px] font-medium text-muted">{t("recentContacts")}</p>
               <ChipGroup label={t("recentContacts")}>
                 {suggestions.map((name) => (
-                  <Chip
+                  <Chip variant="choice"
                     key={name}
                     selected={form.contact.trim() === name}
                     onClick={() => {
@@ -872,7 +872,7 @@ function PickerPanel({ form }: { form: CatatFormState }) {
         </div>
         <ChipGroup label={t("categories")}>
           {matches.map((category) => (
-            <Chip
+            <Chip variant="choice"
               key={category.id}
               selected={form.pick?.id === category.id}
               onClick={() => {

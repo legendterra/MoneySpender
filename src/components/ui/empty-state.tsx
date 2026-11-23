@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+/** Calm empty message: icon, title, body, optional action. Flat, no tile. */
 export function EmptyState({
   icon: Icon,
   title,
@@ -25,11 +26,7 @@ export function EmptyState({
         className,
       )}
     >
-      {Icon ? (
-        <div className="grid size-12 place-items-center rounded-control bg-surface-2 text-muted">
-          <Icon className="size-[22px]" aria-hidden="true" />
-        </div>
-      ) : null}
+      {Icon ? <Icon className="size-6 text-muted" aria-hidden="true" strokeWidth={1.7} /> : null}
       <div className="grid max-w-xs gap-1">
         <p className="text-[15px] font-semibold text-text">{title}</p>
         {body ? <p className="text-[13px] leading-5 text-muted">{body}</p> : null}
