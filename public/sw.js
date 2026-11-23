@@ -1,4 +1,4 @@
-const CACHE_VERSION = "moneyspender-v3";
+const CACHE_VERSION = "moneyspender-v4";
 const APP_SHELL = [
   "/",
   "/offline",
@@ -8,6 +8,22 @@ const APP_SHELL = [
   "/icon-512.png",
   "/icon-512-maskable.png",
 ];
+
+// Only build assets and icons are served cache-first. Page data must always come
+// from the network: Next.js fetches RSC payloads (client navigation and
+// router.refresh() after a save) as plain GETs, and serving them from this
+// cache kept showing old lists until a hard reload.
+function isStaticAsset(requestUrl) {
+  return (
+    requestUrl.origin === self.location.origin &&
+    (requestUrl.pathname.startsWith("/_next/static/") ||
+      /\.(?:png|jpe?g|svg|ico|webp|woff2?|webmanifest)$/.test(requestUrl.pathname))
+  );
+}
+
+function isRscRequest(request, requestUrl) {
+  return request.headers.has("RSC") || request.headers.has("Next-Router-Prefetch") || requestUrl.searchParams.has("_rsc");
+}
 
 function shouldSkipCache(requestUrl) {
   return (
@@ -40,7 +56,7 @@ self.addEventListener("fetch", (event) => {
 
   const requestUrl = new URL(event.request.url);
 
-  if (shouldSkipCache(requestUrl)) {
+  if (shouldSkipCache(requestUrl) || isRscRequest(event.request, requestUrl)) {
     return;
   }
 
@@ -57,6 +73,10 @@ self.addEventListener("fetch", (event) => {
           return cachedPage || caches.match("/offline");
         }),
     );
+    return;
+  }
+
+  if (!isStaticAsset(requestUrl)) {
     return;
   }
 
