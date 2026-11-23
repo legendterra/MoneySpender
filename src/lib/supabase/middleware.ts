@@ -11,6 +11,7 @@ export async function updateSession(request: NextRequest) {
     "/offline",
     "/manifest.webmanifest",
     "/onboarding",
+    "/install",
   ]);
 
   if (publicPaths.has(request.nextUrl.pathname)) {
