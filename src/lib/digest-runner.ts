@@ -12,6 +12,7 @@ import {
   type SlotPosition,
 } from "@/lib/digest";
 import {
+  BUDGET_ALERTS_COLUMN,
   PROFILE_COLUMNS,
   balancesFromSnapshot,
   fetchFinanceSnapshot,
@@ -36,6 +37,8 @@ type PreferenceRow = {
   active_start: number;
   active_end: number;
   hide_amounts: boolean;
+  /** Budget alerts switch (BUDGET_ALERTS_COLUMN); null/undefined counts as on. */
+  [BUDGET_ALERTS_COLUMN]?: boolean | null;
 };
 
 type SubscriptionRow = PushSubscriptionRow & { user_id: string };
@@ -81,7 +84,7 @@ export type RunDigestOptions = {
   send?: PushSender;
 };
 
-const PREFERENCE_COLUMNS = "user_id,digest_enabled,digest_every_hours,active_start,active_end,hide_amounts";
+const PREFERENCE_COLUMNS = `user_id,digest_enabled,digest_every_hours,active_start,active_end,hide_amounts,${BUDGET_ALERTS_COLUMN}`;
 
 function schedule(pref: PreferenceRow) {
   return {
@@ -257,7 +260,8 @@ export async function runDigest(options: RunDigestOptions): Promise<DigestReport
         userPlan.messages.push(planned);
       }
 
-      for (const alert of ctx.budgetCandidates) {
+      const budgetAlertsOn = pref[BUDGET_ALERTS_COLUMN] !== false;
+      for (const alert of budgetAlertsOn ? ctx.budgetCandidates : []) {
         const message = buildBudgetAlertMessage({
           locale,
           categoryName: alert.categoryName,

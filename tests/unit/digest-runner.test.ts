@@ -203,6 +203,17 @@ describe("runDigest", () => {
     expect(u1.messages[0].body).not.toMatch(/IDR|\d/);
   });
 
+  it("skips budget alerts when the budget alerts switch is off, keeping the digest", async () => {
+    const db = makeDb({
+      prefs: { u1: { reminder_evening_enabled: false }, u2: { reminder_evening_enabled: false } },
+    });
+    const report = await runDigest({ client: asClient(db), now: NINE_AM_WIB, dry: true });
+    const byUser = Object.fromEntries(report.plan.map((p) => [p.userId, p]));
+    expect(byUser.u1.messages.map((m) => m.kind)).toEqual(["morning"]);
+    expect(byUser.u2).toBeUndefined(); // digest off and budget alerts off: nothing to send
+    expect(db.calls("reminder_preferences", "select")[0].columns).toContain("reminder_evening_enabled");
+  });
+
   it("keeps going for other users when one user's data cannot be loaded", async () => {
     const db = makeDb({
       failures: [

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarDays, CircleDollarSign, Store, Wallet } from "lucide-react";
@@ -206,7 +207,7 @@ export function TransactionForm({
         {wallets.length === 0 && (
           <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm leading-7 text-warning">
             Belum ada dompet. Tambahkan minimal 1 dompet di{" "}
-            <a href="/settings" className="font-semibold underline">Settings</a> supaya saldo bisa terlacak dengan benar.
+            <Link href="/wallets" className="font-semibold underline">Dompet</Link> supaya saldo bisa terlacak dengan benar.
           </div>
         )}
 

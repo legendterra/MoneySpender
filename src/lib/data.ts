@@ -13,14 +13,12 @@ import {
   fetchFinanceSnapshot,
   fetchProfile,
   fetchRecurring,
-  fetchReminderPreferences,
   fetchTemplates,
   mapDebt,
   mapTransaction,
 } from "@/lib/finance-data";
 import { expectCount, expectData, expectRows } from "@/lib/supabase/query";
 import type {
-  AuditLog,
   BudgetAlert,
   Category,
   CategorySlice,
@@ -580,44 +578,8 @@ export async function getAllTransactionsData(filters?: {
   };
 }
 
-export async function getSettingsData() {
-  const { supabase, user } = await getAuthedContext();
-  const monthValue = monthValueWIB();
-
-  const [profile, categoriesResult, reminder, budgetsResult, snapshot, auditResult, recurringTransactions, templates] =
-    await Promise.all([
-      fetchProfile(supabase, user.id, fallbackName(user)),
-      supabase.from("categories").select("id,name,type,color").eq("user_id", user.id).order("name"),
-      fetchReminderPreferences(supabase, user.id),
-      supabase
-        .from("monthly_budgets")
-        .select("id,category_id,month,amount")
-        .eq("user_id", user.id)
-        .eq("month", monthValue),
-      fetchFinanceSnapshot(supabase, user.id, { includeArchivedWallets: true }),
-      supabase
-        .from("audit_logs")
-        .select("id,action,metadata,created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(20),
-      fetchRecurring(supabase, user.id),
-      fetchTemplates(supabase, user.id),
-    ]);
-
-  return {
-    profile,
-    categories: expectRows<Category>("categories", categoriesResult),
-    reminder,
-    budgetMonth: monthValue,
-    budgets: expectRows<MonthlyBudget>("monthly_budgets", budgetsResult),
-    recurringTransactions,
-    templates,
-    wallets: balancesFromSnapshot(snapshot),
-    auditLogs: expectRows<AuditLog>("audit_logs", auditResult),
-    user: { id: user.id, email: user.email ?? "" },
-  };
-}
+/** Pengaturan menu data; each settings section has its own fetcher in src/lib/data-settings.ts. */
+export { getSettingsMenuData as getSettingsData } from "@/lib/data-settings";
 
 export async function getNetWorthData() {
   const { supabase, user } = await getAuthedContext();

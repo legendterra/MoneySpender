@@ -178,6 +178,8 @@ export type ReminderPreferences = {
   active_start: number;
   active_end: number;
   hide_amounts: boolean;
+  /** 80% / 100% budget alerts; stored in reminder_evening_enabled (see BUDGET_ALERTS_COLUMN). */
+  budget_alerts_enabled: boolean;
 };
 
 export type MonthlyBudget = {
