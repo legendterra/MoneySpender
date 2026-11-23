@@ -31,6 +31,13 @@ Direction: calm, dense-enough, mobile-first daily tool. Dark mode first, light m
 Neutral base, one action color (lime), semantic colors only on money meaning. No gradients, no
 blobs, no cards inside cards, no emoji in UI.
 
+**Owner rule (2026-11-23): minimal and flat, NO cards.** No bordered or filled boxes around
+sections, lists or numbers (hero, wallets, budgets, settings, debts, reports). Structure comes
+from typography, whitespace and thin 1px dividers between rows only. Section switching uses
+simple text tabs with an underline indicator (no pill/segmented boxes, no card tabs). Lists are
+plain rows separated by dividers. Sheets/dialogs, inputs, buttons and the keypad keep their own
+surfaces; everything else sits directly on the page background.
+
 ### Tokens (CSS variables in `src/app/globals.css`, exposed through Tailwind 4 `@theme inline`)
 
 | Token | Dark | Light |
