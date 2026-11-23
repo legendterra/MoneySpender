@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { inputClassName } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export const Select = React.forwardRef<
@@ -10,9 +11,10 @@ export const Select = React.forwardRef<
     <select
       ref={ref}
       className={cn(
-        "min-h-12 w-full appearance-none rounded-md border border-border bg-background-elevated px-3.5 py-3 text-sm font-medium text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20",
+        inputClassName,
+        "cursor-pointer appearance-none pr-10",
+        "[background-image:linear-gradient(45deg,transparent_50%,var(--muted)_50%),linear-gradient(135deg,var(--muted)_50%,transparent_50%)] [background-position:calc(100%-20px)_calc(50%+1px),calc(100%-15px)_calc(50%+1px)] [background-repeat:no-repeat] [background-size:5px_5px,5px_5px]",
         className,
-        "[background-image:linear-gradient(45deg,transparent_50%,var(--foreground)_50%),linear-gradient(135deg,var(--foreground)_50%,transparent_50%)] [background-position:calc(100%-22px)_calc(50%-2px),calc(100%-16px)_calc(50%-2px)] [background-size:6px_6px,6px_6px] [background-repeat:no-repeat]",
       )}
       {...props}
     />

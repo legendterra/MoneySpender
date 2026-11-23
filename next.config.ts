@@ -47,6 +47,15 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "date-fns", "@supabase/supabase-js"],
   },
 
+  // v2: no marketing landing and no paywall (docs/redesign/PLAN.md section 4).
+  // Unauthenticated visitors of /dashboard end on /auth.
+  async redirects() {
+    return [
+      { source: "/", destination: "/dashboard", permanent: false },
+      { source: "/pricing", destination: "/dashboard", permanent: true },
+    ];
+  },
+
   // Headers for caching
   async headers() {
     return [

@@ -7,35 +7,28 @@ import { LoaderCircle } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button-styles";
 import { cn } from "@/lib/utils";
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants> & {
     children?: React.ReactNode;
     isLoading?: boolean;
   };
 
-export function Button({
-  className,
-  variant,
-  size,
-  fullWidth,
-  isLoading,
-  children,
-  disabled,
-  ...props
-}: ButtonProps) {
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { className, variant, size, fullWidth, isLoading, children, disabled, ...props },
+  ref,
+) {
   return (
     <button
-      className={cn(
-        buttonVariants({ variant, size, fullWidth }),
-        className,
-      )}
+      ref={ref}
+      className={cn(buttonVariants({ variant, size, fullWidth }), className)}
       disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       {...props}
     >
-      {isLoading ? <LoaderCircle className="size-4 animate-spin" /> : null}
+      {isLoading ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}
       {children}
     </button>
   );
-}
+});
 
 export { buttonVariants };

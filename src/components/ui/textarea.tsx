@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { inputClassName } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export const Textarea = React.forwardRef<
@@ -7,14 +8,7 @@ export const Textarea = React.forwardRef<
   React.ComponentPropsWithoutRef<"textarea">
 >(({ className, ...props }, ref) => {
   return (
-    <textarea
-      ref={ref}
-      className={cn(
-        "min-h-28 w-full rounded-md border border-border bg-background-elevated px-3.5 py-3 text-sm font-medium text-foreground outline-none transition placeholder:text-muted/70 focus:border-accent focus:ring-2 focus:ring-accent/20",
-        className,
-      )}
-      {...props}
-    />
+    <textarea ref={ref} className={cn(inputClassName, "min-h-28 py-3", className)} {...props} />
   );
 });
 

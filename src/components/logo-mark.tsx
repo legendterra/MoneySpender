@@ -1,22 +1,17 @@
 import { cn } from "@/lib/utils";
 
-export function LogoMark({ className }: { className?: string }) {
+export function LogoMark({ className, compact = false }: { className?: string; compact?: boolean }) {
   return (
-    <div className={cn("flex min-w-0 items-center gap-3", className)}>
+    <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
       <div
-        className="grid size-10 shrink-0 place-items-center rounded-sm bg-accent text-sm font-black text-white"
+        className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-primary text-[12px] font-extrabold tracking-tight text-on-primary"
         aria-hidden="true"
       >
         MS
       </div>
-      <div className="grid leading-tight">
-        <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted">
-          Personal finance
-        </span>
-        <span className="truncate text-lg font-bold tracking-tight text-foreground">
-          MoneySpender
-        </span>
-      </div>
+      {!compact ? (
+        <span className="truncate text-[15px] font-bold tracking-tight text-text">MoneySpender</span>
+      ) : null}
     </div>
   );
 }
