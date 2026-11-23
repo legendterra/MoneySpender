@@ -1,6 +1,8 @@
 name = "moneyspender-digest-cron"
 main = "src/index.ts"
 compatibility_date = "2026-11-01"
+# Cron-only worker: no public *.workers.dev URL.
+workers_dev = false
 
 # Hourly, on the hour (UTC). The app converts to WIB itself.
 [triggers]
