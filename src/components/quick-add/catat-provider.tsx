@@ -4,11 +4,19 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 
 import { CatatSheet } from "@/components/quick-add/catat-sheet";
-import { parseCatatMode, type CatatData, type CatatMode } from "@/components/quick-add/types";
+import {
+  parseCatatMode,
+  type CatatData,
+  type CatatMode,
+  type CatatOpenOptions,
+} from "@/components/quick-add/types";
 
 type CatatContextValue = {
-  /** Open the global Catat sheet, optionally in a given mode (default "expense"). */
-  open: (mode?: CatatMode) => void;
+  /**
+   * Open the global Catat sheet, optionally in a given mode (default "expense").
+   * `options.preset` pre-fills it (duplicate); `options.editing` turns it into an edit sheet.
+   */
+  open: (mode?: CatatMode, options?: CatatOpenOptions) => void;
   close: () => void;
   isOpen: boolean;
 };
@@ -45,15 +53,21 @@ export function CatatProvider({
   demo?: boolean;
   children: React.ReactNode;
 }) {
-  const [state, setState] = React.useState<{ open: boolean; mode: CatatMode; session: number }>({
+  const [state, setState] = React.useState<{
+    open: boolean;
+    mode: CatatMode;
+    session: number;
+    options: CatatOpenOptions;
+  }>({
     open: false,
     mode: "expense",
     session: 0,
+    options: {},
   });
 
-  const open = React.useCallback((mode: CatatMode = "expense") => {
+  const open = React.useCallback((mode: CatatMode = "expense", options: CatatOpenOptions = {}) => {
     setState((current) =>
-      current.open ? current : { open: true, mode, session: current.session + 1 },
+      current.open ? current : { open: true, mode, session: current.session + 1, options },
     );
   }, []);
 
@@ -82,9 +96,11 @@ export function CatatProvider({
       <CatatSheet
         key={state.session}
         open={state.open}
-        onOpenChange={(next) => (next ? open(state.mode) : close())}
+        onOpenChange={(next) => (next ? open(state.mode, state.options) : close())}
         data={data}
         initialMode={state.mode}
+        preset={state.options.preset}
+        editing={state.options.editing}
         demo={demo}
       />
       <React.Suspense fallback={null}>

@@ -1,60 +1,23 @@
 import type { TodayItem } from "@/components/beranda/today-list";
-
-/** Minimal shape of a recorded item for today (see getTodayActivity in src/lib/shell-data.ts). */
-export type TodaySource = {
-  id: string;
-  kind: "expense" | "income" | "transfer" | "debt";
-  amount: number;
-  title: string;
-  categoryLabel: string | null;
-  walletLabel: string | null;
-  fromWallet?: string | null;
-  toWallet?: string | null;
-  debtDirection?: "payable" | "receivable";
-  contactName?: string | null;
-};
+import { describeEntry, type HistoryEntry } from "@/lib/history";
 
 type Translate = (key: string, values?: Record<string, string | number>) => string;
 
-/** Turns raw records into display rows. `t` is the "beranda" translator. */
-export function toTodayItems(sources: TodaySource[], t: Translate): TodayItem[] {
-  return sources.map((source) => {
-    if (source.kind === "transfer") {
-      const from = source.fromWallet ?? "-";
-      const to = source.toWallet ?? "-";
-      return {
-        id: source.id,
-        kind: "transfer",
-        flow: "move",
-        title: t("transferTitle", { from, to }),
-        subtitle: source.title,
-        amount: source.amount,
-      };
-    }
-    if (source.kind === "debt") {
-      const name = source.contactName?.trim() || "-";
-      const payable = source.debtDirection !== "receivable";
-      return {
-        id: source.id,
-        kind: "debt",
-        flow: payable ? "in" : "out",
-        title: payable ? t("debtPayableTitle", { name }) : t("debtReceivableTitle", { name }),
-        subtitle: [source.categoryLabel, source.walletLabel].filter(Boolean).join(" · "),
-        amount: source.amount,
-      };
-    }
-    const category = source.categoryLabel?.trim() || t("noCategory");
-    const title = source.title.trim() || category;
-    const subtitle = (title === category ? [source.walletLabel] : [category, source.walletLabel])
-      .filter(Boolean)
-      .join(" · ");
+/**
+ * Today's Riwayat entries (getTodayEntries in src/lib/data-history.ts) as
+ * Beranda rows, so both screens describe a record the same way.
+ * `t` is the "riwayat" translator.
+ */
+export function toTodayItems(entries: HistoryEntry[], t: Translate): TodayItem[] {
+  return entries.map((entry) => {
+    const { title, subtitle } = describeEntry(entry, t);
     return {
-      id: source.id,
-      kind: source.kind,
-      flow: source.kind === "income" ? "in" : "out",
+      id: entry.key,
+      kind: entry.kind === "debt_payment" ? "debt" : entry.kind,
+      flow: entry.flow,
       title,
       subtitle,
-      amount: source.amount,
+      amount: entry.amount,
     };
   });
 }

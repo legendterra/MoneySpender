@@ -16,14 +16,18 @@ export type CatatDraft = {
   contact: string;
 };
 
-export type CatatIssue = "amount" | "wallets" | "contact";
+export type CatatIssue = "amount" | "wallets" | "contact" | "belowPaid";
 
 export type CatatPayload =
   | { table: "transactions"; payload: Record<string, unknown> }
   | { table: "wallet_transfers"; payload: Record<string, unknown> }
   | { table: "debts"; payload: Record<string, unknown> };
 
-export function validateDraft(draft: CatatDraft, walletCount: number): CatatIssue | null {
+export function validateDraft(
+  draft: CatatDraft,
+  walletCount: number,
+  { minAmount = 0 }: { minAmount?: number } = {},
+): CatatIssue | null {
   if (!Number.isInteger(draft.amount) || draft.amount <= 0) return "amount";
   if (draft.mode === "transfer") {
     if (walletCount < 2 || !draft.walletId || !draft.toWalletId || draft.walletId === draft.toWalletId) {
@@ -31,6 +35,8 @@ export function validateDraft(draft: CatatDraft, walletCount: number): CatatIssu
     }
   }
   if (draft.mode === "debt" && !draft.contact.trim()) return "contact";
+  // An edited debt can never owe less than what was already paid back.
+  if (draft.mode === "debt" && draft.amount < minAmount) return "belowPaid";
   return null;
 }
 
@@ -91,6 +97,34 @@ export function buildCatatPayload(
       merchant: null,
     },
   };
+}
+
+/**
+ * Update payload for an edited row. Columns the sheet does not show (merchant,
+ * debt source_name, paid_amount) are left out so they keep their stored value;
+ * a debt's paid state follows the new amount.
+ */
+export function buildCatatUpdate(
+  draft: CatatDraft,
+  categories: CatatCategory[],
+  wallets: CatatWallet[],
+  editing: { table: CatatPayload["table"]; debtPaid?: number; debtPaidAt?: string | null },
+  now: Date = new Date(),
+): CatatPayload {
+  const built = buildCatatPayload(draft, categories, wallets);
+  if (built.table !== editing.table) {
+    throw new Error(`Catat edit: a ${editing.table} row cannot become a ${built.table} row.`);
+  }
+  const payload = { ...built.payload };
+  if (built.table === "transactions") delete payload.merchant;
+  if (built.table === "debts") {
+    delete payload.source_name;
+    const paid = Math.max(0, Number(editing.debtPaid) || 0);
+    const isPaid = paid > 0 && paid >= draft.amount;
+    payload.is_paid = isPaid;
+    payload.paid_at = isPaid ? (editing.debtPaidAt ?? now.toISOString()) : null;
+  }
+  return { table: built.table, payload } as CatatPayload;
 }
 
 /** Categories of a type, most used first, then alphabetical. */

@@ -37,6 +37,28 @@ export const RECURRING_COLUMNS =
   "id,type,category_id,category_label,wallet_id,wallet_label,amount,reason,merchant,day_of_month,last_generated_month,is_active";
 export const TEMPLATE_COLUMNS =
   "id,label,type,amount,category_id,category_label,wallet_id,wallet_label,sort_order";
+export const CATEGORY_COLUMNS = "id,name,type,color";
+// Riwayat orders rows inside a day by when they were recorded.
+export const HISTORY_TRANSACTION_COLUMNS = `${TRANSACTION_COLUMNS},created_at`;
+export const HISTORY_TRANSFER_COLUMNS = `${TRANSFER_COLUMNS},created_at`;
+export const HISTORY_DEBT_COLUMNS = `${DEBT_COLUMNS},created_at`;
+export const HISTORY_DEBT_PAYMENT_COLUMNS = `${DEBT_PAYMENT_COLUMNS},created_at`;
+/** Riwayat paging: sort keys per table (read before the full rows of a page). */
+export const HISTORY_KEY_COLUMNS = {
+  transactions: "id,transaction_date,created_at",
+  wallet_transfers: "id,transfer_date,created_at",
+  debts: "id,debt_date,created_at",
+  debt_payments: "id,paid_date,created_at",
+} as const;
+/** Lean transaction columns for day totals and period summaries. */
+export const TRANSACTION_SUM_COLUMNS = "id,type,amount,transaction_date,category_label";
+/** Wallet columns Riwayat needs for names and filter chips. */
+export const WALLET_NAME_COLUMNS = "id,name,kind,is_archived";
+/** Lean columns for computing wallet balances (no labels or notes). */
+export const BALANCE_TRANSACTION_COLUMNS = "id,amount,type,wallet_id";
+export const BALANCE_TRANSFER_COLUMNS = "id,amount,from_wallet_id,to_wallet_id";
+export const BALANCE_DEBT_COLUMNS = "id,amount,direction,wallet_id";
+export const BALANCE_DEBT_PAYMENT_COLUMNS = "id,amount,debt_id,wallet_id";
 export const PROFILE_COLUMNS_BASE = "full_name,currency_code,monthly_savings_goal,yearly_savings_goal";
 /** Requires migration 2026-11-20 (locale, reserve_savings). */
 export const PROFILE_COLUMNS = `${PROFILE_COLUMNS_BASE},locale,reserve_savings`;

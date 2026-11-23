@@ -3,9 +3,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { BerandaView } from "@/components/beranda/beranda-view";
 import { toTodayItems } from "@/components/beranda/map-today";
 import { OfflineSnapshotCache } from "@/components/pwa/offline-snapshot-cache";
-import { daysLeftInMonth, formatMonthLabel, jakartaDateKey, toUiLocale } from "@/components/ui/format";
+import { formatMonthLabel, toUiLocale } from "@/components/ui/format";
 import { getDashboardData } from "@/lib/data";
-import { getTodayActivity } from "@/lib/shell-data";
+import { getTodayEntries } from "@/lib/data-history";
 
 export default async function DashboardPage({
   searchParams,
@@ -15,24 +15,13 @@ export default async function DashboardPage({
   const params = await searchParams;
   const [data, today, t, locale] = await Promise.all([
     getDashboardData(params.month),
-    getTodayActivity(),
-    getTranslations("beranda"),
+    getTodayEntries(),
+    getTranslations("riwayat"),
     getLocale(),
   ]);
 
-  const todayKey = jakartaDateKey();
-  const isCurrentMonth = data.monthValue === todayKey.slice(0, 7);
-
-  // TODO(v2-merge): use data.allowance from getDashboardData (src/lib/allowance.ts).
-  // Temporary inline version of PLAN.md 4.1 without upcoming recurring and reserve.
-  const liquidNow = data.wallets
-    .filter((wallet) => wallet.kind !== "card" && !wallet.is_archived)
-    .reduce((sum, wallet) => sum + wallet.balance, 0);
-  const liquidAtStartOfDay = liquidNow + today.spent - today.income;
-  const daysLeft = daysLeftInMonth(todayKey);
-  const allowanceToday = Math.max(0, Math.floor(liquidAtStartOfDay / daysLeft));
-  const tomorrowAllowance =
-    daysLeft > 1 ? Math.max(0, Math.floor((liquidAtStartOfDay - today.spent) / (daysLeft - 1))) : 0;
+  // PLAN.md 4.1, computed server-side in src/lib/allowance.ts (recurring and reserve included).
+  const { allowance } = data;
 
   return (
     <>
@@ -49,13 +38,13 @@ export default async function DashboardPage({
       />
       <BerandaView
         allowance={
-          isCurrentMonth
+          data.isCurrentMonth
             ? {
-                allowanceToday,
-                spentToday: today.spent,
-                remainingToday: allowanceToday - today.spent,
-                tomorrowAllowance,
-                daysLeft,
+                allowanceToday: allowance.allowanceToday,
+                spentToday: allowance.spentToday,
+                remainingToday: allowance.remainingToday,
+                tomorrowAllowance: allowance.tomorrowAllowance ?? 0,
+                daysLeft: allowance.daysLeft,
               }
             : null
         }
@@ -70,7 +59,7 @@ export default async function DashboardPage({
           kind: wallet.kind,
           balance: wallet.balance,
         }))}
-        today={{ items: toTodayItems(today.items, t), spentTotal: today.spent }}
+        today={{ items: toTodayItems(today.entries, t), spentTotal: allowance.spentToday }}
         budgets={data.budgetAlerts}
         savings={{
           saved: data.goalProgress.currentMonthSaved,

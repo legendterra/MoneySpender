@@ -12,11 +12,13 @@ const arrow =
 
 /**
  * Previous / current / next month. Use `basePath` for link navigation (server pages,
- * builds `?month=YYYY-MM`), or `onChange` for client state.
+ * builds `?month=YYYY-MM`), `hrefFor` to build the link yourself (keeps other
+ * query parameters), or `onChange` for client state.
  */
 export function MonthSwitcher({
   value,
   basePath,
+  hrefFor,
   onChange,
   max = jakartaMonthKey(),
   min,
@@ -24,6 +26,7 @@ export function MonthSwitcher({
 }: {
   value: string;
   basePath?: string;
+  hrefFor?: (month: string) => string;
   onChange?: (month: string) => void;
   /** Latest selectable month, default: current month in WIB. */
   max?: string;
@@ -39,10 +42,10 @@ export function MonthSwitcher({
   const label = formatMonthLabel(value, locale);
 
   function control(month: string, disabled: boolean, labelText: string, icon: React.ReactNode) {
-    if (basePath && !onChange) {
+    if ((basePath || hrefFor) && !onChange) {
       return (
         <Link
-          href={`${basePath}?month=${month}`}
+          href={hrefFor ? hrefFor(month) : `${basePath}?month=${month}`}
           aria-label={labelText}
           aria-disabled={disabled || undefined}
           tabIndex={disabled ? -1 : undefined}
@@ -70,7 +73,7 @@ export function MonthSwitcher({
   return (
     <div
       className={cn(
-        "inline-flex h-10 items-center gap-0.5 rounded-control border border-line bg-surface px-0.5",
+        "inline-flex h-10 items-center gap-0.5",
         className,
       )}
     >

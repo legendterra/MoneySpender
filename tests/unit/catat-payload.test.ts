@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCatatPayload,
+  buildCatatUpdate,
   sortCategoriesByUsage,
   validateDraft,
   type CatatDraft,
@@ -118,5 +119,42 @@ describe("sortCategoriesByUsage", () => {
   it("puts the most used first and filters by type", () => {
     expect(sortCategoriesByUsage(categories, "expense").map((item) => item.id)).toEqual(["c2", "c1", "c4"]);
     expect(sortCategoriesByUsage(categories, "income").map((item) => item.id)).toEqual(["c3"]);
+  });
+});
+
+describe("buildCatatUpdate (edit mode)", () => {
+  it("keeps columns the sheet does not show", () => {
+    const result = buildCatatUpdate(base, categories, wallets, { table: "transactions" });
+    expect(result.table).toBe("transactions");
+    expect(result.payload).not.toHaveProperty("merchant");
+    expect(result.payload).toMatchObject({ amount: 25000, category_id: "c2", wallet_id: "w2", reason: "Kopi susu" });
+  });
+
+  it("recomputes the paid state of an edited debt and leaves source_name alone", () => {
+    const draft: CatatDraft = { ...base, mode: "debt", contact: "Budi", amount: 150000 };
+    const now = new Date("2026-11-20T03:00:00Z");
+    const paidOff = buildCatatUpdate(draft, categories, wallets, { table: "debts", debtPaid: 150000, debtPaidAt: null }, now);
+    expect(paidOff.payload).toMatchObject({ amount: 150000, is_paid: true, paid_at: now.toISOString() });
+    expect(paidOff.payload).not.toHaveProperty("source_name");
+    expect(paidOff.payload).not.toHaveProperty("paid_amount");
+
+    const reopened = buildCatatUpdate({ ...draft, amount: 300000 }, categories, wallets, {
+      table: "debts",
+      debtPaid: 150000,
+      debtPaidAt: "2026-11-01T00:00:00Z",
+    });
+    expect(reopened.payload).toMatchObject({ is_paid: false, paid_at: null });
+  });
+
+  it("never moves a row to another table", () => {
+    expect(() => buildCatatUpdate({ ...base, mode: "transfer" }, categories, wallets, { table: "transactions" })).toThrow(
+      /transactions row cannot become a wallet_transfers row/,
+    );
+  });
+
+  it("rejects a debt amount below what was already paid", () => {
+    const draft: CatatDraft = { ...base, mode: "debt", contact: "Budi", amount: 40000 };
+    expect(validateDraft(draft, 2, { minAmount: 50000 })).toBe("belowPaid");
+    expect(validateDraft({ ...draft, amount: 50000 }, 2, { minAmount: 50000 })).toBeNull();
   });
 });

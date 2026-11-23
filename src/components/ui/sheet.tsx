@@ -125,12 +125,17 @@ function SheetPanel({
   React.useEffect(() => {
     if (inline || !open) return;
     const restoreTo = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
     const frame = window.requestAnimationFrame(() => {
       (initialFocusRef?.current ?? panelRef.current)?.focus({ preventScroll: true });
     });
     return () => {
       window.cancelAnimationFrame(frame);
-      if (restoreTo && document.contains(restoreTo)) restoreTo.focus({ preventScroll: true });
+      // Another dialog opened from this one (e.g. Ubah -> Catat) keeps its focus.
+      const active = document.activeElement;
+      const inOtherDialog =
+        active instanceof HTMLElement && !panel?.contains(active) && Boolean(active.closest('[role="dialog"]'));
+      if (!inOtherDialog && restoreTo && document.contains(restoreTo)) restoreTo.focus({ preventScroll: true });
     };
   }, [inline, open, initialFocusRef]);
 

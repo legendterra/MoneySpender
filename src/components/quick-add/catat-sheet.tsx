@@ -7,7 +7,7 @@ import {
   useCatatForm,
   type CatatPreset,
 } from "@/components/quick-add/catat-form";
-import type { CatatData, CatatMode } from "@/components/quick-add/types";
+import type { CatatData, CatatEditing, CatatMode } from "@/components/quick-add/types";
 import { Sheet } from "@/components/ui/sheet";
 
 export function CatatSheet({
@@ -17,6 +17,7 @@ export function CatatSheet({
   initialMode = "expense",
   demo = false,
   preset,
+  editing = null,
   inline = false,
   layoutId = "catat-mode",
 }: {
@@ -27,6 +28,8 @@ export function CatatSheet({
   /** Gallery/demo: never talks to Supabase. */
   demo?: boolean;
   preset?: CatatPreset;
+  /** Edit an existing row (Riwayat, Hutang) instead of recording a new one. */
+  editing?: CatatEditing | null;
   /** Render in place (UI gallery). */
   inline?: boolean;
   layoutId?: string;
@@ -36,6 +39,7 @@ export function CatatSheet({
     initialMode,
     demo,
     preset,
+    editing,
     onSaved: () => onOpenChange(false),
   });
 
@@ -43,7 +47,7 @@ export function CatatSheet({
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
-      title={form.t("title")}
+      title={editing ? form.tr("edit.title") : form.t("title")}
       hideTitle
       inline={inline}
       headerAction={<CatatModeSwitch form={form} layoutId={layoutId} />}
