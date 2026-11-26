@@ -320,7 +320,8 @@
     "noCategory": "Tanpa kategori",
     "transferTitle": "Transfer {from} ke {to}",
     "debtPayableTitle": "Pinjam dari {name}",
-    "debtReceivableTitle": "Pinjamkan ke {name}"
+    "debtReceivableTitle": "Pinjamkan ke {name}",
+    "todayMore": "{count, plural, other {# catatan lain hari ini}}"
   },
   "riwayat": {
     "searchLabel": "Cari catatan",

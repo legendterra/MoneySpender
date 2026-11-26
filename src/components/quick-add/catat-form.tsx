@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeftRight,
   Banknote,
@@ -27,6 +26,7 @@ import {
   validateDraft,
   type CatatDraft,
   type CatatIssue,
+  type CatatPayload,
   type DebtDirectionChoice,
 } from "@/components/quick-add/build-payload";
 import {
@@ -56,8 +56,23 @@ import { inputClassName } from "@/components/ui/input";
 import { SegmentedControl, type SegmentTone } from "@/components/ui/segmented-control";
 import { useRowClamp } from "@/components/ui/use-row-clamp";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
+import {
+  HISTORY_DEBT_COLUMNS,
+  HISTORY_TRANSACTION_COLUMNS,
+  HISTORY_TRANSFER_COLUMNS,
+} from "@/lib/finance-data";
+import { rowToEntry, type HistoryEntry } from "@/lib/history";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+
+type SavedTable = CatatPayload["table"];
+
+/** Columns read back after a save, so the row can be shown before the refresh lands. */
+const SAVED_COLUMNS: Record<SavedTable, string> = {
+  transactions: HISTORY_TRANSACTION_COLUMNS,
+  wallet_transfers: HISTORY_TRANSFER_COLUMNS,
+  debts: HISTORY_DEBT_COLUMNS,
+};
 
 const WALLET_STORAGE_KEY = "moneyspender.catat.wallet.v1";
 // Candidates rendered before the two-row clamp hides what does not fit.
@@ -113,6 +128,7 @@ export function useCatatForm({
   preset,
   editing = null,
   onSaved,
+  onRecorded,
 }: {
   data: CatatData;
   initialMode: CatatMode;
@@ -121,11 +137,12 @@ export function useCatatForm({
   /** Update this row instead of inserting a new one. */
   editing?: CatatEditing | null;
   onSaved?: () => void;
+  /** After a successful save: the saved row as a Riwayat entry (optimistic lists). */
+  onRecorded?: (entry: HistoryEntry | null, options: { isNew: boolean }) => void;
 }) {
   const t = useTranslations("catat");
   const tr = useTranslations("riwayat");
   const locale = toUiLocale(useLocale());
-  const router = useRouter();
   const { templates, contacts } = data;
   // An edited row may point at an archived wallet; keep it selectable so saving
   // does not silently detach the row from it.
@@ -300,6 +317,12 @@ export function useCatatForm({
       : t("savedReceivable", { amount: money, name: contact.trim() });
   }
 
+  function savedEntry(table: SavedTable, row: unknown) {
+    if (!row || typeof row !== "object") return null;
+    const names = new Map(wallets.map((wallet) => [wallet.id, wallet.name]));
+    return rowToEntry(table, row as Record<string, unknown>, names);
+  }
+
   async function save() {
     if (saving) return;
     setAttempted(true);
@@ -344,7 +367,11 @@ export function useCatatForm({
         toast.error(t("notSignedIn"));
         return;
       }
-      const { error } = await supabase.from(table).insert({ user_id: user.id, ...payload });
+      const { data: saved, error } = await supabase
+        .from(table)
+        .insert({ user_id: user.id, ...payload })
+        .select(SAVED_COLUMNS[table])
+        .single();
       if (error) {
         toast.error(t("failed", { table, message: error.message }));
         return;
@@ -352,7 +379,7 @@ export function useCatatForm({
       rememberWallet(walletId);
       toast.success(successMessage());
       onSaved?.();
-      router.refresh();
+      onRecorded?.(savedEntry(table, saved), { isNew: true });
     } catch (error) {
       toast.error(t("failed", { table, message: error instanceof Error ? error.message : String(error) }));
     } finally {
@@ -360,7 +387,7 @@ export function useCatatForm({
     }
   }
 
-  async function saveEdit(table: string, payload: Record<string, unknown>) {
+  async function saveEdit(table: SavedTable, payload: Record<string, unknown>) {
     if (!editing) return;
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       toast.error(tr("edit.offline"));
@@ -376,7 +403,13 @@ export function useCatatForm({
         toast.error(t("notSignedIn"));
         return;
       }
-      const { error } = await supabase.from(table).update(payload).eq("id", editing.id).eq("user_id", user.id);
+      const { data: saved, error } = await supabase
+        .from(table)
+        .update(payload)
+        .eq("id", editing.id)
+        .eq("user_id", user.id)
+        .select(SAVED_COLUMNS[table])
+        .single();
       if (error) {
         toast.error(tr("edit.failed", { table, message: error.message }));
         return;
@@ -384,7 +417,7 @@ export function useCatatForm({
       rememberWallet(walletId);
       toast.success(tr("edit.saved"));
       onSaved?.();
-      router.refresh();
+      onRecorded?.(savedEntry(table, saved), { isNew: false });
     } catch (error) {
       toast.error(tr("edit.failed", { table, message: error instanceof Error ? error.message : String(error) }));
     } finally {

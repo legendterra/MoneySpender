@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { CatatSheet } from "@/components/quick-add/catat-sheet";
 import {
@@ -10,6 +10,7 @@ import {
   type CatatMode,
   type CatatOpenOptions,
 } from "@/components/quick-add/types";
+import type { HistoryEntry, PendingEntry } from "@/lib/history";
 
 type CatatContextValue = {
   /**
@@ -19,9 +20,31 @@ type CatatContextValue = {
   open: (mode?: CatatMode, options?: CatatOpenOptions) => void;
   close: () => void;
   isOpen: boolean;
+  /**
+   * Rows saved in this tab that the current server page may not include yet.
+   * Lists lay them over their data until the refreshed page has rendered.
+   */
+  pending: PendingEntry[];
+  /** After a successful save: show `entry` right away, then refresh the server data. */
+  recorded: (entry: HistoryEntry | null, options?: { isNew?: boolean }) => void;
+  /** Refresh the server data in a transition (after any mutation). */
+  refresh: () => void;
+  /** True while a refresh is in flight. */
+  refreshing: boolean;
+  /** Date.now() of the last refresh start: local patches older than this are in the server data once it settles. */
+  lastRefreshAt: number;
 };
 
-const noop: CatatContextValue = { open: () => undefined, close: () => undefined, isOpen: false };
+const noop: CatatContextValue = {
+  open: () => undefined,
+  close: () => undefined,
+  isOpen: false,
+  pending: [],
+  recorded: () => undefined,
+  refresh: () => undefined,
+  refreshing: false,
+  lastRefreshAt: 0,
+};
 
 const CatatContext = React.createContext<CatatContextValue>(noop);
 
@@ -29,6 +52,9 @@ const CatatContext = React.createContext<CatatContextValue>(noop);
 export function useCatat() {
   return React.useContext(CatatContext);
 }
+
+/** Keeps rows saved for this long at most, even if a refresh never settles. */
+const PENDING_TTL_MS = 60_000;
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -75,6 +101,39 @@ export function CatatProvider({
     setState((current) => ({ ...current, open: false }));
   }, []);
 
+  // Optimistic rows + router.refresh() inside a transition: `refreshing` stays
+  // true until the refreshed server components have rendered, so a saved row
+  // is visible at once and never blinks out before the real one arrives.
+  const router = useRouter();
+  const [refreshing, startRefresh] = React.useTransition();
+  const [pendingRows, setPendingRows] = React.useState<PendingEntry[]>([]);
+  const [lastRefreshAt, setLastRefreshAt] = React.useState(0);
+
+  const refresh = React.useCallback(() => {
+    setLastRefreshAt(Date.now());
+    startRefresh(() => router.refresh());
+  }, [router]);
+
+  const recorded = React.useCallback(
+    (entry: HistoryEntry | null, options: { isNew?: boolean } = {}) => {
+      if (entry) {
+        const at = Date.now();
+        setPendingRows((list) => [
+          { entry, at, isNew: options.isNew ?? true },
+          ...list.filter((item) => item.entry.key !== entry.key && at - item.at < PENDING_TTL_MS),
+        ]);
+      }
+      refresh();
+    },
+    [refresh],
+  );
+
+  // Once a refresh has settled, rows saved before it started are in the server data.
+  const pending = React.useMemo(
+    () => (refreshing ? pendingRows : pendingRows.filter((item) => item.at > lastRefreshAt)),
+    [refreshing, pendingRows, lastRefreshAt],
+  );
+
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== "n" && event.key !== "N") return;
@@ -88,7 +147,10 @@ export function CatatProvider({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  const value = React.useMemo(() => ({ open, close, isOpen: state.open }), [open, close, state.open]);
+  const value = React.useMemo(
+    () => ({ open, close, isOpen: state.open, pending, recorded, refresh, refreshing, lastRefreshAt }),
+    [open, close, state.open, pending, recorded, refresh, refreshing, lastRefreshAt],
+  );
 
   return (
     <CatatContext.Provider value={value}>
@@ -102,6 +164,7 @@ export function CatatProvider({
         preset={state.options.preset}
         editing={state.options.editing}
         demo={demo}
+        onRecorded={recorded}
       />
       <React.Suspense fallback={null}>
         <CatatUrlTrigger onOpen={open} />

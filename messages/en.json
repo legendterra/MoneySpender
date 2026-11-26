@@ -320,7 +320,8 @@
     "noCategory": "Uncategorized",
     "transferTitle": "Transfer {from} to {to}",
     "debtPayableTitle": "Borrowed from {name}",
-    "debtReceivableTitle": "Lent to {name}"
+    "debtReceivableTitle": "Lent to {name}",
+    "todayMore": "{count, plural, one {# more record today} other {# more records today}}"
   },
   "riwayat": {
     "searchLabel": "Search records",

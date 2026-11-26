@@ -9,6 +9,7 @@ import {
 } from "@/components/quick-add/catat-form";
 import type { CatatData, CatatEditing, CatatMode } from "@/components/quick-add/types";
 import { Sheet } from "@/components/ui/sheet";
+import type { HistoryEntry } from "@/lib/history";
 
 export function CatatSheet({
   open,
@@ -20,6 +21,7 @@ export function CatatSheet({
   editing = null,
   inline = false,
   layoutId = "catat-mode",
+  onRecorded,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -33,6 +35,8 @@ export function CatatSheet({
   /** Render in place (UI gallery). */
   inline?: boolean;
   layoutId?: string;
+  /** Called after a successful save with the saved row (null when it could not be read back). */
+  onRecorded?: (entry: HistoryEntry | null, options: { isNew: boolean }) => void;
 }) {
   const form = useCatatForm({
     data,
@@ -41,6 +45,7 @@ export function CatatSheet({
     preset,
     editing,
     onSaved: () => onOpenChange(false),
+    onRecorded,
   });
 
   return (

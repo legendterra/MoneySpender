@@ -6,6 +6,7 @@ import { CalendarRange, LoaderCircle, ReceiptText, Search, SearchX, Tag, Wallet,
 import { useLocale, useTranslations } from "next-intl";
 
 import { CatatButton } from "@/components/quick-add/catat-button";
+import { useCatat } from "@/components/quick-add/catat-provider";
 import { EntryAvatar, FlowAmount } from "@/components/riwayat/entry-visuals";
 import { EntrySheet } from "@/components/riwayat/entry-sheet";
 import { OptionSheet, type PickerOption } from "@/components/riwayat/option-sheet";
@@ -25,6 +26,7 @@ import { Tabs } from "@/components/ui/tabs";
 import type { HistoryPageData } from "@/lib/data-history";
 import {
   HISTORY_TYPES,
+  applyPending,
   describeEntry,
   historyHref,
   historyQuery,
@@ -45,7 +47,7 @@ export function RiwayatView({ data }: { data: HistoryPageData }) {
   const locale = toUiLocale(useLocale());
   const router = useRouter();
   const pathname = usePathname();
-  const [pending, startTransition] = React.useTransition();
+  const [navigating, startTransition] = React.useTransition();
   const { params } = data;
   const currentMonth = data.today.slice(0, 7);
 
@@ -135,7 +137,16 @@ export function RiwayatView({ data }: { data: HistoryPageData }) {
     hint: value === "month" ? monthLabel : value === "year" ? year : undefined,
   }));
 
-  const days = data.days
+  // Rows saved in this tab show at once; the refreshed page replaces them.
+  const { pending } = useCatat();
+  const days = applyPending(data.days, pending, {
+    type: params.type,
+    walletId: params.walletId,
+    categoryId: params.categoryId,
+    q: params.q,
+    range: params.range,
+    firstPage: data.page === 1,
+  })
     .map((day) => ({ ...day, entries: day.entries.filter((entry) => !hidden.has(entry.key)) }))
     .filter((day) => day.entries.length);
 
@@ -167,7 +178,7 @@ export function RiwayatView({ data }: { data: HistoryPageData }) {
               )}
             />
             <span className="absolute top-1/2 right-1 -translate-y-1/2">
-              {pending ? (
+              {navigating ? (
                 <span className="grid size-11 place-items-center text-muted" role="status" aria-label={t("loading")}>
                   <LoaderCircle className="size-[18px] animate-spin" aria-hidden="true" />
                 </span>
@@ -234,7 +245,7 @@ export function RiwayatView({ data }: { data: HistoryPageData }) {
           <SummaryLine data={data} />
         </div>
 
-        <div className={cn("transition-opacity", pending && "opacity-60")} aria-busy={pending || undefined}>
+        <div className={cn("transition-opacity", navigating && "opacity-60")} aria-busy={navigating || undefined}>
           {days.length ? (
             <div className="grid gap-6">
               {days.map((day) => (

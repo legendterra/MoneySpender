@@ -39,7 +39,7 @@ export function AllowanceHero({
   return (
     <section
       aria-labelledby="allowance-label"
-      className={cn("rounded-sheet border border-line bg-surface p-5 md:p-6", className)}
+      className={cn("pt-1", className)}
     >
       <p
         id="allowance-label"
@@ -103,7 +103,7 @@ export function MonthHero({
   return (
     <section
       aria-labelledby="month-hero-label"
-      className={cn("rounded-sheet border border-line bg-surface p-5 md:p-6", className)}
+      className={cn("pt-1", className)}
     >
       <p id="month-hero-label" className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
         {t("pastMonthTitle", { month: monthLabel })}

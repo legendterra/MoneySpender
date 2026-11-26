@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
+import { useCatat } from "@/components/quick-add/catat-provider";
 import { deleteEntry, restoreEntry, type DeleteTarget } from "@/lib/history-mutations";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
@@ -17,7 +17,7 @@ const message = (error: unknown) => (error instanceof Error ? error.message : St
  */
 export function useDeleteWithUndo(onChange?: (key: string, hidden: boolean) => void) {
   const t = useTranslations("riwayat");
-  const router = useRouter();
+  const { refresh } = useCatat();
 
   return React.useCallback(
     async (target: DeleteTarget & { key: string }, description: string) => {
@@ -25,19 +25,21 @@ export function useDeleteWithUndo(onChange?: (key: string, hidden: boolean) => v
         toast.error(t("errors.offline"));
         return false;
       }
+      // Hide the row right away; it comes back on undo or failure.
+      onChange?.(target.key, true);
       const supabase = createBrowserSupabaseClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
+        onChange?.(target.key, false);
         toast.error(t("errors.notSignedIn"));
         return false;
       }
 
-      onChange?.(target.key, true);
       try {
         const token = await deleteEntry(supabase, user.id, target);
-        router.refresh();
+        refresh();
         toast(t("deleted.title"), {
           description,
           duration: 7000,
@@ -48,7 +50,7 @@ export function useDeleteWithUndo(onChange?: (key: string, hidden: boolean) => v
                 await restoreEntry(supabase, user.id, token);
                 onChange?.(target.key, false);
                 toast.success(t("deleted.restored"));
-                router.refresh();
+                refresh();
               } catch (error) {
                 toast.error(t("errors.restore", { message: message(error) }));
               }
@@ -62,6 +64,6 @@ export function useDeleteWithUndo(onChange?: (key: string, hidden: boolean) => v
         return false;
       }
     },
-    [onChange, router, t],
+    [onChange, refresh, t],
   );
 }
