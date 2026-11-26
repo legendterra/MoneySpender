@@ -56,6 +56,17 @@ export function statusForRatio(limit: number, ratio: number): BudgetStatus {
   return "safe";
 }
 
+/**
+ * Status from the exact amounts (not the rounded percentage): "over" only once
+ * spending is really above the limit, "warning" from 80% up to the limit.
+ */
+export function statusForSpend(limit: number, spent: number): BudgetStatus {
+  if (!(limit > 0)) return "none";
+  if (spent > limit) return "over";
+  if (spent >= limit * 0.8) return "warning";
+  return "safe";
+}
+
 /** Whole rupiah per remaining day, never negative; null when daysLeft is unknown. */
 export function perDayAllowance(remaining: number, daysLeft: number | null) {
   if (daysLeft === null || !(daysLeft > 0)) return null;
@@ -106,7 +117,7 @@ export function buildBudgetBoard(
       spent: used,
       remaining,
       ratio,
-      status: statusForRatio(limit, ratio),
+      status: statusForSpend(limit, used),
       perDay: limit > 0 ? perDayAllowance(remaining, daysLeft) : null,
     };
   });
@@ -140,7 +151,7 @@ export function buildBudgetBoard(
       spent: used,
       remaining,
       ratio,
-      status: statusForRatio(limit, ratio),
+      status: statusForSpend(limit, used),
       perDay: limit > 0 ? perDayAllowance(remaining, daysLeft) : null,
       overCount: budgeted.filter((row) => row.status === "over").length,
       nearCount: budgeted.filter((row) => row.status === "warning").length,
@@ -226,7 +237,7 @@ export function withLimit<T extends BudgetRow>(row: T, limit: number, daysLeft: 
     limit: safe,
     remaining,
     ratio,
-    status: statusForRatio(safe, ratio),
+    status: statusForSpend(safe, row.spent),
     perDay: safe > 0 ? perDayAllowance(remaining, daysLeft) : null,
   };
 }
@@ -266,7 +277,7 @@ export function adjustTotals(
     spent,
     remaining,
     ratio,
-    status: statusForRatio(limit, ratio),
+    status: statusForSpend(limit, spent),
     perDay: limit > 0 ? perDayAllowance(remaining, daysLeft) : null,
     overCount: totals.overCount - a.over + b.over,
     nearCount: totals.nearCount - a.near + b.near,

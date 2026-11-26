@@ -407,7 +407,8 @@
     "rowLeftPerDay": "{amount} left · {perDay}/day",
     "rowLeft": "{amount} left",
     "spentThisMonth": "Spent",
-    "set": "Set"
+    "set": "Set",
+    "statusFull": "Used up"
   },
   "laporan": {
     "periodLabel": "Report period",
@@ -454,7 +455,9 @@
     "backToReport": "{period} report",
     "allCategoriesTitle": "All expense categories",
     "allMerchantsTitle": "All places",
-    "listTotal": "{count, plural, one {# row} other {# rows}}"
+    "overspent": "You spent more than you earned.",
+    "listTotalCategories": "{count, plural, one {# category} other {# categories}}",
+    "listTotalPlaces": "{count, plural, one {# place} other {# places}}"
   },
   "pengaturan": {
     "importTitle": "Import records",
@@ -484,7 +487,7 @@
     "navSavings": "Savings",
     "navNotifications": "Notifications",
     "navCategories": "Categories",
-    "navRecurring": "Recurring",
+    "navRecurring": "Recurring transactions",
     "navTemplates": "Templates",
     "navData": "Data",
     "navInstall": "Install app",

@@ -9,6 +9,7 @@ import {
   planBudgetCopy,
   spendingByCategory,
   statusForRatio,
+  statusForSpend,
   withLimit,
 } from "@/lib/budget-plan";
 
@@ -47,6 +48,11 @@ describe("budget-plan", () => {
     expect(statusForRatio(100, 79)).toBe("safe");
     expect(statusForRatio(100, 80)).toBe("warning");
     expect(statusForRatio(100, 100)).toBe("over");
+    // Exact amounts: 299.000 of 300.000 is nearly used up, not over.
+    expect(statusForSpend(300_000, 299_000)).toBe("warning");
+    expect(statusForSpend(300_000, 300_000)).toBe("warning");
+    expect(statusForSpend(300_000, 300_001)).toBe("over");
+    expect(statusForSpend(0, 10)).toBe("none");
   });
 
   it("builds a board sorted over > near > safe, with unbudgeted and idle groups", () => {

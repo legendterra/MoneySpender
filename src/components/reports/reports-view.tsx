@@ -50,7 +50,9 @@ export function ReportsView(data: ReportsPageData) {
             <p className="text-[13px] text-muted">
               {isEmpty
                 ? t("emptyPeriod")
-                : summary.income > 0
+                : summary.net < 0 && summary.income > 0
+                  ? t("overspent")
+                  : summary.income > 0
                   ? t("savingsRate", { rate: summary.savingsRate })
                   : t("noIncome")}
             </p>
@@ -146,7 +148,7 @@ function FullList({ data, periodLabel }: { data: ReportsPageData; periodLabel: s
         <p className="text-[13px] text-muted">
           <span className="capitalize">{periodLabel}</span>
           <span aria-hidden="true"> · </span>
-          {t("listTotal", { count: list.totalItems })}
+          {t(list.kind === "kategori" ? "listTotalCategories" : "listTotalPlaces", { count: list.totalItems })}
           {data.summary.expense ? (
             <>
               <span aria-hidden="true"> · </span>

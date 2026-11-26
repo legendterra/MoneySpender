@@ -299,7 +299,16 @@ function BudgetLine({ row, onEdit }: { row: BudgetListRow; onEdit: () => void })
   const locale = toUiLocale(useLocale());
   const money = (value: number) => formatMoney(value, { locale });
   const tone = row.status === "over" ? "text-expense" : row.status === "warning" ? "text-debt" : "text-muted";
-  const statusLabel = row.status === "over" ? t("statusOver") : row.status === "warning" ? t("statusNear") : null;
+  const statusLabel =
+    row.status === "over"
+      ? t("statusOver")
+      : row.remaining === 0
+        ? t("statusFull")
+        : row.status === "warning"
+          ? t("statusNear")
+          : null;
+  // The rounded percentage must not claim 100% while there is still money left.
+  const shownRatio = row.remaining > 0 ? Math.min(row.ratio, 99) : row.ratio;
 
   return (
     <button type="button" onClick={onEdit} className={rowButton} aria-label={t("editLabel", { name: row.categoryName })}>
@@ -307,7 +316,7 @@ function BudgetLine({ row, onEdit }: { row: BudgetListRow; onEdit: () => void })
         <span className="min-w-0 truncate text-[15px] font-medium text-text">{row.categoryName}</span>
         <span className={cn("shrink-0 text-[13px] font-semibold tabular-nums", tone)}>
           {statusLabel ? `${statusLabel} · ` : ""}
-          {row.ratio}%
+          {shownRatio}%
         </span>
       </span>
       <ProgressBar value={row.spent} max={row.limit} label={t("rowProgress", { name: row.categoryName })} />

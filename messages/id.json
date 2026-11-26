@@ -407,7 +407,8 @@
     "rowLeftPerDay": "Sisa {amount} · {perDay}/hari",
     "rowLeft": "Sisa {amount}",
     "spentThisMonth": "Terpakai",
-    "set": "Atur"
+    "set": "Atur",
+    "statusFull": "Habis"
   },
   "laporan": {
     "periodLabel": "Periode laporan",
@@ -454,7 +455,9 @@
     "backToReport": "Laporan {period}",
     "allCategoriesTitle": "Semua kategori pengeluaran",
     "allMerchantsTitle": "Semua tempat belanja",
-    "listTotal": "{count, plural, other {# baris}}"
+    "overspent": "Pengeluaran lebih besar dari pemasukan.",
+    "listTotalCategories": "{count, plural, other {# kategori}}",
+    "listTotalPlaces": "{count, plural, other {# tempat}}"
   },
   "pengaturan": {
     "importTitle": "Impor catatan",
@@ -484,7 +487,7 @@
     "navSavings": "Tabungan",
     "navNotifications": "Notifikasi",
     "navCategories": "Kategori",
-    "navRecurring": "Berulang",
+    "navRecurring": "Transaksi berulang",
     "navTemplates": "Template",
     "navData": "Data",
     "navInstall": "Pasang aplikasi",
