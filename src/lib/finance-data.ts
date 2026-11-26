@@ -37,6 +37,30 @@ export const RECURRING_COLUMNS =
   "id,type,category_id,category_label,wallet_id,wallet_label,amount,reason,merchant,day_of_month,last_generated_month,is_active";
 export const TEMPLATE_COLUMNS =
   "id,label,type,amount,category_id,category_label,wallet_id,wallet_label,sort_order";
+export const CATEGORY_COLUMNS = "id,name,type,color";
+// Riwayat orders rows inside a day by when they were recorded.
+export const HISTORY_TRANSACTION_COLUMNS = `${TRANSACTION_COLUMNS},created_at`;
+export const HISTORY_TRANSFER_COLUMNS = `${TRANSFER_COLUMNS},created_at`;
+export const HISTORY_DEBT_COLUMNS = `${DEBT_COLUMNS},created_at`;
+export const HISTORY_DEBT_PAYMENT_COLUMNS = `${DEBT_PAYMENT_COLUMNS},created_at`;
+/** Riwayat paging: sort keys per table (read before the full rows of a page). */
+export const HISTORY_KEY_COLUMNS = {
+  transactions: "id,transaction_date,created_at",
+  wallet_transfers: "id,transfer_date,created_at",
+  debts: "id,debt_date,created_at",
+  debt_payments: "id,paid_date,created_at",
+} as const;
+/** Lean transaction columns for day totals and period summaries. */
+export const TRANSACTION_SUM_COLUMNS = "id,type,amount,transaction_date,category_id,category_label";
+/** Monthly budget rows (Beranda budget watch). */
+export const BUDGET_COLUMNS = "id,category_id,month,amount";
+/** Wallet columns Riwayat needs for names and filter chips. */
+export const WALLET_NAME_COLUMNS = "id,name,kind,is_archived";
+/** Lean columns for wallet balances (PLAN.md 4.2): no labels, notes or categories. */
+export const BALANCE_TRANSACTION_COLUMNS = "id,amount,type,wallet_id,transaction_date";
+export const BALANCE_TRANSFER_COLUMNS = "id,amount,from_wallet_id,to_wallet_id,transfer_date";
+export const BALANCE_DEBT_COLUMNS = "id,amount,paid_amount,paid_at,direction,wallet_id,debt_date,is_paid";
+export const BALANCE_DEBT_PAYMENT_COLUMNS = "id,amount,debt_id,wallet_id,paid_date";
 export const PROFILE_COLUMNS_BASE = "full_name,currency_code,monthly_savings_goal,yearly_savings_goal";
 /** Requires migration 2026-11-20 (locale, reserve_savings). */
 export const PROFILE_COLUMNS = `${PROFILE_COLUMNS_BASE},locale,reserve_savings`;
@@ -298,6 +322,97 @@ export async function fetchFinanceSnapshot(
     debts: debts.map(mapDebt),
     payments: payments.map(mapDebtPayment),
   };
+}
+
+export type BalanceDebtRow = {
+  id: string;
+  amount: number;
+  paid_amount: number;
+  paid_at: string | null;
+  direction: DebtDirection;
+  wallet_id: string | null;
+  debt_date: string;
+  is_paid: boolean;
+};
+
+export type LeanBalanceData = {
+  walletRows: WalletRow[];
+  transactions: Array<{ type: "income" | "expense"; amount: number; wallet_id: string | null; transaction_date: string }>;
+  transfers: Array<{ from_wallet_id: string; to_wallet_id: string; amount: number; transfer_date: string }>;
+  debts: BalanceDebtRow[];
+  payments: Array<{ debt_id: string; amount: number; wallet_id: string | null; paid_date: string }>;
+};
+
+/**
+ * Everything wallet balances need, with lean columns only, read in parallel
+ * (each table paged past the 1000-row cap). Much lighter than
+ * fetchFinanceSnapshot: no notes, labels or categories travel over the wire.
+ */
+export async function fetchBalanceData(
+  client: SupabaseClient,
+  userId: string,
+  options: { includeArchivedWallets?: boolean } = {},
+): Promise<LeanBalanceData> {
+  const [walletRows, transactions, transfers, debts, payments] = await Promise.all([
+    (async () => {
+      let query = client.from("wallets").select(WALLET_COLUMNS).eq("user_id", userId);
+      if (!options.includeArchivedWallets) query = query.eq("is_archived", false);
+      return expectRows<Row>("wallets", await query.order("created_at", { ascending: true })).map(mapWalletRow);
+    })(),
+    selectAllRows<Row>("transactions", () =>
+      client.from("transactions").select(BALANCE_TRANSACTION_COLUMNS).eq("user_id", userId).order("id", { ascending: true }),
+    ),
+    selectAllRows<Row>("wallet_transfers", () =>
+      client.from("wallet_transfers").select(BALANCE_TRANSFER_COLUMNS).eq("user_id", userId).order("id", { ascending: true }),
+    ),
+    selectAllRows<Row>("debts", () =>
+      client.from("debts").select(BALANCE_DEBT_COLUMNS).eq("user_id", userId).order("id", { ascending: true }),
+    ),
+    selectAllRows<Row>("debt_payments", () =>
+      client.from("debt_payments").select(BALANCE_DEBT_PAYMENT_COLUMNS).eq("user_id", userId).order("id", { ascending: true }),
+    ),
+  ]);
+  const num = (value: unknown) => Number(value) || 0;
+  const text = (value: unknown) => (value === null || value === undefined ? null : String(value));
+  return {
+    walletRows,
+    transactions: transactions.map((row) => ({
+      type: row.type === "income" ? "income" : "expense",
+      amount: num(row.amount),
+      wallet_id: text(row.wallet_id),
+      transaction_date: String(row.transaction_date),
+    })),
+    transfers: transfers.map((row) => ({
+      from_wallet_id: String(row.from_wallet_id),
+      to_wallet_id: String(row.to_wallet_id),
+      amount: num(row.amount),
+      transfer_date: String(row.transfer_date),
+    })),
+    debts: debts.map((row) => ({
+      id: String(row.id),
+      amount: num(row.amount),
+      paid_amount: num(row.paid_amount),
+      paid_at: text(row.paid_at),
+      direction: row.direction === "receivable" ? "receivable" : "payable",
+      wallet_id: text(row.wallet_id),
+      debt_date: String(row.debt_date),
+      is_paid: Boolean(row.is_paid),
+    })),
+    payments: payments.map((row) => ({
+      debt_id: String(row.debt_id),
+      amount: num(row.amount),
+      wallet_id: text(row.wallet_id),
+      paid_date: String(row.paid_date),
+    })),
+  };
+}
+
+export function balancesFromLean(data: LeanBalanceData, options: BalanceOptions = {}): Wallet[] {
+  return computeWalletBalances(
+    data.walletRows,
+    { transactions: data.transactions, transfers: data.transfers, debts: data.debts, payments: data.payments },
+    options,
+  );
 }
 
 export function balancesFromSnapshot(snapshot: FinanceSnapshot, options: BalanceOptions = {}): Wallet[] {

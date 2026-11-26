@@ -48,11 +48,16 @@ const nextConfig: NextConfig = {
   },
 
   // v2: no marketing landing and no paywall (docs/redesign/PLAN.md section 4).
-  // Unauthenticated visitors of /dashboard end on /auth.
+  // Unauthenticated visitors of /dashboard end on /auth. Old v1 screens moved.
   async redirects() {
     return [
       { source: "/", destination: "/dashboard", permanent: false },
       { source: "/pricing", destination: "/dashboard", permanent: true },
+      { source: "/expenses", destination: "/history?type=expense", permanent: true },
+      { source: "/income", destination: "/history?type=income", permanent: true },
+      { source: "/all-transactions", destination: "/history", permanent: true },
+      { source: "/net-worth", destination: "/wallets", permanent: true },
+      { source: "/goals", destination: "/settings", permanent: true },
     ];
   },
 

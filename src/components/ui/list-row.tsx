@@ -14,7 +14,10 @@ const avatarTone: Record<RowTone, string> = {
   primary: "text-primary-ink",
 };
 
-/** Square avatar with an initial or icon, colored by money meaning. */
+/**
+ * Leading mark of a row: an icon (or an initial) colored by money meaning.
+ * Flat: no tile behind it (owner rule, PLAN.md section 3).
+ */
 export function RowAvatar({
   label,
   icon: Icon,
@@ -30,12 +33,17 @@ export function RowAvatar({
     <span
       aria-hidden="true"
       className={cn(
-        "grid size-10 shrink-0 place-items-center rounded-[12px] bg-surface-2 text-[14px] font-bold",
+        "grid size-8 shrink-0 place-items-center text-[15px] font-semibold",
+        !Icon && "rounded-full ring-1 ring-line-strong ring-inset text-[13px]",
         avatarTone[tone],
         className,
       )}
     >
-      {Icon ? <Icon className="size-[18px]" /> : (label ?? "?").trim().charAt(0).toUpperCase()}
+      {Icon ? (
+        <Icon className="size-5" strokeWidth={1.9} />
+      ) : (
+        (label ?? "?").trim().charAt(0).toUpperCase()
+      )}
     </span>
   );
 }
@@ -52,7 +60,7 @@ type ListRowProps = {
   className?: string;
 };
 
-/** One row in a list. Place rows inside a container with `divide-y divide-line`. */
+/** One plain row. Place rows inside a container with `divide-y divide-line`. */
 export function ListRow({
   title,
   subtitle,
@@ -79,9 +87,10 @@ export function ListRow({
     </>
   );
 
-  const base = cn("flex min-h-14 w-full items-center gap-3 py-2", className);
+  const base = cn("flex min-h-14 w-full items-center gap-3 py-2.5", className);
+  // Hover/focus feedback only; at rest the row sits flat on the page.
   const interactive =
-    "-mx-2 rounded-control px-2 outline-none transition-colors hover:bg-surface-2/70 focus-visible:outline-2 focus-visible:outline-ring w-[calc(100%+1rem)]";
+    "outline-none transition-colors hover:bg-surface-2/40 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring";
 
   if (href) {
     return (

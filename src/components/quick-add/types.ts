@@ -42,3 +42,42 @@ export type CatatData = {
 };
 
 export const EMPTY_CATAT_DATA: CatatData = { categories: [], wallets: [], templates: [], contacts: [] };
+
+export type CatatPanel = "keypad" | "category" | "wallet" | "toWallet" | "date" | "note" | "contact";
+
+/** Initial values of the sheet (duplicate, edit, PWA shortcuts, gallery). */
+export type CatatPreset = Partial<{
+  amount: number;
+  categoryId: string;
+  /** Used when the category is only a label (no row in `categories`). */
+  categoryLabel: string;
+  walletId: string;
+  /** Shown if the wallet is archived and therefore not in the picker. */
+  walletLabel: string;
+  toWalletId: string;
+  toWalletLabel: string;
+  dateKey: string;
+  note: string;
+  contact: string;
+  debtDirection: "payable" | "receivable";
+  panel: CatatPanel;
+}>;
+
+/** Edit mode: the sheet updates this row instead of inserting a new one. */
+export type CatatEditing = {
+  table: "transactions" | "wallet_transfers" | "debts";
+  id: string;
+  /** Debts: already paid back; the amount cannot go below it and the direction is locked. */
+  debtPaid?: number;
+  debtPaidAt?: string | null;
+};
+
+export type CatatOpenOptions = { preset?: CatatPreset; editing?: CatatEditing };
+
+/** Modes an edited row may switch between (a row never moves to another table). */
+export function editableModes(editing: CatatEditing | null | undefined): CatatMode[] {
+  if (!editing) return CATAT_MODES;
+  if (editing.table === "transactions") return ["expense", "income"];
+  if (editing.table === "wallet_transfers") return ["transfer"];
+  return ["debt"];
+}

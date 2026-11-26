@@ -148,7 +148,16 @@ function HeaderMonth({ pathname }: { pathname: string }) {
   const requested = searchParams.get("month");
   const current = jakartaMonthKey();
   const value = requested && /^\d{4}-\d{2}$/.test(requested) ? requested : current;
-  return <MonthSwitcher value={value} basePath={pathname} />;
+  // Keep filters (Riwayat search, type, wallet...) when switching months; the page
+  // size and a year/all period are relative to the month, so they reset.
+  const hrefFor = (month: string) => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("n");
+    next.delete("period");
+    next.set("month", month);
+    return `${pathname}?${next.toString()}`;
+  };
+  return <MonthSwitcher value={value} hrefFor={hrefFor} />;
 }
 
 function Sidebar({

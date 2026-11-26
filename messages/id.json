@@ -345,7 +345,274 @@
     "noCategory": "Tanpa kategori",
     "transferTitle": "Transfer {from} ke {to}",
     "debtPayableTitle": "Pinjam dari {name}",
-    "debtReceivableTitle": "Pinjamkan ke {name}"
+    "debtReceivableTitle": "Pinjamkan ke {name}",
+    "todayMore": "{count, plural, other {# catatan lain hari ini}}"
+  },
+  "riwayat": {
+    "searchLabel": "Cari catatan",
+    "searchPlaceholder": "Cari catatan, kategori, nominal",
+    "clearSearch": "Hapus pencarian",
+    "loading": "Memuat",
+    "filtersLabel": "Filter riwayat",
+    "types": {
+      "expense": "Keluar",
+      "income": "Masuk",
+      "transfer": "Transfer",
+      "debt": "Hutang",
+      "all": "Semua"
+    },
+    "wallet": "Dompet",
+    "allWallets": "Semua dompet",
+    "archived": "Diarsipkan",
+    "category": "Kategori",
+    "allCategories": "Semua kategori",
+    "expenseCategories": "Pengeluaran",
+    "incomeCategories": "Pemasukan",
+    "searchCategory": "Cari kategori",
+    "period": "Periode",
+    "periodOptions": {
+      "month": "Satu bulan",
+      "year": "Satu tahun",
+      "all": "Semua waktu"
+    },
+    "periodChip": {
+      "year": "Tahun {year}",
+      "all": "Semua waktu"
+    },
+    "reset": "Reset filter",
+    "summary": "{count, plural, =0 {Belum ada catatan} other {# catatan}}",
+    "summaryTitle": "Ringkasan",
+    "summaryIncome": "Masuk",
+    "summaryExpense": "Keluar",
+    "summaryNet": "Selisih",
+    "topCategories": "Pengeluaran terbesar",
+    "today": "Hari ini",
+    "yesterday": "Kemarin",
+    "emptyTitle": "Belum ada catatan di periode ini",
+    "emptyBody": "Catatan yang kamu simpan muncul di sini, dikelompokkan per hari.",
+    "emptyAction": "Catat sekarang",
+    "noMatchTitle": "Tidak ada yang cocok",
+    "noMatchBody": "Coba kata lain atau longgarkan filternya.",
+    "rows": {
+      "transfer": "Transfer {from} ke {to}",
+      "debtPayable": "Pinjam dari {name}",
+      "debtReceivable": "Pinjamkan ke {name}",
+      "paymentPayable": "Bayar hutang ke {name}",
+      "paymentReceivable": "Terima cicilan dari {name}",
+      "noCategory": "Tanpa kategori"
+    },
+    "kinds": {
+      "expense": "Pengeluaran",
+      "income": "Pemasukan",
+      "transfer": "Transfer antar dompet",
+      "debt": "Hutang",
+      "receivable": "Piutang",
+      "debtPayment": "Pembayaran hutang",
+      "receivablePayment": "Cicilan piutang"
+    },
+    "detail": {
+      "date": "Tanggal",
+      "wallet": "Dompet",
+      "noWallet": "Tanpa dompet",
+      "from": "Dari",
+      "to": "Ke",
+      "category": "Kategori",
+      "contact": "Orang",
+      "merchant": "Tempat",
+      "note": "Catatan"
+    },
+    "actions": {
+      "edit": "Ubah",
+      "duplicate": "Duplikat",
+      "delete": "Hapus",
+      "openDebt": "Lihat di Hutang",
+      "seeAll": "Lihat semua"
+    },
+    "deleted": {
+      "title": "Catatan dihapus",
+      "undo": "Urungkan",
+      "restored": "Catatan dikembalikan"
+    },
+    "errors": {
+      "notSignedIn": "Sesi kamu sudah habis. Masuk lagi dulu, ya.",
+      "offline": "Menghapus butuh koneksi internet. Coba lagi setelah online.",
+      "delete": "Gagal menghapus. {message}",
+      "restore": "Gagal mengembalikan. {message}"
+    },
+    "edit": {
+      "title": "Ubah catatan",
+      "titleTransfer": "Ubah transfer",
+      "titleDebt": "Ubah hutang",
+      "save": "Simpan perubahan",
+      "saved": "Perubahan tersimpan",
+      "offline": "Mengubah catatan butuh koneksi internet. Coba lagi setelah online.",
+      "failed": "Gagal menyimpan ke tabel {table}: {message}",
+      "belowPaid": "Nominal tidak boleh kurang dari yang sudah dibayar ({amount}).",
+      "directionLocked": "sudah ada pembayaran, arahnya tetap"
+    },
+    "typesLabel": "Jenis catatan",
+    "pageInfo": "{from}–{to} dari {total} catatan",
+    "summaryAllTime": "Total pemasukan dan pengeluaran tampil kalau kamu pilih satu bulan atau satu tahun."
+  },
+  "hutang": {
+    "tabs": {
+      "label": "Jenis hutang",
+      "payable": "Hutang",
+      "receivable": "Piutang"
+    },
+    "hero": {
+      "payable": "Masih harus kamu bayar",
+      "receivable": "Masih harus kamu terima",
+      "detail": "{count} orang · dibayar {paid} dari {total}",
+      "clearPayable": "Semua hutang sudah lunas.",
+      "clearReceivable": "Tidak ada piutang yang belum kembali.",
+      "progress": "Bagian yang sudah dibayar",
+      "net": "Posisi bersih"
+    },
+    "actions": {
+      "addPayable": "Catat hutang",
+      "addReceivable": "Catat piutang",
+      "payPart": "Bayar sebagian",
+      "receivePart": "Terima sebagian",
+      "settle": "Lunasi",
+      "edit": "Ubah",
+      "delete": "Hapus"
+    },
+    "list": {
+      "activePayable": "Belum lunas",
+      "activeReceivable": "Belum kembali",
+      "count": "{count, plural, other {# catatan}}",
+      "settled": "Sudah lunas ({count})",
+      "paidBadge": "Lunas",
+      "of": "dari {total}"
+    },
+    "empty": {
+      "payableTitle": "Tidak ada hutang aktif",
+      "payableBody": "Kalau kamu pinjam uang, catat di sini supaya saldo dompet tetap pas.",
+      "receivableTitle": "Tidak ada piutang aktif",
+      "receivableBody": "Kalau kamu meminjamkan uang, catat di sini supaya tidak lupa menagih."
+    },
+    "detail": {
+      "payableSince": "Hutang sejak {date}",
+      "receivableSince": "Piutang sejak {date}",
+      "remaining": "Sisa",
+      "settled": "Sudah lunas",
+      "paidOf": "Sudah dibayar {paid} dari {total}",
+      "progress": "Pembayaran {name}",
+      "walletPayable": "Uangnya masuk ke",
+      "walletReceivable": "Uangnya keluar dari",
+      "noWallet": "Tanpa dompet",
+      "note": "Catatan",
+      "settledOn": "Lunas pada"
+    },
+    "payments": {
+      "title": "Pembayaran",
+      "empty": "Belum ada pembayaran.",
+      "delete": "Hapus pembayaran {label}",
+      "deleted": "Pembayaran dihapus",
+      "restored": "Pembayaran dikembalikan"
+    },
+    "pay": {
+      "titlePayable": "Bayar ke {name}",
+      "titleReceivable": "Terima dari {name}",
+      "titleSettlePayable": "Lunasi hutang ke {name}",
+      "titleSettleReceivable": "Terima pelunasan dari {name}",
+      "remaining": "Sisa {amount}",
+      "back": "Kembali",
+      "save": "Simpan pembayaran",
+      "amount": "Nominal pembayaran",
+      "max": "Maksimal {amount}",
+      "capped": "Maksimal {amount}, sesuai sisa hutang",
+      "quick": "Nominal cepat",
+      "all": "Semua sisa",
+      "half": "Setengah",
+      "fromWallet": "Bayar dari dompet",
+      "toWallet": "Masuk ke dompet",
+      "noWallets": "Belum ada dompet aktif. Pembayaran dicatat ke dompet hutangnya.",
+      "needAmount": "Isi nominal pembayarannya dulu.",
+      "savedPayable": "Pembayaran {amount} ke {name} tersimpan",
+      "savedReceivable": "Penerimaan {amount} dari {name} tersimpan",
+      "settledPayable": "Hutang ke {name} lunas",
+      "settledReceivable": "Piutang dari {name} sudah kembali semua",
+      "undone": "Pembayaran dibatalkan"
+    },
+    "undo": "Urungkan",
+    "errors": {
+      "notSignedIn": "Sesi kamu sudah habis. Masuk lagi dulu, ya.",
+      "offline": "Pembayaran butuh koneksi internet. Coba lagi setelah online.",
+      "pay": "Pembayaran gagal disimpan. {message}",
+      "undo": "Gagal mengurungkan. {message}",
+      "deletePayment": "Gagal menghapus pembayaran. {message}"
+    }
+  },
+  "dompet": {
+    "hero": {
+      "netWorth": "Kekayaan bersih",
+      "formula": "Saldo semua dompet, ditambah piutang, dikurangi hutang.",
+      "wallets": "Saldo dompet",
+      "receivable": "Piutang",
+      "payable": "Hutang"
+    },
+    "actions": {
+      "transfer": "Transfer",
+      "add": "Tambah dompet",
+      "transferFrom": "Transfer dari sini",
+      "history": "Lihat riwayat"
+    },
+    "kinds": {
+      "cash": "Tunai",
+      "bank": "Rekening bank",
+      "ewallet": "Dompet digital",
+      "card": "Kartu kredit",
+      "other": "Lainnya"
+    },
+    "list": {
+      "title": "Dompet aktif",
+      "opening": "awal {amount}",
+      "liquid": "Tanpa kartu kredit: {amount}. Jatah harian dihitung dari angka ini.",
+      "archived": "Diarsipkan ({count})",
+      "archivedHint": "Saldo dompet yang diarsipkan tidak ikut dihitung."
+    },
+    "empty": {
+      "title": "Belum ada dompet",
+      "body": "Tambah dompet pertamamu, misalnya Tunai atau rekening bank, lengkap dengan saldonya sekarang."
+    },
+    "transfers": {
+      "title": "Transfer terakhir",
+      "empty": "Belum ada transfer antar dompet."
+    },
+    "form": {
+      "titleNew": "Dompet baru",
+      "name": "Nama dompet",
+      "namePlaceholder": "Contoh: BCA, GoPay, Tunai",
+      "nameRequired": "Nama dompet belum diisi.",
+      "nameTaken": "Nama ini sudah dipakai dompet lain.",
+      "kind": "Jenis",
+      "opening": "Saldo awal",
+      "openingHint": "Isi saldo yang ada sekarang. Catatan berikutnya akan menambah atau mengurangi saldo ini.",
+      "openingHintEdit": "Catatan di dompet ini mengubah saldo awal sebesar {amount}.",
+      "cardSign": "Tanda saldo kartu",
+      "positive": "Saldo plus",
+      "negative": "Tagihan (minus)",
+      "currentBalance": "Saldo sekarang",
+      "create": "Simpan dompet",
+      "saveChanges": "Simpan perubahan",
+      "created": "Dompet {name} ditambahkan",
+      "updated": "Dompet {name} diperbarui"
+    },
+    "archive": {
+      "archive": "Arsipkan dompet",
+      "unarchive": "Aktifkan lagi",
+      "archivedHint": "Diarsipkan",
+      "done": "Dompet {name} diarsipkan",
+      "restored": "Dompet {name} aktif lagi"
+    },
+    "undo": "Urungkan",
+    "errors": {
+      "notSignedIn": "Sesi kamu sudah habis. Masuk lagi dulu, ya.",
+      "offline": "Menyimpan dompet butuh koneksi internet. Coba lagi setelah online.",
+      "save": "Gagal menyimpan ke tabel {table}: {message}"
+    }
   },
   "placeholder": {
     "historyTitle": "Riwayat sedang disiapkan",

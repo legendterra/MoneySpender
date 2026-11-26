@@ -17,6 +17,7 @@ export function progressToneFor(ratio: number): Exclude<ProgressTone, "auto"> {
   return "primary";
 }
 
+/** A thin line meter on a hairline track (flat, no box). */
 export function ProgressBar({
   value,
   max = 100,
@@ -44,11 +45,7 @@ export function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(Math.max(0, ratio * 100))}
-      className={cn(
-        "w-full overflow-hidden rounded-full bg-surface-2",
-        size === "sm" ? "h-1.5" : "h-2",
-        className,
-      )}
+      className={cn("w-full overflow-hidden rounded-full bg-line", size === "sm" ? "h-1" : "h-1.5", className)}
     >
       <div
         className={cn("h-full rounded-full transition-[width] duration-500 ease-out", fills[resolved])}

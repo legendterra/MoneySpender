@@ -51,18 +51,49 @@ export class FakeSupabase {
 
 type Filter = (row: Row) => boolean;
 
+/** Splits on commas outside parentheses: "a.eq.1,and(b.is.null,c.in.(x,y))". */
+function splitTopLevel(expression: string) {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const char of expression) {
+    if (char === "(") depth += 1;
+    if (char === ")") depth -= 1;
+    if (char === "," && depth === 0) {
+      parts.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  if (current) parts.push(current);
+  return parts;
+}
+
+function parseCondition(part: string): Filter {
+  const nested = /^(and|or)\((.*)\)$/.exec(part);
+  if (nested) {
+    const tests = splitTopLevel(nested[2]).map(parseCondition);
+    return nested[1] === "and" ? (row) => tests.every((test) => test(row)) : (row) => tests.some((test) => test(row));
+  }
+  const [column, operator, ...rest] = part.split(".");
+  const value = rest.join(".");
+  return (row: Row) => {
+    const current = row[column];
+    if (operator === "is") return value === "null" ? current === null || current === undefined : String(current) === value;
+    if (operator === "eq") return String(current) === value;
+    if (operator === "neq") return current !== null && current !== undefined && String(current) !== value;
+    if (operator === "in") return value.replace(/^\(|\)$/g, "").split(",").includes(String(current));
+    if (operator === "ilike") {
+      const pattern = value.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/[*%]/g, ".*");
+      return current !== null && current !== undefined && new RegExp(`^${pattern}$`, "i").test(String(current));
+    }
+    throw new Error(`fake supabase: unsupported or() operator ${operator}`);
+  };
+}
+
 function parseOrExpression(expression: string): Filter {
-  const parts = expression.split(",").map((part) => {
-    const [column, operator, ...rest] = part.split(".");
-    const value = rest.join(".");
-    return (row: Row) => {
-      const current = row[column];
-      if (operator === "is") return value === "null" ? current === null || current === undefined : String(current) === value;
-      if (operator === "eq") return String(current) === value;
-      if (operator === "neq") return current !== null && current !== undefined && String(current) !== value;
-      throw new Error(`fake supabase: unsupported or() operator ${operator}`);
-    };
-  });
+  const parts = splitTopLevel(expression).map(parseCondition);
   return (row) => parts.some((test) => test(row));
 }
 
@@ -72,7 +103,7 @@ class FakeQuery implements PromiseLike<Result> {
   private payload: unknown = null;
   private returning = false;
   private filters: Filter[] = [];
-  private orders: Array<{ column: string; ascending: boolean }> = [];
+  private orders: Array<{ column: string; ascending: boolean; nullsFirst: boolean }> = [];
   private from_: number | null = null;
   private to_: number | null = null;
   private limit_: number | null = null;
@@ -139,8 +170,10 @@ class FakeQuery implements PromiseLike<Result> {
     this.filters.push(parseOrExpression(expression));
     return this;
   }
-  order(column: string, options?: { ascending?: boolean }) {
-    this.orders.push({ column, ascending: options?.ascending ?? true });
+  order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean }) {
+    const ascending = options?.ascending ?? true;
+    // Postgres default: NULLS LAST ascending, NULLS FIRST descending.
+    this.orders.push({ column, ascending, nullsFirst: options?.nullsFirst ?? !ascending });
     return this;
   }
   limit(count: number) {
@@ -221,11 +254,13 @@ class FakeQuery implements PromiseLike<Result> {
     }
 
     let selected = rows.filter((row) => this.matches(row)).map((row) => ({ ...row }));
-    for (const { column, ascending } of [...this.orders].reverse()) {
+    for (const { column, ascending, nullsFirst } of [...this.orders].reverse()) {
       selected = [...selected].sort((a, b) => {
-        const left = a[column] as string | number;
-        const right = b[column] as string | number;
+        const left = a[column] as string | number | null | undefined;
+        const right = b[column] as string | number | null | undefined;
         if (left === right) return 0;
+        if (left === null || left === undefined) return nullsFirst ? -1 : 1;
+        if (right === null || right === undefined) return nullsFirst ? 1 : -1;
         return (left > right ? 1 : -1) * (ascending ? 1 : -1);
       });
     }

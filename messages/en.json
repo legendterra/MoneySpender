@@ -345,7 +345,274 @@
     "noCategory": "Uncategorized",
     "transferTitle": "Transfer {from} to {to}",
     "debtPayableTitle": "Borrowed from {name}",
-    "debtReceivableTitle": "Lent to {name}"
+    "debtReceivableTitle": "Lent to {name}",
+    "todayMore": "{count, plural, one {# more record today} other {# more records today}}"
+  },
+  "riwayat": {
+    "searchLabel": "Search records",
+    "searchPlaceholder": "Search notes, categories, amounts",
+    "clearSearch": "Clear search",
+    "loading": "Loading",
+    "filtersLabel": "History filters",
+    "types": {
+      "expense": "Out",
+      "income": "In",
+      "transfer": "Transfer",
+      "debt": "Debt",
+      "all": "All"
+    },
+    "wallet": "Wallet",
+    "allWallets": "All wallets",
+    "archived": "Archived",
+    "category": "Category",
+    "allCategories": "All categories",
+    "expenseCategories": "Expenses",
+    "incomeCategories": "Income",
+    "searchCategory": "Search categories",
+    "period": "Period",
+    "periodOptions": {
+      "month": "One month",
+      "year": "One year",
+      "all": "All time"
+    },
+    "periodChip": {
+      "year": "Year {year}",
+      "all": "All time"
+    },
+    "reset": "Reset filters",
+    "summary": "{count, plural, =0 {No records yet} one {# record} other {# records}}",
+    "summaryTitle": "Summary",
+    "summaryIncome": "In",
+    "summaryExpense": "Out",
+    "summaryNet": "Net",
+    "topCategories": "Biggest expenses",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "emptyTitle": "No records in this period yet",
+    "emptyBody": "What you record shows up here, grouped by day.",
+    "emptyAction": "Record now",
+    "noMatchTitle": "Nothing matches",
+    "noMatchBody": "Try another word or loosen the filters.",
+    "rows": {
+      "transfer": "Transfer {from} to {to}",
+      "debtPayable": "Borrowed from {name}",
+      "debtReceivable": "Lent to {name}",
+      "paymentPayable": "Paid back {name}",
+      "paymentReceivable": "Repayment from {name}",
+      "noCategory": "No category"
+    },
+    "kinds": {
+      "expense": "Expense",
+      "income": "Income",
+      "transfer": "Transfer between wallets",
+      "debt": "Debt",
+      "receivable": "Receivable",
+      "debtPayment": "Debt payment",
+      "receivablePayment": "Repayment received"
+    },
+    "detail": {
+      "date": "Date",
+      "wallet": "Wallet",
+      "noWallet": "No wallet",
+      "from": "From",
+      "to": "To",
+      "category": "Category",
+      "contact": "Person",
+      "merchant": "Place",
+      "note": "Note"
+    },
+    "actions": {
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "openDebt": "Open in Debts",
+      "seeAll": "See all"
+    },
+    "deleted": {
+      "title": "Record deleted",
+      "undo": "Undo",
+      "restored": "Record restored"
+    },
+    "errors": {
+      "notSignedIn": "Your session has ended. Please sign in again.",
+      "offline": "Deleting needs an internet connection. Try again once you are online.",
+      "delete": "Could not delete. {message}",
+      "restore": "Could not restore. {message}"
+    },
+    "edit": {
+      "title": "Edit record",
+      "titleTransfer": "Edit transfer",
+      "titleDebt": "Edit debt",
+      "save": "Save changes",
+      "saved": "Changes saved",
+      "offline": "Editing needs an internet connection. Try again once you are online.",
+      "failed": "Could not save to table {table}: {message}",
+      "belowPaid": "The amount cannot be lower than what was already paid ({amount}).",
+      "directionLocked": "payments exist, so the direction stays"
+    },
+    "typesLabel": "Record type",
+    "pageInfo": "{from}–{to} of {total} records",
+    "summaryAllTime": "Income and spending totals show when you pick a month or a year."
+  },
+  "hutang": {
+    "tabs": {
+      "label": "Debt type",
+      "payable": "I owe",
+      "receivable": "Owed to me"
+    },
+    "hero": {
+      "payable": "You still need to pay",
+      "receivable": "You still get back",
+      "detail": "{count, plural, one {# person} other {# people}} · paid {paid} of {total}",
+      "clearPayable": "Every debt is paid off.",
+      "clearReceivable": "Nobody owes you anything right now.",
+      "progress": "Share already paid",
+      "net": "Net position"
+    },
+    "actions": {
+      "addPayable": "Record debt",
+      "addReceivable": "Record loan",
+      "payPart": "Pay part",
+      "receivePart": "Receive part",
+      "settle": "Settle",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "list": {
+      "activePayable": "Not paid off",
+      "activeReceivable": "Not returned yet",
+      "count": "{count, plural, one {# record} other {# records}}",
+      "settled": "Paid off ({count})",
+      "paidBadge": "Paid",
+      "of": "of {total}"
+    },
+    "empty": {
+      "payableTitle": "No open debts",
+      "payableBody": "When you borrow money, record it here so your wallet balances stay right.",
+      "receivableTitle": "No open loans",
+      "receivableBody": "When you lend money, record it here so you remember to ask for it back."
+    },
+    "detail": {
+      "payableSince": "Debt since {date}",
+      "receivableSince": "Loan since {date}",
+      "remaining": "Remaining",
+      "settled": "Paid off",
+      "paidOf": "Paid {paid} of {total}",
+      "progress": "Payments for {name}",
+      "walletPayable": "Money went into",
+      "walletReceivable": "Money came from",
+      "noWallet": "No wallet",
+      "note": "Note",
+      "settledOn": "Paid off on"
+    },
+    "payments": {
+      "title": "Payments",
+      "empty": "No payments yet.",
+      "delete": "Delete payment {label}",
+      "deleted": "Payment deleted",
+      "restored": "Payment restored"
+    },
+    "pay": {
+      "titlePayable": "Pay {name}",
+      "titleReceivable": "Receive from {name}",
+      "titleSettlePayable": "Pay off {name}",
+      "titleSettleReceivable": "Settle with {name}",
+      "remaining": "{amount} left",
+      "back": "Back",
+      "save": "Save payment",
+      "amount": "Payment amount",
+      "max": "Up to {amount}",
+      "capped": "Up to {amount}, the amount still owed",
+      "quick": "Quick amounts",
+      "all": "Everything left",
+      "half": "Half",
+      "fromWallet": "Pay from wallet",
+      "toWallet": "Into wallet",
+      "noWallets": "No active wallets. The payment goes to the debt's wallet.",
+      "needAmount": "Enter the payment amount first.",
+      "savedPayable": "Payment of {amount} to {name} saved",
+      "savedReceivable": "Received {amount} from {name}",
+      "settledPayable": "Debt to {name} is paid off",
+      "settledReceivable": "{name} has paid everything back",
+      "undone": "Payment undone"
+    },
+    "undo": "Undo",
+    "errors": {
+      "notSignedIn": "Your session has ended. Please sign in again.",
+      "offline": "Payments need an internet connection. Try again once you are online.",
+      "pay": "Could not save the payment. {message}",
+      "undo": "Could not undo. {message}",
+      "deletePayment": "Could not delete the payment. {message}"
+    }
+  },
+  "dompet": {
+    "hero": {
+      "netWorth": "Net worth",
+      "formula": "All wallet balances, plus money owed to you, minus your debts.",
+      "wallets": "Wallets",
+      "receivable": "Owed to me",
+      "payable": "I owe"
+    },
+    "actions": {
+      "transfer": "Transfer",
+      "add": "Add wallet",
+      "transferFrom": "Transfer from here",
+      "history": "See history"
+    },
+    "kinds": {
+      "cash": "Cash",
+      "bank": "Bank account",
+      "ewallet": "E-wallet",
+      "card": "Credit card",
+      "other": "Other"
+    },
+    "list": {
+      "title": "Active wallets",
+      "opening": "start {amount}",
+      "liquid": "Without credit cards: {amount}. The daily allowance uses this number.",
+      "archived": "Archived ({count})",
+      "archivedHint": "Archived wallets are not counted."
+    },
+    "empty": {
+      "title": "No wallets yet",
+      "body": "Add your first wallet, for example Cash or a bank account, with what it holds right now."
+    },
+    "transfers": {
+      "title": "Latest transfers",
+      "empty": "No transfers between wallets yet."
+    },
+    "form": {
+      "titleNew": "New wallet",
+      "name": "Wallet name",
+      "namePlaceholder": "For example: BCA, GoPay, Cash",
+      "nameRequired": "Give the wallet a name.",
+      "nameTaken": "Another wallet already uses this name.",
+      "kind": "Type",
+      "opening": "Opening balance",
+      "openingHint": "Enter what it holds now. Later records add to or subtract from this.",
+      "openingHintEdit": "Records in this wallet changed the opening balance by {amount}.",
+      "cardSign": "Card balance sign",
+      "positive": "Positive",
+      "negative": "Bill (negative)",
+      "currentBalance": "Current balance",
+      "create": "Save wallet",
+      "saveChanges": "Save changes",
+      "created": "Wallet {name} added",
+      "updated": "Wallet {name} updated"
+    },
+    "archive": {
+      "archive": "Archive wallet",
+      "unarchive": "Make active again",
+      "archivedHint": "Archived",
+      "done": "Wallet {name} archived",
+      "restored": "Wallet {name} is active again"
+    },
+    "undo": "Undo",
+    "errors": {
+      "notSignedIn": "Your session has ended. Please sign in again.",
+      "offline": "Saving a wallet needs an internet connection. Try again once you are online.",
+      "save": "Could not save to table {table}: {message}"
+    }
   },
   "placeholder": {
     "historyTitle": "History is being prepared",

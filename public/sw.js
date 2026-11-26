@@ -31,23 +31,31 @@ function isPrivatePath(pathname) {
   return PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
+// React Server Component and prefetch payloads change with every write: always network.
+function isRscRequest(request, requestUrl) {
+  return (
+    request.headers.has("RSC") ||
+    request.headers.has("Next-Router-Prefetch") ||
+    requestUrl.searchParams.has("_rsc")
+  );
+}
+
 function shouldSkipCache(request, requestUrl) {
   return (
     requestUrl.origin !== self.location.origin ||
     requestUrl.pathname.startsWith("/api/") ||
     requestUrl.pathname.startsWith("/auth") ||
-    // React Server Component payloads change with every write: always network.
-    requestUrl.searchParams.has("_rsc") ||
-    request.headers.get("RSC") === "1" ||
+    isRscRequest(request, requestUrl) ||
     isPrivatePath(requestUrl.pathname)
   );
 }
 
 function isStaticAsset(requestUrl) {
   return (
-    requestUrl.pathname.startsWith("/_next/static/") ||
-    /\.(?:png|svg|ico|webp|woff2?)$/.test(requestUrl.pathname) ||
-    requestUrl.pathname === "/manifest.webmanifest"
+    requestUrl.origin === self.location.origin &&
+    (requestUrl.pathname.startsWith("/_next/static/") ||
+      /\.(?:png|jpe?g|svg|ico|webp|woff2?|webmanifest)$/.test(requestUrl.pathname) ||
+      requestUrl.pathname === "/manifest.webmanifest")
   );
 }
 

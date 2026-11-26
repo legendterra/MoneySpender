@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeftRight,
   Banknote,
@@ -22,18 +21,24 @@ import { toast } from "sonner";
 
 import {
   buildCatatPayload,
+  buildCatatUpdate,
   sortCategoriesByUsage,
   validateDraft,
   type CatatDraft,
   type CatatIssue,
+  type CatatPayload,
   type DebtDirectionChoice,
 } from "@/components/quick-add/build-payload";
-import type {
-  CatatCategory,
-  CatatData,
-  CatatMode,
-  CatatTemplate,
-  CatatWallet,
+import {
+  editableModes,
+  type CatatCategory,
+  type CatatData,
+  type CatatEditing,
+  type CatatMode,
+  type CatatPanel,
+  type CatatPreset,
+  type CatatTemplate,
+  type CatatWallet,
 } from "@/components/quick-add/types";
 import { AmountDisplay } from "@/components/ui/amount-display";
 import { AmountKeypad } from "@/components/ui/amount-keypad";
@@ -51,14 +56,29 @@ import { inputClassName } from "@/components/ui/input";
 import { SegmentedControl, type SegmentTone } from "@/components/ui/segmented-control";
 import { useRowClamp } from "@/components/ui/use-row-clamp";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
+import {
+  HISTORY_DEBT_COLUMNS,
+  HISTORY_TRANSACTION_COLUMNS,
+  HISTORY_TRANSFER_COLUMNS,
+} from "@/lib/finance-data";
+import { rowToEntry, type HistoryEntry } from "@/lib/history";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+
+type SavedTable = CatatPayload["table"];
+
+/** Columns read back after a save, so the row can be shown before the refresh lands. */
+const SAVED_COLUMNS: Record<SavedTable, string> = {
+  transactions: HISTORY_TRANSACTION_COLUMNS,
+  wallet_transfers: HISTORY_TRANSFER_COLUMNS,
+  debts: HISTORY_DEBT_COLUMNS,
+};
 
 const WALLET_STORAGE_KEY = "moneyspender.catat.wallet.v1";
 // Candidates rendered before the two-row clamp hides what does not fit.
 const VISIBLE_CATEGORIES = 10;
 
-type Panel = "keypad" | "category" | "wallet" | "toWallet" | "date" | "note" | "contact";
+type Panel = CatatPanel;
 
 export const MODE_TONE: Record<CatatMode, SegmentTone> = {
   expense: "expense",
@@ -77,16 +97,10 @@ const walletIcons: Record<CatatWallet["kind"], LucideIcon> = {
 
 type CategoryPick = { id: string | null; label: string };
 
-export type CatatPreset = Partial<{
-  amount: number;
-  categoryId: string;
-  note: string;
-  contact: string;
-  debtDirection: DebtDirectionChoice;
-  panel: Panel;
-}>;
+export type { CatatPreset };
 
-function readStoredWallet(wallets: CatatWallet[]) {
+function readStoredWallet(wallets: CatatWallet[], preferred?: string) {
+  if (preferred && wallets.some((wallet) => wallet.id === preferred)) return preferred;
   if (typeof window === "undefined") return wallets[0]?.id ?? null;
   try {
     const stored = window.localStorage.getItem(WALLET_STORAGE_KEY);
@@ -112,23 +126,52 @@ export function useCatatForm({
   initialMode,
   demo = false,
   preset,
+  editing = null,
   onSaved,
+  onRecorded,
 }: {
   data: CatatData;
   initialMode: CatatMode;
   demo?: boolean;
   preset?: CatatPreset;
+  /** Update this row instead of inserting a new one. */
+  editing?: CatatEditing | null;
   onSaved?: () => void;
+  /** After a successful save: the saved row as a Riwayat entry (optimistic lists). */
+  onRecorded?: (entry: HistoryEntry | null, options: { isNew: boolean }) => void;
 }) {
   const t = useTranslations("catat");
+  const tr = useTranslations("riwayat");
   const locale = toUiLocale(useLocale());
-  const router = useRouter();
-  const { wallets, templates, contacts } = data;
+  const { templates, contacts } = data;
+  // An edited row may point at an archived wallet; keep it selectable so saving
+  // does not silently detach the row from it.
+  const wallets = React.useMemo(() => {
+    if (!editing) return data.wallets;
+    const extra: CatatWallet[] = [];
+    for (const [id, name] of [
+      [preset?.walletId, preset?.walletLabel],
+      [preset?.toWalletId, preset?.toWalletLabel],
+    ] as const) {
+      if (id && !data.wallets.some((wallet) => wallet.id === id) && !extra.some((wallet) => wallet.id === id)) {
+        extra.push({ id, name: name ?? "-", kind: "other" });
+      }
+    }
+    return extra.length ? [...data.wallets, ...extra] : data.wallets;
+  }, [data.wallets, editing, preset?.walletId, preset?.walletLabel, preset?.toWalletId, preset?.toWalletLabel]);
+  const allowedModes = editableModes(editing);
 
   const [mode, setMode] = React.useState<CatatMode>(initialMode);
   const [amount, setAmount] = React.useState(preset?.amount ?? 0);
   const [picks, setPicks] = React.useState<Record<"expense" | "income", CategoryPick | null>>(() => {
     const presetCategory = data.categories.find((item) => item.id === preset?.categoryId);
+    if (!presetCategory && preset?.categoryLabel && (initialMode === "expense" || initialMode === "income")) {
+      // Label-only category (imported or created offline).
+      return {
+        expense: initialMode === "expense" ? { id: null, label: preset.categoryLabel } : null,
+        income: initialMode === "income" ? { id: null, label: preset.categoryLabel } : null,
+      };
+    }
     return {
       expense:
         presetCategory?.type === "expense" ? { id: presetCategory.id, label: presetCategory.name } : null,
@@ -136,12 +179,17 @@ export function useCatatForm({
         presetCategory?.type === "income" ? { id: presetCategory.id, label: presetCategory.name } : null,
     };
   });
-  const [walletId, setWalletId] = React.useState<string | null>(() => readStoredWallet(wallets));
+  const [walletId, setWalletId] = React.useState<string | null>(() =>
+    readStoredWallet(wallets, preset?.walletId),
+  );
   const [toWalletId, setToWalletId] = React.useState<string | null>(() => {
-    const from = readStoredWallet(wallets);
+    if (preset?.toWalletId && wallets.some((wallet) => wallet.id === preset.toWalletId)) return preset.toWalletId;
+    const from = readStoredWallet(wallets, preset?.walletId);
     return wallets.find((wallet) => wallet.id !== from)?.id ?? null;
   });
-  const [dateKey, setDateKey] = React.useState(() => jakartaDateKey());
+  const [dateKey, setDateKey] = React.useState(() =>
+    preset?.dateKey && /^\d{4}-\d{2}-\d{2}$/.test(preset.dateKey) ? preset.dateKey : jakartaDateKey(),
+  );
   const [note, setNote] = React.useState(preset?.note ?? "");
   const [debtDirection, setDebtDirection] = React.useState<DebtDirectionChoice>(
     preset?.debtDirection ?? "payable",
@@ -172,7 +220,7 @@ export function useCatatForm({
     debtDirection,
     contact,
   };
-  const issue: CatatIssue | null = validateDraft(draft, wallets.length);
+  const issue: CatatIssue | null = validateDraft(draft, wallets.length, { minAmount: editing?.debtPaid ?? 0 });
 
   function selectCategory(next: CategoryPick | null) {
     if (mode !== "expense" && mode !== "income") return;
@@ -269,6 +317,12 @@ export function useCatatForm({
       : t("savedReceivable", { amount: money, name: contact.trim() });
   }
 
+  function savedEntry(table: SavedTable, row: unknown) {
+    if (!row || typeof row !== "object") return null;
+    const names = new Map(wallets.map((wallet) => [wallet.id, wallet.name]));
+    return rowToEntry(table, row as Record<string, unknown>, names);
+  }
+
   async function save() {
     if (saving) return;
     setAttempted(true);
@@ -276,11 +330,18 @@ export function useCatatForm({
       if (issue === "contact") setPanel("contact");
       return;
     }
-    const { table, payload } = buildCatatPayload(draft, categories, wallets);
+    const { table, payload } = editing
+      ? buildCatatUpdate(draft, categories, wallets, editing)
+      : buildCatatPayload(draft, categories, wallets);
 
     if (demo) {
-      toast.success(successMessage(), { description: t("demoSaved") });
+      toast.success(editing ? tr("edit.saved") : successMessage(), { description: t("demoSaved") });
       onSaved?.();
+      return;
+    }
+
+    if (editing) {
+      await saveEdit(table, payload);
       return;
     }
 
@@ -306,7 +367,11 @@ export function useCatatForm({
         toast.error(t("notSignedIn"));
         return;
       }
-      const { error } = await supabase.from(table).insert({ user_id: user.id, ...payload });
+      const { data: saved, error } = await supabase
+        .from(table)
+        .insert({ user_id: user.id, ...payload })
+        .select(SAVED_COLUMNS[table])
+        .single();
       if (error) {
         toast.error(t("failed", { table, message: error.message }));
         return;
@@ -314,7 +379,7 @@ export function useCatatForm({
       rememberWallet(walletId);
       toast.success(successMessage());
       onSaved?.();
-      router.refresh();
+      onRecorded?.(savedEntry(table, saved), { isNew: true });
     } catch (error) {
       toast.error(t("failed", { table, message: error instanceof Error ? error.message : String(error) }));
     } finally {
@@ -322,10 +387,51 @@ export function useCatatForm({
     }
   }
 
+  async function saveEdit(table: SavedTable, payload: Record<string, unknown>) {
+    if (!editing) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      toast.error(tr("edit.offline"));
+      return;
+    }
+    setSaving(true);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error(t("notSignedIn"));
+        return;
+      }
+      const { data: saved, error } = await supabase
+        .from(table)
+        .update(payload)
+        .eq("id", editing.id)
+        .eq("user_id", user.id)
+        .select(SAVED_COLUMNS[table])
+        .single();
+      if (error) {
+        toast.error(tr("edit.failed", { table, message: error.message }));
+        return;
+      }
+      rememberWallet(walletId);
+      toast.success(tr("edit.saved"));
+      onSaved?.();
+      onRecorded?.(savedEntry(table, saved), { isNew: false });
+    } catch (error) {
+      toast.error(tr("edit.failed", { table, message: error instanceof Error ? error.message : String(error) }));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return {
     t,
+    tr,
     locale,
     data,
+    editing,
+    allowedModes,
     mode,
     setMode,
     amount,
@@ -334,7 +440,7 @@ export function useCatatForm({
     pick,
     selectCategory,
     applyTemplate,
-    templates: templates.filter((template) => template.type === mode),
+    templates: editing ? [] : templates.filter((template) => template.type === mode),
     walletId,
     setWalletId,
     toWalletId,
@@ -367,6 +473,13 @@ export type CatatFormState = ReturnType<typeof useCatatForm>;
 
 export function CatatModeSwitch({ form, layoutId }: { form: CatatFormState; layoutId?: string }) {
   const { t } = form;
+  if (form.allowedModes.length === 1) {
+    return (
+      <p className="min-w-0 flex-1 truncate text-[17px] font-semibold tracking-tight text-text">
+        {form.mode === "transfer" ? form.tr("edit.titleTransfer") : form.tr("edit.titleDebt")}
+      </p>
+    );
+  }
   return (
     <SegmentedControl<CatatMode>
       label={t("modeLabel")}
@@ -378,7 +491,7 @@ export function CatatModeSwitch({ form, layoutId }: { form: CatatFormState; layo
           form.setPanel("keypad");
         }
       }}
-      options={(["expense", "income", "transfer", "debt"] as const).map((value) => ({
+      options={form.allowedModes.map((value) => ({
         value,
         label: t(`modes.${value}`),
         tone: MODE_TONE[value],
@@ -431,7 +544,15 @@ export function CatatBody({
 
       {mode === "expense" || mode === "income" ? <CategoryChips form={form} /> : null}
       {mode === "transfer" ? <TransferWallets form={form} /> : null}
-      {mode === "debt" ? (
+      {mode === "debt" && form.editing && (form.editing.debtPaid ?? 0) > 0 ? (
+        <p className="rounded-control border border-line bg-surface-2/50 px-3.5 py-2.5 text-[13px] text-muted">
+          <span className="font-semibold text-debt">
+            {form.debtDirection === "payable" ? t("debtPayable") : t("debtReceivable")}
+          </span>
+          <span aria-hidden="true"> · </span>
+          {form.tr("edit.directionLocked")}
+        </p>
+      ) : mode === "debt" ? (
         <SegmentedControl<DebtDirectionChoice>
           size="sm"
           label={t("debtDirectionLabel")}
@@ -508,7 +629,7 @@ function CategoryChips({ form }: { form: CatatFormState }) {
             form.pick && (category.id ? form.pick.id === category.id : form.pick.label === category.label),
           );
           return (
-            <Chip
+            <Chip variant="choice"
               key={category.id ?? `label-${category.label}`}
               data-keep={selected ? "" : undefined}
               selected={selected}
@@ -729,7 +850,7 @@ function PickerPanel({ form }: { form: CatatFormState }) {
         <div className="grid gap-3">
           <ChipGroup label={t("pickDate")}>
             {quick.map((key, index) => (
-              <Chip
+              <Chip variant="choice"
                 key={key}
                 selected={form.dateKey === key}
                 onClick={() => {
@@ -817,7 +938,7 @@ function PickerPanel({ form }: { form: CatatFormState }) {
               <p className="text-[12px] font-medium text-muted">{t("recentContacts")}</p>
               <ChipGroup label={t("recentContacts")}>
                 {suggestions.map((name) => (
-                  <Chip
+                  <Chip variant="choice"
                     key={name}
                     selected={form.contact.trim() === name}
                     onClick={() => {
@@ -872,7 +993,7 @@ function PickerPanel({ form }: { form: CatatFormState }) {
         </div>
         <ChipGroup label={t("categories")}>
           {matches.map((category) => (
-            <Chip
+            <Chip variant="choice"
               key={category.id}
               selected={form.pick?.id === category.id}
               onClick={() => {
@@ -907,7 +1028,11 @@ export function CatatFooter({ form }: { form: CatatFormState }) {
         ? t("hintAmount")
         : form.issue === "wallets"
           ? t("hintWallets")
-          : t("hintContact")
+          : form.issue === "belowPaid"
+            ? form.tr("edit.belowPaid", {
+                amount: formatMoney(form.editing?.debtPaid ?? 0, { locale: form.locale }),
+              })
+            : t("hintContact")
       : form.mode === "transfer" && form.wallets.length < 2
         ? t("hintWallets")
         : !form.wallets.length
@@ -922,7 +1047,7 @@ export function CatatFooter({ form }: { form: CatatFormState }) {
         </p>
       ) : null}
       <Button size="lg" fullWidth isLoading={form.saving} onClick={() => void form.save()} type="button">
-        {t("save")}
+        {form.editing ? form.tr("edit.save") : t("save")}
       </Button>
     </div>
   );

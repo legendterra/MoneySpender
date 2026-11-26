@@ -33,16 +33,16 @@ export function WalletStrip({ wallets }: { wallets: WalletChipData[] }) {
         action={wallets.length ? undefined : { label: t("walletsManage"), href: "/wallets" }}
       />
       {wallets.length ? (
-        <ul className="scrollbar-none -mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] md:overflow-visible md:px-0 md:pb-0">
+        <ul className="scrollbar-none -mx-4 flex snap-x scroll-px-4 divide-x divide-line overflow-x-auto px-4 md:mx-0 md:px-0">
           {wallets.map((wallet) => {
             const Icon = icons[wallet.kind];
             return (
-              <li key={wallet.id} className="snap-start">
+              <li key={wallet.id} className="shrink-0 snap-start px-4 first:pl-0 last:pr-0">
                 <Link
                   href="/wallets"
-                  className="flex min-w-[8.5rem] flex-col gap-1.5 rounded-control md:min-w-0 border border-line bg-surface px-3.5 py-3 outline-none transition-colors hover:border-line-strong focus-visible:outline-2 focus-visible:outline-ring"
+                  className="flex min-w-[6.5rem] flex-col gap-1 py-1 outline-none transition-colors hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&:hover_.wallet-name]:text-text"
                 >
-                  <span className="flex items-center gap-1.5 text-[12px] font-medium text-muted">
+                  <span className="wallet-name flex items-center gap-1.5 text-[12px] font-medium text-muted transition-colors">
                     <Icon className="size-3.5 shrink-0" aria-hidden="true" />
                     <span className="truncate">{wallet.name}</span>
                   </span>
