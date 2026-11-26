@@ -18,7 +18,10 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
+    if (error) {
+      // Expired or already used link: back to login with a calm explanation.
+      destination = "/auth?error=link";
+    } else {
       const {
         data: { user },
       } = await supabase.auth.getUser();

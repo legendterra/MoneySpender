@@ -1,73 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import * as React from "react";
+import { useLocale, useTranslations } from "next-intl";
 
-import { formatCurrency } from "@/lib/utils";
+import { AmountText } from "@/components/ui/amount-display";
+import { toUiLocale } from "@/components/ui/format";
+import { OFFLINE_QUEUE_EVENT, getOfflineQueueCount } from "@/lib/offline-queue";
 
 type DashboardSnapshot = {
   savedAt: string;
-  payload: {
-    currency: string;
-    month: string;
-    income: number;
-    expense: number;
-    balance: number;
-    debt: number;
-  };
+  payload: { currency: string; month: string; income: number; expense: number; balance: number; debt: number };
 };
 
+const SNAPSHOT_KEY = "moneyspender.offline.snapshot.dashboard";
+
+function subscribe(onChange: () => void) {
+  window.addEventListener(OFFLINE_QUEUE_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(OFFLINE_QUEUE_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+function readSnapshot(): string | null {
+  return window.localStorage.getItem(SNAPSHOT_KEY);
+}
+
+/** Last Beranda numbers saved on this device plus the pending offline queue. Flat rows. */
 export function OfflineSnapshotViewer() {
-  const [snapshot] = useState<DashboardSnapshot | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
+  const t = useTranslations("offline");
+  const locale = toUiLocale(useLocale());
+  const raw = React.useSyncExternalStore(subscribe, readSnapshot, () => null);
+  const pending = React.useSyncExternalStore(subscribe, getOfflineQueueCount, () => 0);
 
-    const raw = window.localStorage.getItem("moneyspender.offline.snapshot.dashboard");
-    if (!raw) {
-      return null;
-    }
-
+  const snapshot = React.useMemo(() => {
+    if (!raw) return null;
     try {
       return JSON.parse(raw) as DashboardSnapshot;
     } catch {
       return null;
     }
-  });
+  }, [raw]);
 
-  if (!snapshot) {
-    return (
-      <div className="rounded-lg border border-dashed border-border p-5 text-sm leading-7 text-muted">
-        Belum ada snapshot offline. Buka dashboard saat online minimal sekali, nanti ringkasannya muncul di sini.
-      </div>
-    );
-  }
-
-  const historyRaw = typeof window !== "undefined" ? window.localStorage.getItem("moneyspender.offline.snapshot.history") : null;
-  const settingsRaw = typeof window !== "undefined" ? window.localStorage.getItem("moneyspender.offline.snapshot.settings") : null;
+  const savedAt = snapshot
+    ? new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "id-ID", {
+        timeZone: "Asia/Jakarta",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(snapshot.savedAt))
+    : null;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <div className="rounded-lg border border-border bg-background-strong p-5">
-        <p className="text-xs uppercase tracking-[0.22em] text-muted">{snapshot.payload.month}</p>
-        <p className="mt-2 text-2xl font-black text-foreground">
-          {formatCurrency(snapshot.payload.balance, snapshot.payload.currency)}
-        </p>
-        <p className="mt-1 text-sm text-muted">Sisa saldo terakhir</p>
-      </div>
-      <div className="rounded-lg border border-border bg-background-strong p-5">
-        <p className="text-sm text-muted">Pemasukan: {formatCurrency(snapshot.payload.income, snapshot.payload.currency)}</p>
-        <p className="mt-2 text-sm text-muted">Pengeluaran: {formatCurrency(snapshot.payload.expense, snapshot.payload.currency)}</p>
-        <p className="mt-2 text-sm text-muted">Hutang: {formatCurrency(snapshot.payload.debt, snapshot.payload.currency)}</p>
-      </div>
-      <div className="rounded-lg border border-border bg-background-strong p-5 sm:col-span-2">
-        <p className="text-sm font-bold text-foreground">Data lokal terakhir</p>
-        <p className="mt-2 text-sm text-muted">
-          Riwayat: {historyRaw ? "tersimpan" : "belum ada"} | Settings: {settingsRaw ? "tersimpan" : "belum ada"}
-        </p>
-        <p className="mt-2 text-xs leading-6 text-muted">
-          Untuk lihat data lengkap saat offline, buka Dashboard, Riwayat, dan Settings minimal sekali saat online.
-        </p>
-      </div>
+    <div className="grid gap-6">
+      <p className="text-[14px] leading-6 text-text">
+        {pending > 0 ? t("pending", { count: pending }) : t("noPending")}
+      </p>
+      {snapshot ? (
+        <section aria-labelledby="offline-snapshot" className="grid gap-2">
+          <h2 id="offline-snapshot" className="text-[12px] font-semibold tracking-[0.06em] text-muted uppercase">
+            {t("snapshotTitle", { time: savedAt ?? "" })}
+          </h2>
+          <dl className="divide-y divide-line border-y border-line text-[14px]">
+            <Row label={t("balance")} value={snapshot.payload.balance} />
+            <Row label={t("income")} value={snapshot.payload.income} tone="income" />
+            <Row label={t("expense")} value={snapshot.payload.expense} tone="expense" />
+            <Row label={t("debt")} value={snapshot.payload.debt} />
+          </dl>
+        </section>
+      ) : (
+        <p className="text-[13px] leading-5 text-muted">{t("noSnapshot")}</p>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, tone = "neutral" }: { label: string; value: number; tone?: "neutral" | "income" | "expense" }) {
+  return (
+    <div className="flex min-h-12 items-center justify-between gap-4">
+      <dt className="text-muted">{label}</dt>
+      <dd>
+        <AmountText value={value} tone={tone} className="font-semibold" />
+      </dd>
     </div>
   );
 }

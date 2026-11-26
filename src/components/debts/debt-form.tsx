@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -332,7 +333,7 @@ export function DebtForm({
         {wallets.length === 0 && (
           <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm leading-7 text-warning">
             Belum ada dompet. Tambahkan di{" "}
-            <a href="/settings" className="font-semibold underline">Settings</a>{" "}
+            <Link href="/wallets" className="font-semibold underline">Dompet</Link>{" "}
             supaya hutang/piutang bisa terkait dengan saldo.
           </div>
         )}

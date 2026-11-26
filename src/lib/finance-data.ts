@@ -41,6 +41,12 @@ export const PROFILE_COLUMNS_BASE = "full_name,currency_code,monthly_savings_goa
 /** Requires migration 2026-11-20 (locale, reserve_savings). */
 export const PROFILE_COLUMNS = `${PROFILE_COLUMNS_BASE},locale,reserve_savings`;
 export const REMINDER_COLUMNS_BASE = "reminder_morning_enabled,reminder_evening_enabled,push_enabled";
+/**
+ * Budget alerts on/off. There is no dedicated column: the deprecated
+ * `reminder_evening_enabled` (the pre-digest 19.00 reminder, unused since the
+ * hourly digest) stores it, so the switch works without a migration. Default true.
+ */
+export const BUDGET_ALERTS_COLUMN = "reminder_evening_enabled";
 /** Requires migration 2026-11-20 (digest settings). */
 export const REMINDER_COLUMNS = `${REMINDER_COLUMNS_BASE},digest_enabled,digest_every_hours,active_start,active_end,hide_amounts`;
 
@@ -176,6 +182,7 @@ export function normalizeReminder(reminder: Row | null): ReminderPreferences {
     active_start: validWindow ? start : 9,
     active_end: validWindow ? end : 21,
     hide_amounts: (reminder?.hide_amounts as boolean | undefined) ?? false,
+    budget_alerts_enabled: (reminder?.[BUDGET_ALERTS_COLUMN] as boolean | undefined) ?? true,
   };
 }
 
