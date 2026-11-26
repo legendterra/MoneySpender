@@ -17,7 +17,7 @@ export function LanguageSwitcher() {
       variant="ghost"
       size="sm"
       disabled={busy}
-      aria-label={next === "en" ? "Switch to English" : "Ganti ke Bahasa Indonesia"}
+      aria-label={next === "en" ? "EN, Switch to English" : "ID, Ganti ke Bahasa Indonesia"}
       onClick={async () => {
         setBusy(true);
         // Saves profiles.locale when signed in; always sets the cookie.
