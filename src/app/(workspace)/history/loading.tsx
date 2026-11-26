@@ -14,7 +14,7 @@ export default function RiwayatLoading() {
             <Skeleton key={index} className={`h-9 shrink-0 rounded-chip ${width}`} />
           ))}
         </div>
-        <div className="grid gap-5 lg:rounded-sheet lg:border lg:border-line lg:bg-surface lg:p-5">
+        <div className="grid gap-6">
           {[3, 2].map((rows, group) => (
             <div key={group}>
               <Skeleton className="mb-2 h-4 w-28" />
@@ -25,7 +25,7 @@ export default function RiwayatLoading() {
           ))}
         </div>
       </div>
-      <div className="hidden gap-3 rounded-sheet border border-line bg-surface p-5 lg:grid">
+      <div className="hidden gap-3 lg:grid lg:border-l lg:border-line lg:pl-8">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-4 w-32" />
         <Skeleton className="mt-2 h-3.5 w-full" />

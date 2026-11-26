@@ -3,11 +3,21 @@ import { join } from "node:path";
 
 const root = process.cwd();
 const requiredFiles = [
-  "src/app/(workspace)/net-worth/page.tsx",
+  "src/app/(workspace)/dashboard/page.tsx",
+  "src/app/(workspace)/history/page.tsx",
+  "src/app/(workspace)/wallets/page.tsx",
+  "src/app/(workspace)/debts/page.tsx",
+  "src/app/(workspace)/budget/page.tsx",
+  "src/app/(workspace)/reports/page.tsx",
+  "src/app/(workspace)/settings/page.tsx",
+  "src/app/(workspace)/settings/[section]/page.tsx",
+  "src/app/install/page.tsx",
   "src/app/api/cron/recurring/route.ts",
   "src/app/api/cron/digest/route.ts",
   "src/app/api/import/transactions/route.ts",
-  "src/components/net-worth/transfer-panel.tsx",
+  "src/components/dompet/dompet-view.tsx",
+  "src/components/hutang/hutang-view.tsx",
+  "src/components/riwayat/riwayat-view.tsx",
   "src/components/pwa/offline-snapshot-viewer.tsx",
   "public/sw.js",
 ];
@@ -16,6 +26,8 @@ const requiredSchemaTerms = [
   "public.wallet_transfers",
   "public.transaction_splits",
   "public.budget_notification_logs",
+  "public.notification_digest_logs",
+  "public.transaction_templates",
   "storage.buckets",
   "last_generated_month",
 ];

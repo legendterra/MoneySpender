@@ -21,8 +21,6 @@ import { historyHref, type HistoryEntry } from "@/lib/history";
 import type { TransferRow } from "@/lib/net-worth";
 import { cn } from "@/lib/utils";
 
-const sectionCard = "lg:rounded-sheet lg:border lg:border-line lg:bg-surface lg:p-5";
-
 function transferEntry(transfer: TransferRow): HistoryEntry {
   return {
     key: `tf:${transfer.id}`,
@@ -80,9 +78,9 @@ export function DompetView({ data }: { data: WalletsPageData }) {
       : sheet;
 
   return (
-    <div className="mx-auto grid max-w-2xl gap-5 lg:max-w-none lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start lg:gap-6">
-      <div className="grid min-w-0 gap-5 lg:gap-6">
-        <section aria-labelledby="networth-label" className="rounded-sheet border border-line bg-surface p-5 md:p-6">
+    <div className="mx-auto grid max-w-2xl gap-8 lg:max-w-none lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div className="grid min-w-0 gap-8">
+        <section aria-labelledby="networth-label" className="pt-1">
           <p id="networth-label" className="text-[11px] font-semibold tracking-[0.08em] text-muted uppercase">
             {t("hero.netWorth")}
           </p>
@@ -137,7 +135,7 @@ export function DompetView({ data }: { data: WalletsPageData }) {
           </div>
         </section>
 
-        <section aria-labelledby="wallets-list" className={sectionCard}>
+        <section aria-labelledby="wallets-list">
           <SectionHeader
             id="wallets-list"
             title={t("list.title")}
@@ -176,7 +174,7 @@ export function DompetView({ data }: { data: WalletsPageData }) {
                   {t("actions.add")}
                 </Button>
               }
-              className="mt-1 rounded-control border border-dashed border-line-strong"
+              className="mt-1"
             />
           )}
           {summary.liquid !== summary.walletTotal ? (
@@ -218,7 +216,7 @@ export function DompetView({ data }: { data: WalletsPageData }) {
         </section>
       </div>
 
-      <section aria-labelledby="transfers-list" className={cn(sectionCard, "min-w-0")}>
+      <section aria-labelledby="transfers-list" className="min-w-0 lg:border-l lg:border-line lg:pl-8">
         <SectionHeader
           id="transfers-list"
           title={t("transfers.title")}

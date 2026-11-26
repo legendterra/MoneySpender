@@ -21,7 +21,7 @@ export function MoreMenu() {
 
   return (
     <nav aria-label={t("moreTitle")} className="mb-6 lg:hidden">
-      <ul className="divide-y divide-line overflow-hidden rounded-sheet border border-line bg-surface">
+      <ul className="divide-y divide-line border-y border-line">
         {items.map((item) => {
           const Icon = item.icon;
           return (
