@@ -1,4 +1,5 @@
 import { isMonthValue, monthRange, monthValueWIB, todayWIB } from "@/lib/dates";
+import { mapDebt, mapTransaction, mapTransfer } from "@/lib/finance-data";
 import { DEFAULT_PAGE_SIZE, parsePage } from "@/lib/paging";
 import type { DebtDirection, DebtPayment, DebtRecord, TransactionRecord, WalletTransfer } from "@/lib/types";
 
@@ -285,7 +286,27 @@ export function summarizeTransactions(
 // ── Optimistic rows ──────────────────────────────────────────────────────────
 
 /** A row saved in this tab that the server page may not show yet. */
-export type PendingEntry = { entry: HistoryEntry; at: number };
+export type PendingEntry = {
+  entry: HistoryEntry;
+  /** Date.now() when it was saved. */
+  at: number;
+  /** A new row (not an edit): may change totals and balances. */
+  isNew: boolean;
+};
+
+/** A row just returned by insert/update (.select()) as a Riwayat entry. */
+export function rowToEntry(
+  table: "transactions" | "wallet_transfers" | "debts",
+  row: Record<string, unknown>,
+  walletNames: Map<string, string>,
+): HistoryEntry | null {
+  const createdAt = row.created_at === null || row.created_at === undefined ? null : String(row.created_at);
+  const sources: HistorySources = { transactions: [], transfers: [], debts: [], payments: [], walletNames };
+  if (table === "transactions") sources.transactions.push({ ...mapTransaction(row), created_at: createdAt });
+  else if (table === "wallet_transfers") sources.transfers.push({ ...mapTransfer(row), created_at: createdAt });
+  else sources.debts.push({ ...mapDebt(row), created_at: createdAt });
+  return buildHistoryEntries(sources)[0] ?? null;
+}
 
 /** Does `entry` pass the Riwayat filters and date range? (client-side twin of the SQL filters) */
 export function entryMatches(

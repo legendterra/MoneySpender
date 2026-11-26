@@ -4,38 +4,39 @@ import { id as indonesiaLocale } from "date-fns/locale";
 import { computeAllowance } from "@/lib/allowance";
 import { getAuthedContext } from "@/lib/auth";
 import { computeBudgetAlerts } from "@/lib/budget";
-import { MONTHS_TO_SHOW, WEEKDAY_OPTIONS } from "@/lib/constants";
+import { MONTHS_TO_SHOW } from "@/lib/constants";
 import { isMonthValue, monthRange, monthValueWIB, shiftMonth, todayWIB } from "@/lib/dates";
+import { DEBTS_PAGE_SIZE, buildDebtBoard, summarizeSide, toDebtItem } from "@/lib/debt-board";
 import {
   DEBT_COLUMNS,
-  TRANSACTION_COLUMNS,
+  DEBT_PAYMENT_COLUMNS,
+  balancesFromLean,
   balancesFromSnapshot,
+  fetchBalanceData,
   fetchFinanceSnapshot,
   fetchProfile,
   fetchRecurring,
   fetchReminderPreferences,
   fetchTemplates,
   mapDebt,
-  mapTransaction,
+  mapDebtPayment,
 } from "@/lib/finance-data";
-import { expectCount, expectData, expectRows } from "@/lib/supabase/query";
+import { paginate } from "@/lib/paging";
+import { expectData, expectRows, selectAllRows } from "@/lib/supabase/query";
 import type {
   AuditLog,
   BudgetAlert,
   Category,
   CategorySlice,
   DashboardInsight,
-  DebtPayment,
   DebtRecord,
   DebtSummary,
   GoalProgress,
-  HistoryRecord,
   MonthlyBudget,
   MonthlyPoint,
   ProfileData,
   SummaryStats,
   TransactionRecord,
-  TransactionType,
   Wallet,
 } from "@/lib/types";
 import { calculateRate, formatCompactCurrency } from "@/lib/utils";
@@ -260,52 +261,6 @@ function buildGoalProgress(
   };
 }
 
-function buildHistoryRecordFromTransaction(t: TransactionRecord): HistoryRecord {
-  const label = t.type === "income" ? "Pemasukan" : "Pengeluaran";
-  return {
-    id: t.id,
-    source: "transaction",
-    type: t.type,
-    amount: t.amount,
-    date: t.transaction_date,
-    title: t.category_label || label,
-    subtitle: t.reason || "Tanpa catatan",
-    detail: [t.merchant, t.wallet_label].filter(Boolean).join(" · ") || null,
-    statusLabel: label,
-  };
-}
-
-function buildHistoryRecordFromDebt(d: DebtRecord): HistoryRecord {
-  const dirLabel = d.direction === "receivable" ? "Piutang" : "Hutang";
-  return {
-    id: d.id,
-    source: "debt",
-    type: "debt",
-    amount: d.remaining_amount || d.amount,
-    date: d.debt_date,
-    title: `${dirLabel}: ${d.contact_name}`,
-    subtitle: d.reason,
-    detail: d.source_name || null,
-    statusLabel: d.is_paid ? "Lunas" : "Belum lunas",
-  };
-}
-
-function parseLocalDate(value: string) {
-  return new Date(`${value}T00:00:00`);
-}
-
-function getWeekdayLabel(value: string) {
-  return WEEKDAY_OPTIONS.find((o) => o.value === value)?.label ?? "Semua Hari";
-}
-
-function groupPaymentsByDebt(payments: DebtPayment[]) {
-  const byDebt = new Map<string, DebtPayment[]>();
-  [...payments]
-    .sort((a, b) => b.paid_date.localeCompare(a.paid_date))
-    .forEach((p) => byDebt.set(p.debt_id, [...(byDebt.get(p.debt_id) ?? []), p]));
-  return byDebt;
-}
-
 const byDebtDateDesc = (a: DebtRecord, b: DebtRecord) => b.debt_date.localeCompare(a.debt_date);
 
 // ── Public data fetchers ──────────────────────────────────────────────────────
@@ -392,191 +347,51 @@ export async function getDashboardData(month?: string) {
   };
 }
 
-export async function getTransactionsPageData(type: TransactionType, month?: string) {
-  const monthValue = resolveMonthValue(month);
-  const { start: monthStart, end: monthEnd } = monthRange(monthValue);
+export type DebtsPageParams = {
+  tab: "payable" | "receivable";
+  page: number;
+  settledPage: number;
+  /** Opened from Riwayat (?debt=): returned with its payments even when on another page. */
+  debtId: string | null;
+};
+
+/**
+ * Hutang screen: every debt (not only one month), grouped into payable /
+ * receivable, 10 per page per list. Debts are few per user, so totals come
+ * from all of them; payments are read only for the debts on screen. Wallet
+ * balances use lean columns, in parallel.
+ */
+export async function getDebtsPageData(params: DebtsPageParams) {
   const { supabase, user } = await getAuthedContext();
-
-  const [profile, categoriesResult, transactionsResult, snapshot] = await Promise.all([
-    fetchProfile(supabase, user.id, fallbackName(user)),
-    supabase
-      .from("categories")
-      .select("id,name,type,color")
-      .eq("user_id", user.id)
-      .eq("type", type)
-      .order("name"),
-    supabase
-      .from("transactions")
-      .select(TRANSACTION_COLUMNS)
-      .eq("user_id", user.id)
-      .eq("type", type)
-      .gte("transaction_date", monthStart)
-      .lte("transaction_date", monthEnd)
-      .order("transaction_date", { ascending: false })
-      .order("created_at", { ascending: false }),
-    fetchFinanceSnapshot(supabase, user.id),
+  const [debtRows, balanceData] = await Promise.all([
+    selectAllRows<Record<string, unknown>>("debts", () =>
+      supabase.from("debts").select(DEBT_COLUMNS).eq("user_id", user.id).order("id", { ascending: true }),
+    ),
+    fetchBalanceData(supabase, user.id),
   ]);
+  const board = buildDebtBoard(debtRows.map(mapDebt), []);
+  const side = board[params.tab];
+  const active = paginate(side.active, params.page, DEBTS_PAGE_SIZE);
+  const settled = paginate(side.settled, params.settledPage, DEBTS_PAGE_SIZE);
+  const all = [...board.payable.active, ...board.payable.settled, ...board.receivable.active, ...board.receivable.settled];
+  const focus = params.debtId ? (all.find((debt) => debt.id === params.debtId) ?? null) : null;
 
-  const transactions = expectRows<Record<string, unknown>>("transactions", transactionsResult).map(mapTransaction);
+  const shownIds = [...new Set([...active.items, ...settled.items, ...(focus ? [focus] : [])].map((debt) => debt.id))];
+  const payments = shownIds.length
+    ? expectRows<Record<string, unknown>>(
+        "debt_payments",
+        await supabase.from("debt_payments").select(DEBT_PAYMENT_COLUMNS).eq("user_id", user.id).in("debt_id", shownIds),
+      ).map(mapDebtPayment)
+    : [];
+  const withPayments = (debt: DebtRecord) => toDebtItem(debt, payments.filter((payment) => payment.debt_id === debt.id));
 
   return {
-    monthValue,
-    selectedMonthLabel: monthLabel(monthValue),
-    profile,
-    categories: expectRows<Category>("categories", categoriesResult),
-    wallets: balancesFromSnapshot(snapshot)
-      .filter((w) => !w.is_archived)
-      .sort((a, b) => a.name.localeCompare(b.name)),
-    transactions,
-    total: transactions.reduce((s, t) => s + t.amount, 0),
-    type,
-  };
-}
-
-export async function getDebtsPageData(month?: string) {
-  const monthValue = resolveMonthValue(month);
-  const { start: monthStart, end: monthEnd } = monthRange(monthValue);
-  const { supabase, user } = await getAuthedContext();
-
-  const [profile, snapshot] = await Promise.all([
-    fetchProfile(supabase, user.id, fallbackName(user)),
-    fetchFinanceSnapshot(supabase, user.id),
-  ]);
-
-  const paymentsByDebt = groupPaymentsByDebt(snapshot.payments);
-  const allDebts = [...snapshot.debts].sort(byDebtDateDesc);
-  const debts = allDebts
-    .filter((d) => inRange(d.debt_date, monthStart, monthEnd))
-    .map((d) => ({ ...d, payments: paymentsByDebt.get(d.id) ?? [] }));
-
-  return {
-    monthValue,
-    selectedMonthLabel: monthLabel(monthValue),
-    profile,
-    wallets: balancesFromSnapshot(snapshot)
-      .filter((w) => !w.is_archived)
-      .sort((a, b) => a.name.localeCompare(b.name)),
-    debts,
-    summary: summarizeDebts(allDebts, monthValue),
-  };
-}
-
-export async function getAllTransactionsData(filters?: {
-  date?: string;
-  weekday?: string;
-  year?: string;
-  page?: string;
-  q?: string;
-}) {
-  const { supabase, user } = await getAuthedContext();
-  const exactDate = filters?.date ?? "";
-  const weekday = filters?.weekday ?? "all";
-  const year = filters?.year ?? "";
-  const query = (filters?.q ?? "").trim().toLowerCase();
-  const currentPage = Math.max(1, Number(filters?.page ?? "1") || 1);
-  const pageSize = 10;
-
-  const isComplexFilter = weekday !== "all" || query !== "";
-  const kLimit = currentPage * pageSize;
-
-  let txQuery = supabase
-    .from("transactions")
-    .select(TRANSACTION_COLUMNS)
-    .eq("user_id", user.id)
-    .order("transaction_date", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  let debtQuery = supabase
-    .from("debts")
-    .select(DEBT_COLUMNS)
-    .eq("user_id", user.id)
-    .order("debt_date", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  let txCountQuery = supabase.from("transactions").select("id", { count: "exact", head: true }).eq("user_id", user.id);
-  let debtCountQuery = supabase.from("debts").select("id", { count: "exact", head: true }).eq("user_id", user.id);
-
-  if (exactDate) {
-    txQuery = txQuery.eq("transaction_date", exactDate);
-    debtQuery = debtQuery.eq("debt_date", exactDate);
-    txCountQuery = txCountQuery.eq("transaction_date", exactDate);
-    debtCountQuery = debtCountQuery.eq("debt_date", exactDate);
-  }
-
-  if (year) {
-    const yearStart = `${year}-01-01`;
-    const yearEnd = `${year}-12-31`;
-    txQuery = txQuery.gte("transaction_date", yearStart).lte("transaction_date", yearEnd);
-    debtQuery = debtQuery.gte("debt_date", yearStart).lte("debt_date", yearEnd);
-    txCountQuery = txCountQuery.gte("transaction_date", yearStart).lte("transaction_date", yearEnd);
-    debtCountQuery = debtCountQuery.gte("debt_date", yearStart).lte("debt_date", yearEnd);
-  }
-
-  if (!isComplexFilter) {
-    txQuery = txQuery.limit(kLimit);
-    debtQuery = debtQuery.limit(kLimit);
-  }
-
-  const [profile, transactionsResult, debtsResult, txCountResult, debtCountResult] = await Promise.all([
-    fetchProfile(supabase, user.id, fallbackName(user)),
-    txQuery,
-    debtQuery,
-    txCountQuery,
-    debtCountQuery,
-  ]);
-
-  let history = [
-    ...expectRows<Record<string, unknown>>("transactions", transactionsResult)
-      .map(mapTransaction)
-      .map(buildHistoryRecordFromTransaction),
-    ...expectRows<Record<string, unknown>>("debts", debtsResult).map(mapDebt).map(buildHistoryRecordFromDebt),
-  ];
-  const txCount = expectCount("transactions", txCountResult);
-  const debtCount = expectCount("debts", debtCountResult);
-
-  if (isComplexFilter) {
-    history = history.filter((entry) => {
-      if (exactDate && entry.date !== exactDate) return false;
-      if (year && entry.date.slice(0, 4) !== year) return false;
-      if (weekday !== "all") {
-        const day = parseLocalDate(entry.date).getDay().toString();
-        if (day !== weekday) return false;
-      }
-      if (query) {
-        const haystack = [entry.title, entry.subtitle, entry.detail, entry.statusLabel, String(entry.amount)]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!haystack.includes(query)) return false;
-      }
-      return true;
-    });
-  }
-
-  history.sort((a, b) => {
-    const diff = b.date.localeCompare(a.date);
-    return diff !== 0 ? diff : b.amount - a.amount;
-  });
-
-  const totalItems = isComplexFilter ? history.length : txCount + debtCount;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const safePage = Math.min(currentPage, totalPages);
-  const startIndex = (safePage - 1) * pageSize;
-
-  return {
-    profile,
-    filters: {
-      date: exactDate,
-      weekday,
-      weekdayLabel: getWeekdayLabel(weekday),
-      year,
-      q: query,
-      page: safePage,
-    },
-    totalItems,
-    totalPages,
-    pageSize,
-    items: history.slice(startIndex, startIndex + pageSize),
+    today: todayWIB(),
+    wallets: balancesFromLean(balanceData).filter((wallet) => !wallet.is_archived),
+    summary: { payable: summarizeSide(board.payable), receivable: summarizeSide(board.receivable) },
+    active: { items: active.items.map(withPayments), page: active.page, totalPages: active.totalPages },
+    settled: { items: settled.items.map(withPayments), page: settled.page, totalPages: settled.totalPages },
+    focus: focus ? withPayments(focus) : null,
   };
 }
 
@@ -616,34 +431,6 @@ export async function getSettingsData() {
     wallets: balancesFromSnapshot(snapshot),
     auditLogs: expectRows<AuditLog>("audit_logs", auditResult),
     user: { id: user.id, email: user.email ?? "" },
-  };
-}
-
-export async function getNetWorthData() {
-  const { supabase, user } = await getAuthedContext();
-
-  const [profile, snapshot] = await Promise.all([
-    fetchProfile(supabase, user.id, fallbackName(user)),
-    fetchFinanceSnapshot(supabase, user.id),
-  ]);
-
-  const wallets = balancesFromSnapshot(snapshot).filter((w) => !w.is_archived);
-  const debtSummary = summarizeDebts(snapshot.debts, monthValueWIB());
-
-  // ASSETS = total saldo dompet + piutang; LIABILITIES = hutang (payable)
-  const totalWalletBalance = wallets.reduce((s, w) => s + w.balance, 0);
-  const totalAssets = totalWalletBalance + debtSummary.totalReceivable;
-  const totalDebt = debtSummary.totalPayable;
-
-  return {
-    profile,
-    wallets,
-    transfers: snapshot.transfers,
-    debtSummary,
-    totalWalletBalance,
-    totalAssets,
-    totalDebt,
-    netWorth: totalAssets - totalDebt,
   };
 }
 

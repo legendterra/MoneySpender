@@ -98,20 +98,6 @@ export type DebtSummary = {
   currentMonthOutstanding: number;
 };
 
-export type HistoryRecordType = TransactionType | "debt";
-
-export type HistoryRecord = {
-  id: string;
-  source: "transaction" | "debt";
-  type: HistoryRecordType;
-  amount: number;
-  date: string;
-  title: string;
-  subtitle: string;
-  detail: string | null;
-  statusLabel: string;
-};
-
 export type SummaryStats = {
   income: number;
   expense: number;
@@ -219,12 +205,4 @@ export type AuditLog = {
   action: string;
   metadata: Record<string, unknown>;
   created_at: string;
-};
-
-export type NetWorthData = {
-  wallets: Wallet[];
-  transfers: WalletTransfer[];
-  totalAssets: number;
-  totalDebt: number;
-  netWorth: number;
 };

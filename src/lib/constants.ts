@@ -19,17 +19,6 @@ export type SupportedCurrencyCode = (typeof SUPPORTED_CURRENCIES)[number]["code"
 export const APP_TIMEZONE = "Asia/Jakarta";
 export const MONTHS_TO_SHOW = 6;
 
-export const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/goals", label: "Target" },
-  { href: "/net-worth", label: "Net Worth" },
-  { href: "/all-transactions", label: "Riwayat" },
-  { href: "/income", label: "Pemasukan" },
-  { href: "/expenses", label: "Pengeluaran" },
-  { href: "/debts", label: "Hutang" },
-  { href: "/settings", label: "Atur" },
-] as const;
-
 export const DEFAULT_INCOME_CATEGORIES = [
   // Kerja & usaha
   { name: "Gaji", color: "#3b82f6" },
@@ -82,14 +71,3 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
   // Lainnya
   { name: "Lainnya", color: "#6b7280" },
 ] as const;
-
-export const WEEKDAY_OPTIONS = [
-  { value: "all", label: "Semua Hari" },
-  { value: "0", label: "Minggu" },
-  { value: "1", label: "Senin" },
-  { value: "2", label: "Selasa" },
-  { value: "3", label: "Rabu" },
-  { value: "4", label: "Kamis" },
-  { value: "5", label: "Jumat" },
-  { value: "6", label: "Sabtu" },
-];
