@@ -68,6 +68,7 @@ export type DebtRecord = {
   paid_amount: number;
   remaining_amount: number;
   debt_date: string;
+  due_date?: string | null;
   /** Untuk payable: siapa yang kamu hutangi. Untuk receivable: siapa yang hutang ke kamu. */
   contact_name: string;
   /** Asal transaksi / keterangan sumber */
@@ -186,6 +187,10 @@ export type RecurringTransaction = {
   reason: string;
   merchant: string | null;
   day_of_month: number;
+  cadence?: "weekly" | "monthly" | "yearly";
+  day_of_week?: number | null;
+  month_of_year?: number | null;
+  end_of_month?: boolean;
   last_generated_month: string | null;
   is_active: boolean;
 };

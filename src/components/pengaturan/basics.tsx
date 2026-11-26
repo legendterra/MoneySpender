@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { ChoiceList } from "@/components/flat/controls";
 import { AmountInput } from "@/components/pengaturan/amount-input";
+import { SavingsGoalsPanel } from "@/components/pengaturan/savings-goals-panel";
 import { SettingRow, SettingsSection, writeError } from "@/components/pengaturan/section";
 import { Button } from "@/components/ui/button";
 import { formatMoney, toUiLocale } from "@/components/ui/format";
@@ -217,6 +218,7 @@ export function SavingsSection({
         />
         {goal <= 0 ? <p className="-mt-1 text-[12px] text-muted">{t("reserveNeedsGoal")}</p> : null}
       </div>
+      <SavingsGoalsPanel userId={userId} />
     </SettingsSection>
   );
 }

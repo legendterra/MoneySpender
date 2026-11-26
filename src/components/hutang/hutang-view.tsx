@@ -25,6 +25,7 @@ import {
   type DebtPatch,
   type DebtSideSummary,
 } from "@/lib/debt-board";
+import { evaluateDebtDue } from "@/lib/debt-due";
 import type { DebtDirection } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -266,12 +267,32 @@ export function HutangView({
 function DebtRow({ debt, today, onOpen }: { debt: DebtItem; today: string; onOpen: () => void }) {
   const t = useTranslations("hutang");
   const locale = toUiLocale(useLocale());
+  const isEn = locale === "en";
   const date = formatDateKey(debt.debt_date, locale, {
     day: "numeric",
     month: "short",
     ...(debt.debt_date.slice(0, 4) === today.slice(0, 4) ? {} : { year: "numeric" }),
   });
-  const detail = [debt.reason || null, date].filter(Boolean).join(" · ");
+  const due = evaluateDebtDue(debt.due_date, today, debt.settled);
+  const dueText =
+    due.state === "overdue"
+      ? isEn
+        ? `Overdue ${Math.abs(due.daysUntil ?? 0)}d`
+        : `Telat ${Math.abs(due.daysUntil ?? 0)} hr`
+      : due.state === "today"
+        ? isEn
+          ? "Due today"
+          : "Jatuh tempo hari ini"
+        : due.state === "soon"
+          ? isEn
+            ? `Due in ${due.daysUntil}d`
+            : `Jatuh tempo H-${due.daysUntil}`
+          : null;
+  const dueNote =
+    due.state === "upcoming" && debt.due_date
+      ? `${isEn ? "Due" : "Tempo"} ${formatDateKey(debt.due_date, locale, { day: "numeric", month: "short" })}`
+      : null;
+  const detail = [debt.reason || null, date, dueNote].filter(Boolean).join(" · ");
 
   return (
     <button
@@ -283,7 +304,14 @@ function DebtRow({ debt, today, onOpen }: { debt: DebtItem; today: string; onOpe
       <RowAvatar tone={debt.settled ? "neutral" : "debt"} label={debt.contact_name} />
       <span className="grid min-w-0 flex-1 gap-1">
         <span className="flex items-baseline justify-between gap-3">
-          <span className="truncate text-[14px] font-medium text-text">{debt.contact_name || "-"}</span>
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <span className="truncate text-[14px] font-medium text-text">{debt.contact_name || "-"}</span>
+            {dueText ? (
+              <Badge tone={due.state === "overdue" || due.state === "today" ? "expense" : "debt"}>
+                {dueText}
+              </Badge>
+            ) : null}
+          </span>
           {debt.settled ? (
             <Badge tone="income">{t("list.paidBadge")}</Badge>
           ) : (

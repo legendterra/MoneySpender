@@ -29,12 +29,12 @@ import type {
 export const TRANSACTION_COLUMNS =
   "id,amount,type,category_id,transaction_date,reason,merchant,category_label,wallet_id,wallet_label";
 export const DEBT_COLUMNS =
-  "id,amount,paid_amount,debt_date,source_name,contact_name,reason,category_label,is_paid,paid_at,direction,wallet_id,wallet_label";
+  "id,amount,paid_amount,debt_date,due_date,source_name,contact_name,reason,category_label,is_paid,paid_at,direction,wallet_id,wallet_label";
 export const DEBT_PAYMENT_COLUMNS = "id,debt_id,amount,paid_date,note,wallet_id,wallet_label";
 export const WALLET_COLUMNS = "id,name,kind,opening_balance,color,is_archived";
 export const TRANSFER_COLUMNS = "id,from_wallet_id,to_wallet_id,amount,transfer_date,note";
 export const RECURRING_COLUMNS =
-  "id,type,category_id,category_label,wallet_id,wallet_label,amount,reason,merchant,day_of_month,last_generated_month,is_active";
+  "id,type,category_id,category_label,wallet_id,wallet_label,amount,reason,merchant,day_of_month,cadence,day_of_week,month_of_year,end_of_month,last_generated_month,is_active";
 export const TEMPLATE_COLUMNS =
   "id,label,type,amount,category_id,category_label,wallet_id,wallet_label,sort_order";
 export const CATEGORY_COLUMNS = "id,name,type,color";
@@ -114,6 +114,7 @@ export function mapDebt(record: Row): DebtRecord {
     paid_amount: paidAmount,
     remaining_amount: Math.max(0, amount - paidAmount),
     debt_date: String(record.debt_date),
+    due_date: text(record.due_date),
     contact_name: String(record.contact_name ?? ""),
     source_name: String(record.source_name ?? ""),
     reason: String(record.reason ?? ""),
@@ -160,6 +161,10 @@ export function mapRecurring(record: Row): RecurringTransaction {
     reason: String(record.reason ?? ""),
     merchant: text(record.merchant),
     day_of_month: Number(record.day_of_month ?? 1),
+    cadence: record.cadence === "weekly" || record.cadence === "yearly" ? record.cadence : "monthly",
+    day_of_week: record.day_of_week === null || record.day_of_week === undefined ? null : Number(record.day_of_week),
+    month_of_year: record.month_of_year === null || record.month_of_year === undefined ? null : Number(record.month_of_year),
+    end_of_month: Boolean(record.end_of_month),
     last_generated_month: text(record.last_generated_month),
     is_active: Boolean(record.is_active),
   };

@@ -97,6 +97,19 @@ const PROBES = [
     table: "subscriptions",
     columns: ["user_id", "plan", "status", "provider_customer_id", "provider_subscription_id", "current_period_end", "updated_at"],
   },
+
+  // v2.2 enhancements (migration 2026-11-26)
+  { table: "debts", columns: ["due_date"], note: "v2.2 migration 2026-11-26" },
+  {
+    table: "recurring_transactions",
+    columns: ["cadence", "day_of_week", "month_of_year", "end_of_month", "to_wallet_id", "to_wallet_label"],
+    note: "v2.2 migration 2026-11-26",
+  },
+  {
+    table: "savings_goals",
+    columns: ["id", "user_id", "name", "target_amount", "current_amount", "target_date", "wallet_id", "is_archived", "created_at", "updated_at"],
+    note: "v2.2 migration 2026-11-26",
+  },
 ];
 
 function readEnvFile(path) {

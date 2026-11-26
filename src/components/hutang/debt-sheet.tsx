@@ -61,6 +61,8 @@ export function DebtSheet({
   const [capped, setCapped] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [busyPayment, setBusyPayment] = React.useState<string | null>(null);
+  const [dueDate, setDueDate] = React.useState<string>("");
+  const [savingDue, setSavingDue] = React.useState(false);
 
   // Reset the pay form whenever another debt is opened.
   const [openedId, setOpenedId] = React.useState<string | null>(null);
@@ -69,7 +71,35 @@ export function DebtSheet({
     setView("detail");
     setAmount(0);
     setCapped(false);
+    setDueDate(debt?.due_date ?? "");
     setWalletId(debt?.wallet_id && wallets.some((w) => w.id === debt.wallet_id) ? debt.wallet_id : (wallets[0]?.id ?? null));
+  }
+
+  async function saveDueDate(nextDate: string) {
+    if (!debt || savingDue) return;
+    setDueDate(nextDate);
+    setSavingDue(true);
+    try {
+      const supabase = createBrowserSupabaseClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const value = /^\d{4}-\d{2}-\d{2}$/.test(nextDate) ? nextDate : null;
+      const { error } = await supabase
+        .from("debts")
+        .update({ due_date: value })
+        .eq("id", debt.id)
+        .eq("user_id", user.id);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(locale === "en" ? "Due date updated." : "Tanggal jatuh tempo disimpan.");
+      catat.refresh();
+    } finally {
+      setSavingDue(false);
+    }
   }
 
   const payable = debt?.direction !== "receivable";
@@ -294,6 +324,33 @@ export function DebtSheet({
               <dt className="text-[13px] text-muted">{t(payable ? "detail.walletPayable" : "detail.walletReceivable")}</dt>
               <dd className="font-medium text-text">{debt.wallet_label ?? t("detail.noWallet")}</dd>
             </div>
+            {!debt.settled ? (
+              <div className="flex items-center justify-between gap-4 py-2">
+                <dt className="shrink-0 text-[13px] text-muted">
+                  <label htmlFor="debt-due-date">{locale === "en" ? "Due date" : "Jatuh tempo"}</label>
+                </dt>
+                <dd className="flex items-center gap-1.5">
+                  <input
+                    id="debt-due-date"
+                    type="date"
+                    value={dueDate}
+                    disabled={savingDue}
+                    onChange={(e) => void saveDueDate(e.target.value)}
+                    className="min-h-9 rounded-chip border border-line bg-surface px-2.5 text-[13px] text-text [color-scheme:inherit]"
+                  />
+                  {dueDate ? (
+                    <button
+                      type="button"
+                      disabled={savingDue}
+                      onClick={() => void saveDueDate("")}
+                      className="px-1.5 text-[12px] text-muted hover:text-text"
+                    >
+                      {locale === "en" ? "Clear" : "Hapus"}
+                    </button>
+                  ) : null}
+                </dd>
+              </div>
+            ) : null}
             {debt.reason ? (
               <div className="flex items-baseline justify-between gap-4 py-2.5">
                 <dt className="shrink-0 text-[13px] text-muted">{t("detail.note")}</dt>

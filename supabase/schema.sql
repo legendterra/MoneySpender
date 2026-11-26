@@ -136,6 +136,7 @@ create table public.debts (
   category_id    uuid        references public.categories(id) on delete set null,
   category_label text,
   debt_date      date        not null default current_date,
+  due_date       date,
 
   -- contact_name: nama orang/pihak yang terlibat
   -- payable   → nama pemberi hutang (siapa yang kamu hutangi)
@@ -286,6 +287,12 @@ create table public.recurring_transactions (
   reason               text    not null,
   merchant             text,
   day_of_month         integer not null default 1 check (day_of_month between 1 and 28),
+  cadence              text    not null default 'monthly' check (cadence in ('weekly', 'monthly', 'yearly')),
+  day_of_week          integer check (day_of_week is null or day_of_week between 0 and 6),
+  month_of_year        integer check (month_of_year is null or month_of_year between 1 and 12),
+  end_of_month         boolean not null default false,
+  to_wallet_id         uuid    references public.wallets(id) on delete set null,
+  to_wallet_label      text,
   last_generated_month text    check (last_generated_month is null
                                 or last_generated_month ~ '^[0-9]{4}-[0-9]{2}$'),
   is_active            boolean not null default true,
@@ -553,6 +560,29 @@ create policy "Subscriptions owner read" on public.subscriptions
 
 create index if not exists subscriptions_provider_customer_idx
   on public.subscriptions (provider_customer_id);
+
+-- savings_goals: kantong tabungan multi-tujuan (sinking funds)
+create table if not exists public.savings_goals (
+  id             uuid          primary key default gen_random_uuid(),
+  user_id        uuid          not null references auth.users(id) on delete cascade,
+  name           text          not null,
+  target_amount  numeric(14,2) not null check (target_amount > 0),
+  current_amount numeric(14,2) not null default 0 check (current_amount >= 0),
+  target_date    date,
+  wallet_id      uuid          references public.wallets(id) on delete set null,
+  is_archived    boolean       not null default false,
+  created_at     timestamptz   not null default timezone('utc', now()),
+  updated_at     timestamptz   not null default timezone('utc', now())
+);
+
+create index if not exists savings_goals_user_idx
+  on public.savings_goals (user_id, is_archived);
+
+alter table public.savings_goals enable row level security;
+
+drop policy if exists "Savings goals owner only" on public.savings_goals;
+create policy "Savings goals owner only" on public.savings_goals
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ── 11. Reload PostgREST schema cache ────────────────────────
 notify pgrst, 'reload schema';

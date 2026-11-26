@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { filterProUserIds } from "@/lib/billing";
 import { todayWIB } from "@/lib/dates";
+import { isRecurringDueOnDate, type RecurringCadence } from "@/lib/recurring-schedule";
 import { expectRows, SupabaseQueryError } from "@/lib/supabase/query";
 
 type RuleRow = {
@@ -16,6 +17,10 @@ type RuleRow = {
   reason: string;
   merchant: string | null;
   day_of_month: number;
+  cadence?: RecurringCadence | null;
+  day_of_week?: number | null;
+  month_of_year?: number | null;
+  end_of_month?: boolean | null;
   last_generated_month: string | null;
 };
 
@@ -28,7 +33,7 @@ export type RecurringRunReport = {
 };
 
 const RULE_COLUMNS =
-  "id,user_id,type,category_id,category_label,wallet_id,wallet_label,amount,reason,merchant,day_of_month,last_generated_month";
+  "id,user_id,type,category_id,category_label,wallet_id,wallet_label,amount,reason,merchant,day_of_month,cadence,day_of_week,month_of_year,end_of_month,last_generated_month";
 
 const notThisMonth = (month: string) => `last_generated_month.is.null,last_generated_month.neq.${month}`;
 
@@ -65,6 +70,26 @@ export async function generateRecurringTransactions(
   );
 
   for (const rule of rules.filter((r) => proIds.has(r.user_id))) {
+    const cadence: RecurringCadence =
+      rule.cadence === "weekly" || rule.cadence === "yearly" ? rule.cadence : "monthly";
+    // Weekly, yearly, and end-of-month rules only fire on their exact scheduled date.
+    if (cadence !== "monthly" || rule.end_of_month) {
+      if (
+        !isRecurringDueOnDate(
+          {
+            cadence,
+            day_of_month: rule.day_of_month,
+            day_of_week: rule.day_of_week,
+            month_of_year: rule.month_of_year,
+            end_of_month: Boolean(rule.end_of_month),
+          },
+          today,
+        )
+      ) {
+        continue;
+      }
+    }
+
     const claim = await admin
       .from("recurring_transactions")
       .update({ last_generated_month: month })
@@ -80,6 +105,11 @@ export async function generateRecurringTransactions(
       continue;
     }
 
+    const txDate =
+      cadence !== "monthly" || rule.end_of_month
+        ? today
+        : `${month}-${String(rule.day_of_month).padStart(2, "0")}`;
+
     const inserted = await admin.from("transactions").insert({
       user_id: rule.user_id,
       type: rule.type,
@@ -90,8 +120,7 @@ export async function generateRecurringTransactions(
       amount: rule.amount,
       reason: rule.reason,
       merchant: rule.merchant,
-      // The rule's own day this month (WIB), also when a missed day is caught up later.
-      transaction_date: `${month}-${String(rule.day_of_month).padStart(2, "0")}`,
+      transaction_date: txDate,
     });
 
     if (inserted.error) {

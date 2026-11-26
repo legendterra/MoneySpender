@@ -45,8 +45,27 @@ const emptyDraft = (kind: Kind): RuleDraft => ({
   categoryId: null,
   walletId: null,
   dayOfMonth: kind === "recurring" ? 1 : undefined,
+  cadence: kind === "recurring" ? "monthly" : undefined,
+  dayOfWeek: null,
+  monthOfYear: null,
+  endOfMonth: false,
   isActive: true,
 });
+
+const WEEKDAYS_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const MONTHS_ID = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+function scheduleSummary(rule: RecurringTransaction, fallback: string) {
+  if (rule.cadence === "weekly") {
+    return `Tiap ${WEEKDAYS_ID[rule.day_of_week ?? 1] ?? "Senin"}`;
+  }
+  if (rule.cadence === "yearly") {
+    const monthName = MONTHS_ID[(rule.month_of_year ?? 1) - 1] ?? "Jan";
+    return `Tiap ${rule.end_of_month ? "akhir" : rule.day_of_month} ${monthName}`;
+  }
+  if (rule.end_of_month) return "Akhir bulan";
+  return fallback;
+}
 
 function useEditor(kind: Kind) {
   const [state, setState] = React.useState<EditorState>({ open: false, session: 0, draft: emptyDraft(kind), id: null });
@@ -178,6 +197,10 @@ export function RecurringSection({
                         categoryId: rule.category_id,
                         walletId: rule.wallet_id,
                         dayOfMonth: Math.min(MAX_RULE_DAY, Math.max(1, rule.day_of_month)),
+                        cadence: rule.cadence ?? "monthly",
+                        dayOfWeek: rule.day_of_week ?? 1,
+                        monthOfYear: rule.month_of_year ?? 1,
+                        endOfMonth: Boolean(rule.end_of_month),
                         isActive: rule.is_active,
                       },
                       rule.id,
@@ -194,7 +217,7 @@ export function RecurringSection({
                   <span className="grid min-w-0 flex-1 gap-0.5">
                     <span className="truncate text-[14px] font-medium text-text">{rule.reason || t("untitled")}</span>
                     <span className="truncate text-[12px] text-muted">
-                      {[t("everyDay", { day: rule.day_of_month }), rule.category_label, rule.wallet_label]
+                      {[scheduleSummary(rule, t("everyDay", { day: rule.day_of_month })), rule.category_label, rule.wallet_label]
                         .filter(Boolean)
                         .join(" · ")}
                     </span>
@@ -513,16 +536,73 @@ function RuleSheet({
           </Field>
         </div>
         {kind === "recurring" ? (
-          <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
-            <Field label={t("dayLabel")} hint={t("dayHint")} error={issue === "day" ? t("dayInvalid") : undefined}>
-              <Select value={String(draft.dayOfMonth ?? 1)} onChange={(event) => patch({ dayOfMonth: Number(event.target.value) })}>
-                {Array.from({ length: MAX_RULE_DAY }, (_, index) => index + 1).map((day) => (
-                  <option key={day} value={day}>
-                    {t("everyDay", { day })}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+          <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
+              <Field label="Siklus">
+                <Select
+                  value={draft.endOfMonth ? "eom" : (draft.cadence ?? "monthly")}
+                  onChange={(event) => {
+                    const val = event.target.value;
+                    if (val === "eom") {
+                      patch({ cadence: "monthly", endOfMonth: true, dayOfMonth: 28 });
+                    } else if (val === "weekly") {
+                      patch({ cadence: "weekly", endOfMonth: false, dayOfWeek: draft.dayOfWeek ?? 1 });
+                    } else if (val === "yearly") {
+                      patch({ cadence: "yearly", endOfMonth: false, monthOfYear: draft.monthOfYear ?? 1 });
+                    } else {
+                      patch({ cadence: "monthly", endOfMonth: false });
+                    }
+                  }}
+                >
+                  <option value="monthly">Bulanan (tanggal 1–28)</option>
+                  <option value="eom">Akhir bulan (28/30/31)</option>
+                  <option value="weekly">Mingguan</option>
+                  <option value="yearly">Tahunan</option>
+                </Select>
+              </Field>
+              {draft.cadence === "weekly" ? (
+                <Field label="Hari">
+                  <Select
+                    value={String(draft.dayOfWeek ?? 1)}
+                    onChange={(event) => patch({ dayOfWeek: Number(event.target.value) })}
+                  >
+                    {WEEKDAYS_ID.map((dayName, idx) => (
+                      <option key={dayName} value={idx}>
+                        Tiap {dayName}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              ) : draft.endOfMonth ? (
+                <Field label={t("dayLabel")}>
+                  <Input value="Otomatis di hari terakhir bulan" disabled />
+                </Field>
+              ) : (
+                <Field label={t("dayLabel")} hint={t("dayHint")} error={issue === "day" ? t("dayInvalid") : undefined}>
+                  <Select value={String(draft.dayOfMonth ?? 1)} onChange={(event) => patch({ dayOfMonth: Number(event.target.value) })}>
+                    {Array.from({ length: MAX_RULE_DAY }, (_, index) => index + 1).map((day) => (
+                      <option key={day} value={day}>
+                        {t("everyDay", { day })}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+              )}
+            </div>
+            {draft.cadence === "yearly" ? (
+              <Field label="Bulan">
+                <Select
+                  value={String(draft.monthOfYear ?? 1)}
+                  onChange={(event) => patch({ monthOfYear: Number(event.target.value) })}
+                >
+                  {MONTHS_ID.map((mName, idx) => (
+                    <option key={mName} value={idx + 1}>
+                      {mName}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            ) : null}
             <div className="grid gap-1.5">
               <span className="text-[13px] font-semibold text-text">{t("activeLabel")}</span>
               <div className="flex min-h-12 items-center justify-between gap-3">

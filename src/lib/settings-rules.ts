@@ -13,6 +13,10 @@ export type RuleDraft = {
   walletId: string | null;
   /** Recurring only, 1-28 so every month has the day. */
   dayOfMonth?: number;
+  cadence?: "weekly" | "monthly" | "yearly";
+  dayOfWeek?: number | null;
+  monthOfYear?: number | null;
+  endOfMonth?: boolean;
   isActive?: boolean;
 };
 
@@ -47,13 +51,28 @@ function resolveRefs(draft: RuleDraft, categories: TypedCategory[], wallets: Nam
 
 /** recurring_transactions insert/update payload (without user_id for updates). */
 export function buildRecurringRow(draft: RuleDraft, categories: TypedCategory[], wallets: Named[]) {
-  return {
+  const base = {
     type: draft.type,
     amount: draft.amount,
     reason: draft.label.trim(),
     ...resolveRefs(draft, categories, wallets),
     day_of_month: draft.dayOfMonth ?? 1,
     is_active: draft.isActive ?? true,
+  };
+  if (
+    draft.cadence === undefined &&
+    draft.dayOfWeek === undefined &&
+    draft.monthOfYear === undefined &&
+    draft.endOfMonth === undefined
+  ) {
+    return base;
+  }
+  return {
+    ...base,
+    cadence: draft.cadence ?? "monthly",
+    day_of_week: draft.cadence === "weekly" ? (draft.dayOfWeek ?? 1) : null,
+    month_of_year: draft.cadence === "yearly" ? (draft.monthOfYear ?? 1) : null,
+    end_of_month: Boolean(draft.endOfMonth),
   };
 }
 
