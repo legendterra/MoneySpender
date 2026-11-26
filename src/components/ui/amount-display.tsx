@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocale } from "next-intl";
 
+import { maskMoney, usePrivacyMask } from "@/components/providers/privacy-provider";
 import {
   currencyPrefix,
   formatAmountNumber,
@@ -30,18 +31,25 @@ export function AmountText({
   tone = "neutral",
   sign = "auto",
   compact = false,
+  maskable = true,
   className,
 }: {
   value: number;
   tone?: MoneyTone;
   sign?: MoneySign;
   compact?: boolean;
+  maskable?: boolean;
   className?: string;
 }) {
   const locale = toUiLocale(useLocale());
+  const { masked } = usePrivacyMask();
+  const hide = masked && maskable;
   return (
-    <span className={cn("tabular-nums tracking-tight whitespace-nowrap", moneyToneClass[tone], className)}>
-      {formatMoney(value, { locale, sign, compact })}
+    <span
+      className={cn("tabular-nums tracking-tight whitespace-nowrap", moneyToneClass[tone], className)}
+      aria-label={hide ? (locale === "en" ? "Amount hidden" : "Nominal disembunyikan") : undefined}
+    >
+      {hide ? maskMoney(locale) : formatMoney(value, { locale, sign, compact })}
     </span>
   );
 }

@@ -39,11 +39,23 @@ export type CatatData = {
   templates: CatatTemplate[];
   /** Recent debt contact names, most recent first. */
   contacts: string[];
+  /** Recent merchant/place names, most recent first. */
+  merchants?: string[];
 };
 
-export const EMPTY_CATAT_DATA: CatatData = { categories: [], wallets: [], templates: [], contacts: [] };
+export const EMPTY_CATAT_DATA: CatatData = { categories: [], wallets: [], templates: [], contacts: [], merchants: [] };
 
-export type CatatPanel = "keypad" | "category" | "wallet" | "toWallet" | "date" | "note" | "contact";
+export type CatatPanel =
+  | "keypad"
+  | "category"
+  | "wallet"
+  | "toWallet"
+  | "date"
+  | "note"
+  | "merchant"
+  | "fee"
+  | "paste"
+  | "contact";
 
 /** Initial values of the sheet (duplicate, edit, PWA shortcuts, gallery). */
 export type CatatPreset = Partial<{
@@ -58,6 +70,8 @@ export type CatatPreset = Partial<{
   toWalletLabel: string;
   dateKey: string;
   note: string;
+  merchant: string;
+  transferFee: number;
   contact: string;
   debtDirection: "payable" | "receivable";
   panel: CatatPanel;

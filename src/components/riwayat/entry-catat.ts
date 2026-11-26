@@ -47,6 +47,7 @@ export function entryToCatat(
     options: {
       preset: {
         ...base,
+        merchant: entry.merchant ?? "",
         categoryId: entry.categoryId ?? undefined,
         categoryLabel: entry.categoryLabel ?? undefined,
       },

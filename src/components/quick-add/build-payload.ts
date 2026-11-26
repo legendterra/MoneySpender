@@ -12,6 +12,8 @@ export type CatatDraft = {
   toWalletId: string | null;
   dateKey: string;
   note: string;
+  merchant?: string;
+  transferFee?: number;
   debtDirection: DebtDirectionChoice;
   contact: string;
 };
@@ -83,6 +85,7 @@ export function buildCatatPayload(
   }
 
   const category = categories.find((item) => item.id === draft.categoryId) ?? null;
+  const merchant = draft.merchant?.trim() || null;
   return {
     table: "transactions",
     payload: {
@@ -94,6 +97,36 @@ export function buildCatatPayload(
       wallet_label: wallet?.name ?? null,
       transaction_date: draft.dateKey,
       reason: note || null,
+      merchant,
+    },
+  };
+}
+
+/**
+ * Optional paired expense row for bank / e-wallet transfer admin fees (e.g. BI-FAST Rp2.500).
+ * Deducted from the sender wallet on the same date; returns null when fee is 0 or mode != transfer.
+ */
+export function buildTransferFeePayload(
+  draft: CatatDraft,
+  wallets: CatatWallet[],
+  options: { categoryLabel?: string } = {},
+): { table: "transactions"; payload: Record<string, unknown> } | null {
+  if (draft.mode !== "transfer") return null;
+  const fee = Math.round(Number(draft.transferFee) || 0);
+  if (fee <= 0) return null;
+  const from = wallets.find((item) => item.id === draft.walletId) ?? null;
+  const to = wallets.find((item) => item.id === draft.toWalletId) ?? null;
+  return {
+    table: "transactions",
+    payload: {
+      type: "expense",
+      amount: fee,
+      category_id: null,
+      category_label: options.categoryLabel ?? "Biaya Admin",
+      wallet_id: from?.id ?? null,
+      wallet_label: from?.name ?? null,
+      transaction_date: draft.dateKey,
+      reason: to ? `Biaya admin transfer → ${to.name}` : "Biaya admin transfer",
       merchant: null,
     },
   };
@@ -116,7 +149,7 @@ export function buildCatatUpdate(
     throw new Error(`Catat edit: a ${editing.table} row cannot become a ${built.table} row.`);
   }
   const payload = { ...built.payload };
-  if (built.table === "transactions") delete payload.merchant;
+  if (built.table === "transactions" && draft.merchant === undefined) delete payload.merchant;
   if (built.table === "debts") {
     delete payload.source_name;
     const paid = Math.max(0, Number(editing.debtPaid) || 0);

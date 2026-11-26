@@ -6,12 +6,15 @@ import {
   Banknote,
   CalendarDays,
   Check,
+  ClipboardPaste,
   CreditCard,
   Landmark,
   NotebookPen,
   Plus,
+  Receipt,
   Search,
   Smartphone,
+  Store,
   UserRound,
   Wallet as WalletIcon,
   type LucideIcon,
@@ -19,9 +22,11 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
+import { AmountField } from "@/components/dompet/amount-field";
 import {
   buildCatatPayload,
   buildCatatUpdate,
+  buildTransferFeePayload,
   sortCategoriesByUsage,
   validateDraft,
   type CatatDraft,
@@ -29,6 +34,7 @@ import {
   type CatatPayload,
   type DebtDirectionChoice,
 } from "@/components/quick-add/build-payload";
+import { parseBankNotification } from "@/lib/quick-capture";
 import {
   editableModes,
   type CatatCategory,
@@ -191,6 +197,9 @@ export function useCatatForm({
     preset?.dateKey && /^\d{4}-\d{2}-\d{2}$/.test(preset.dateKey) ? preset.dateKey : jakartaDateKey(),
   );
   const [note, setNote] = React.useState(preset?.note ?? "");
+  const [merchant, setMerchant] = React.useState(preset?.merchant ?? "");
+  const [transferFee, setTransferFee] = React.useState(preset?.transferFee ?? 0);
+  const [pasteText, setPasteText] = React.useState("");
   const [debtDirection, setDebtDirection] = React.useState<DebtDirectionChoice>(
     preset?.debtDirection ?? "payable",
   );
@@ -217,6 +226,8 @@ export function useCatatForm({
     toWalletId,
     dateKey,
     note,
+    merchant,
+    transferFee,
     debtDirection,
     contact,
   };
@@ -376,6 +387,18 @@ export function useCatatForm({
         toast.error(t("failed", { table, message: error.message }));
         return;
       }
+      // Optional paired admin fee expense when transferring between wallets/e-wallets.
+      const feeRow = buildTransferFeePayload(draft, wallets, {
+        categoryLabel: locale === "en" ? "Admin Fee" : "Biaya Admin",
+      });
+      if (feeRow) {
+        const { error: feeErr } = await supabase
+          .from(feeRow.table)
+          .insert({ user_id: user.id, ...feeRow.payload });
+        if (feeErr) {
+          toast.error(t("failed", { table: feeRow.table, message: feeErr.message }));
+        }
+      }
       rememberWallet(walletId);
       toast.success(successMessage());
       onSaved?.();
@@ -452,6 +475,27 @@ export function useCatatForm({
     setDateKey,
     note,
     setNote,
+    merchant,
+    setMerchant,
+    merchants: data.merchants ?? [],
+    transferFee,
+    setTransferFee,
+    pasteText,
+    setPasteText,
+    applyQuickCapture(raw: string) {
+      const parsed = parseBankNotification(raw);
+      if (!parsed) {
+        toast.error(locale === "en" ? "Could not detect an amount from that text." : "Nominal tidak terdeteksi dari teks tersebut.");
+        return;
+      }
+      setMode(parsed.mode);
+      setAmount(parsed.amount);
+      if (parsed.merchant) setMerchant(parsed.merchant);
+      if (parsed.note) setNote(parsed.note);
+      setPasteText("");
+      setPanel("keypad");
+      toast.success(locale === "en" ? "Notification parsed." : "Teks mutasi berhasil dibaca.");
+    },
     debtDirection,
     setDebtDirection,
     contact,
@@ -487,7 +531,14 @@ export function CatatModeSwitch({ form, layoutId }: { form: CatatFormState; layo
       value={form.mode}
       onChange={(next) => {
         form.setMode(next);
-        if (form.panel === "category" || form.panel === "toWallet" || form.panel === "contact") {
+        if (
+          form.panel === "category" ||
+          form.panel === "toWallet" ||
+          form.panel === "contact" ||
+          form.panel === "fee" ||
+          form.panel === "merchant" ||
+          form.panel === "paste"
+        ) {
           form.setPanel("keypad");
         }
       }}
@@ -746,6 +797,41 @@ function MetaChips({ form }: { form: CatatFormState }) {
       >
         {form.note.trim() || t("addNote")}
       </Chip>
+      {mode === "expense" || mode === "income" ? (
+        <Chip
+          variant="meta"
+          icon={Store}
+          aria-expanded={form.panel === "merchant"}
+          onClick={() => togglePanel(form, "merchant")}
+          className="max-w-[12rem]"
+        >
+          {form.merchant.trim() || (form.locale === "en" ? "Place" : "Tempat")}
+        </Chip>
+      ) : null}
+      {mode === "transfer" && !form.editing ? (
+        <Chip
+          variant="meta"
+          icon={Receipt}
+          aria-expanded={form.panel === "fee"}
+          onClick={() => togglePanel(form, "fee")}
+        >
+          {form.transferFee > 0
+            ? `${form.locale === "en" ? "Fee" : "Admin"} ${formatMoney(form.transferFee, { locale: form.locale, compact: true })}`
+            : form.locale === "en"
+              ? "Admin fee"
+              : "Biaya admin"}
+        </Chip>
+      ) : null}
+      {(mode === "expense" || mode === "income") && !form.editing ? (
+        <Chip
+          variant="meta"
+          icon={ClipboardPaste}
+          aria-expanded={form.panel === "paste"}
+          onClick={() => togglePanel(form, "paste")}
+        >
+          {form.locale === "en" ? "Paste SMS/QRIS" : "Tempel mutasi"}
+        </Chip>
+      ) : null}
     </ChipGroup>
   );
 }
@@ -903,6 +989,115 @@ function PickerPanel({ form }: { form: CatatFormState }) {
           }}
           className={inputClassName}
         />
+      </PanelFrame>
+    );
+  }
+
+  if (form.panel === "merchant") {
+    const queryText = form.merchant.trim().toLowerCase();
+    const suggestions = form.merchants
+      .filter((name) => !queryText || name.toLowerCase().includes(queryText))
+      .slice(0, 8);
+    const isEn = form.locale === "en";
+    return (
+      <PanelFrame form={form} title={isEn ? "Place / Merchant" : "Tempat / Toko"}>
+        <div className="grid gap-3">
+          <input
+            autoFocus
+            type="text"
+            value={form.merchant}
+            maxLength={80}
+            enterKeyHint="done"
+            aria-label={isEn ? "Place or merchant" : "Tempat atau toko"}
+            placeholder={isEn ? "e.g. Kopi Kenangan, Indomaret" : "Mis. Kopi Kenangan, Indomaret"}
+            onChange={(event) => form.setMerchant(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                form.setPanel("keypad");
+              }
+            }}
+            className={inputClassName}
+          />
+          {suggestions.length ? (
+            <ChipGroup label={isEn ? "Recent places" : "Tempat terakhir"}>
+              {suggestions.map((name) => (
+                <Chip
+                  key={name}
+                  variant="choice"
+                  selected={form.merchant.trim() === name}
+                  onClick={() => {
+                    form.setMerchant(name);
+                    form.setPanel("keypad");
+                  }}
+                >
+                  {name}
+                </Chip>
+              ))}
+            </ChipGroup>
+          ) : null}
+        </div>
+      </PanelFrame>
+    );
+  }
+
+  if (form.panel === "fee") {
+    const isEn = form.locale === "en";
+    return (
+      <PanelFrame form={form} title={isEn ? "Transfer admin fee" : "Biaya admin transfer"}>
+        <div className="grid gap-3">
+          <AmountField value={form.transferFee} onChange={form.setTransferFee} />
+          <ChipGroup label={isEn ? "Common fees" : "Biaya umum"}>
+            {[0, 1000, 2500, 6500].map((fee) => (
+              <Chip
+                key={fee}
+                variant="choice"
+                selected={form.transferFee === fee}
+                onClick={() => {
+                  form.setTransferFee(fee);
+                  form.setPanel("keypad");
+                }}
+              >
+                {fee === 0 ? (isEn ? "Free" : "Gratis") : formatMoney(fee, { locale: form.locale })}
+              </Chip>
+            ))}
+          </ChipGroup>
+          <p className="text-[12px] text-muted">
+            {isEn
+              ? "Recorded as a separate admin fee expense from the sender wallet."
+              : "Dicatat otomatis sebagai pengeluaran Biaya Admin dari dompet pengirim."}
+          </p>
+        </div>
+      </PanelFrame>
+    );
+  }
+
+  if (form.panel === "paste") {
+    const isEn = form.locale === "en";
+    return (
+      <PanelFrame form={form} title={isEn ? "Paste bank / QRIS notification" : "Tempel teks mutasi / QRIS"}>
+        <div className="grid gap-2.5">
+          <textarea
+            autoFocus
+            rows={3}
+            value={form.pasteText}
+            onChange={(event) => form.setPasteText(event.target.value)}
+            placeholder={
+              isEn
+                ? "Paste BCA, Mandiri, GoPay, or QRIS notification text..."
+                : "Tempel notif BCA, Livin, BRImo, GoPay, atau QRIS..."
+            }
+            className={cn(inputClassName, "min-h-[84px] py-2 text-[13px]")}
+          />
+          <Button
+            type="button"
+            size="sm"
+            disabled={!form.pasteText.trim()}
+            onClick={() => form.applyQuickCapture(form.pasteText)}
+          >
+            {isEn ? "Parse & fill" : "Baca otomatis"}
+          </Button>
+        </div>
       </PanelFrame>
     );
   }

@@ -7,6 +7,7 @@ import { CategoriesSection } from "@/components/pengaturan/categories-section";
 import { AccountSection, DataSection } from "@/components/pengaturan/misc-sections";
 import { NotificationsSection } from "@/components/pengaturan/notifications-section";
 import { RecurringSection, TemplatesSection } from "@/components/pengaturan/rules-section";
+import { SecuritySection } from "@/components/pengaturan/security-section";
 import { SETTINGS_SECTIONS } from "@/components/pengaturan/settings-sections";
 import {
   getCategoriesSettings,
@@ -92,6 +93,10 @@ export default async function SettingsSectionPage({ params, searchParams }: Prop
     case "notifikasi": {
       const data = await getNotificationSettings();
       return <NotificationsSection userId={data.userId} reminder={data.reminder} deviceCount={data.deviceCount} />;
+    }
+    case "keamanan": {
+      const data = await getProfileSettings();
+      return <SecuritySection email={data.user.email} />;
     }
     case "data":
       return <DataSection />;

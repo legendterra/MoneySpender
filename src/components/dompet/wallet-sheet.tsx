@@ -11,6 +11,7 @@ import {
   CreditCard,
   Landmark,
   ReceiptText,
+  Scale,
   Smartphone,
   Wallet as WalletIcon,
   type LucideIcon,
@@ -24,10 +25,11 @@ import { AmountText } from "@/components/ui/amount-display";
 import { Button } from "@/components/ui/button";
 import { Chip, ChipGroup } from "@/components/ui/chip";
 import { Field } from "@/components/ui/field";
-import { formatMoney, toUiLocale } from "@/components/ui/format";
+import { formatMoney, jakartaDateKey, toUiLocale } from "@/components/ui/format";
 import { Input } from "@/components/ui/input";
 import { Sheet } from "@/components/ui/sheet";
 import { historyHref } from "@/lib/history";
+import { buildReconcileTransaction } from "@/lib/reconcile";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { isUniqueViolation } from "@/lib/supabase/query";
 import type { Wallet, WalletKind } from "@/lib/types";
@@ -79,6 +81,9 @@ export function WalletSheet({
   const [opening, setOpening] = React.useState(0);
   const [attempted, setAttempted] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [reconciling, setReconciling] = React.useState(false);
+  const [actualBalance, setActualBalance] = React.useState(0);
+  const [savingReconcile, setSavingReconcile] = React.useState(false);
 
   // Load the form whenever another wallet (or "new") is opened.
   if (targetKey !== loadedKey) {
@@ -86,6 +91,8 @@ export function WalletSheet({
     setName(editing?.name ?? "");
     setKind(editing?.kind ?? "cash");
     setOpening(editing ? Math.round(editing.opening_balance) : 0);
+    setActualBalance(editing ? Math.round(editing.balance) : 0);
+    setReconciling(false);
     setAttempted(false);
   }
 
@@ -132,6 +139,46 @@ export function WalletSheet({
       toast.error(t("errors.save", { table: "wallets", message: message(error) }));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function saveReconcile() {
+    if (!editing || savingReconcile) return;
+    const isEn = locale === "en";
+    const built = buildReconcileTransaction({
+      wallet: editing,
+      actualBalance,
+      dateKey: jakartaDateKey(),
+      categoryLabel: isEn ? "Balance Adjustment" : "Penyesuaian Saldo",
+      reason: isEn ? `Reconcile ${editing.name}` : `Penyesuaian saldo ${editing.name}`,
+    });
+    if (!built) {
+      toast(isEn ? "Balance already matches." : "Saldo sudah sesuai.");
+      setReconciling(false);
+      return;
+    }
+    setSavingReconcile(true);
+    try {
+      const { supabase, user } = await currentUser();
+      if (!user) {
+        toast.error(t("errors.notSignedIn"));
+        return;
+      }
+      const { error } = await supabase.from("transactions").insert({ user_id: user.id, ...built.payload });
+      if (error) {
+        toast.error(t("errors.save", { table: "transactions", message: error.message }));
+        return;
+      }
+      toast.success(
+        isEn
+          ? `Adjusted by ${formatMoney(built.delta, { locale, sign: "always" })}`
+          : `Saldo disesuaikan ${formatMoney(built.delta, { locale, sign: "always" })}`,
+      );
+      setReconciling(false);
+      onClose();
+      router.refresh();
+    } finally {
+      setSavingReconcile(false);
     }
   }
 
@@ -210,18 +257,32 @@ export function WalletSheet({
             </div>
             <div className="flex flex-wrap gap-2">
               {!editing.is_archived ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    onClose();
-                    catat.open("transfer", { preset: { walletId: editing.id } });
-                  }}
-                >
-                  <ArrowLeftRight aria-hidden="true" />
-                  {t("actions.transferFrom")}
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      onClose();
+                      catat.open("transfer", { preset: { walletId: editing.id } });
+                    }}
+                  >
+                    <ArrowLeftRight aria-hidden="true" />
+                    {t("actions.transferFrom")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      setActualBalance(Math.round(editing.balance));
+                      setReconciling((v) => !v);
+                    }}
+                  >
+                    <Scale aria-hidden="true" />
+                    {locale === "en" ? "Reconcile" : "Sesuaikan saldo"}
+                  </Button>
+                </>
               ) : null}
               <Link
                 href={historyHref({ walletId: editing.id })}
@@ -232,6 +293,30 @@ export function WalletSheet({
                 {t("actions.history")}
               </Link>
             </div>
+            {reconciling ? (
+              <div className="grid gap-2.5 border-t border-line pt-3">
+                <label htmlFor="wallet-reconcile" className="text-[12px] font-semibold text-text">
+                  {locale === "en" ? "Real balance right now" : "Saldo asli sekarang"}
+                </label>
+                <AmountField id="wallet-reconcile" value={actualBalance} onChange={setActualBalance} />
+                <div className="flex items-center justify-between gap-2 text-[12px]">
+                  <span className="text-muted">
+                    {locale === "en" ? "Difference:" : "Selisih:"}{" "}
+                    <strong className="tabular-nums text-text">
+                      {formatMoney(actualBalance - Math.round(editing.balance), { locale, sign: "always" })}
+                    </strong>
+                  </span>
+                  <div className="flex gap-1.5">
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setReconciling(false)}>
+                      {locale === "en" ? "Cancel" : "Batal"}
+                    </Button>
+                    <Button type="button" size="sm" isLoading={savingReconcile} onClick={() => void saveReconcile()}>
+                      {locale === "en" ? "Apply" : "Terapkan"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

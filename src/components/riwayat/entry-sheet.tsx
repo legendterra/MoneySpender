@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { useCatat } from "@/components/quick-add/catat-provider";
 import { entryToCatat } from "@/components/riwayat/entry-catat";
+import { EntryExtras } from "@/components/riwayat/entry-extras";
 import { AmountText } from "@/components/ui/amount-display";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatDateKey, toUiLocale } from "@/components/ui/format";
@@ -136,6 +137,7 @@ export function EntrySheet({
             <DetailRow label={t("detail.merchant")} value={entry.merchant} />
             <DetailRow label={t("detail.note")} value={entry.note} />
           </dl>
+          <EntryExtras entry={entry} />
           {entry.kind === "debt" && debtHref ? (
             <Link
               href={debtHref}

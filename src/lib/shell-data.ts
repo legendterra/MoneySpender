@@ -33,7 +33,7 @@ export const getShellData = cache(async (): Promise<CatatData> => {
   const { supabase, user } = await getAuthedContext();
   const since = addDays(todayWIB(), -USAGE_WINDOW_DAYS);
 
-  const [categoryRows, walletRows, usageRows, debtRows, templates] = await Promise.all([
+  const [categoryRows, walletRows, usageRows, debtRows, templates, merchantRows] = await Promise.all([
     supabase
       .from("categories")
       .select(CATEGORY_COLUMNS)
@@ -66,6 +66,14 @@ export const getShellData = cache(async (): Promise<CatatData> => {
       .limit(60)
       .then((result) => expectRows<{ contact_name: string | null }>("debts", result)),
     fetchTemplates(supabase, user.id),
+    supabase
+      .from("transactions")
+      .select("merchant")
+      .eq("user_id", user.id)
+      .not("merchant", "is", null)
+      .order("transaction_date", { ascending: false })
+      .limit(60)
+      .then((result) => expectRows<{ merchant: string | null }>("transactions", result)),
   ]);
 
   const usage = new Map<string, number>();
@@ -90,10 +98,17 @@ export const getShellData = cache(async (): Promise<CatatData> => {
     if (name && !contacts.includes(name)) contacts.push(name);
   }
 
+  const merchants: string[] = [];
+  for (const row of merchantRows) {
+    const name = row.merchant?.trim();
+    if (name && !merchants.includes(name)) merchants.push(name);
+  }
+
   return {
     categories,
     wallets,
     templates: templates.filter((template) => template.amount > 0).map(toCatatTemplate),
     contacts: contacts.slice(0, RECENT_CONTACTS),
+    merchants: merchants.slice(0, RECENT_CONTACTS),
   };
 });

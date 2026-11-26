@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 
 import { LogoMark } from "@/components/logo-mark";
 import { LogoutButton } from "@/components/logout-button";
+import { PrivacyToggle } from "@/components/providers/privacy-provider";
 import { CatatProvider, useCatat } from "@/components/quick-add/catat-provider";
 import type { CatatData } from "@/components/quick-add/types";
 import { matchesPath, resolveRoute, SHELL_ROUTES, TAB_ITEMS } from "@/components/shell/nav-config";
@@ -121,6 +122,7 @@ function ShellFrame({
             <h1 className="min-w-0 flex-1 truncate text-[17px] font-semibold tracking-tight text-text lg:text-[22px] lg:font-bold">
               {title}
             </h1>
+            <PrivacyToggle className="lg:hidden" />
             {route?.month && !nested ? (
               <React.Suspense fallback={<div className="h-10 w-[13.5rem] rounded-control border border-line bg-surface" />}>
                 <HeaderMonth pathname={realPathname} />
@@ -234,6 +236,7 @@ function Sidebar({
           <span className="truncate text-[13px] font-semibold text-text capitalize">{userLabel}</span>
           <span className="truncate text-[12px] text-muted">{userEmail}</span>
         </div>
+        <PrivacyToggle />
         <ThemeToggle />
         <LogoutButton iconOnly />
       </div>

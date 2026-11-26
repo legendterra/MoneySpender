@@ -34,6 +34,7 @@ describe("entryToCatat", () => {
         preset: {
           amount: 25000,
           note: "Kopi susu",
+          merchant: "Kopi Kenangan",
           dateKey: "2026-11-18",
           walletId: "w-old",
           walletLabel: "Dompet lama",

@@ -8,6 +8,7 @@ export type SettingsSlug =
   | "berulang"
   | "template"
   | "notifikasi"
+  | "keamanan"
   | "data"
   | "pasang"
   | "akun";
@@ -21,6 +22,7 @@ export const SETTINGS_SECTIONS: Array<{ slug: SettingsSlug; key: string; href: s
   { slug: "berulang", key: "navRecurring", href: "/settings/berulang" },
   { slug: "template", key: "navTemplates", href: "/settings/template" },
   { slug: "notifikasi", key: "navNotifications", href: "/settings/notifikasi" },
+  { slug: "keamanan", key: "navSecurity", href: "/settings/keamanan" },
   { slug: "data", key: "navData", href: "/settings/data" },
   { slug: "pasang", key: "navInstall", href: "/install" },
   { slug: "akun", key: "navAccount", href: "/settings/akun" },
